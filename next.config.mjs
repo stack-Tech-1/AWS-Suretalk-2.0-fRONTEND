@@ -1,9 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone', // or 'export' for static sites
+  output: 'export', // or 'export' for static sites
   trailingSlash: true, // Try this for Amplify routing
   /* config options here */
   reactStrictMode: true,
+  images: {
+    unoptimized: true,     // Since Next.js Image optimization doesn’t work in static export
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
