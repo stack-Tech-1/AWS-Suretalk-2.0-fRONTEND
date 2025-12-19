@@ -46,23 +46,17 @@ export default function AdminLogin() {
   
       const userData = response.data.user;
 
-      if (!userData.is_admin) {
+        if (!userData.is_admin) {
         throw new Error('This account does not have admin privileges.');
-      }
-      
-      // ✅ Admin approval routing
-      if (userData.admin_status === 'approved') {
-        router.replace('/admin/adminDashboard');
-        return;
-      }
-      
-      if (userData.admin_status === 'pending') {
+        }
+
+        if (userData.admin_status === 'approved') {
+        router.replace('/adminDashboard');
+        } else if (userData.admin_status === 'pending') {
         router.replace('/admin/pending');
-        return;
-      }
-      
-      throw new Error('Admin access not approved');
-      
+        } else {
+        throw new Error('Admin access not approved yet.');
+        }   
   
     } catch (error) {
       console.error("Admin login error:", error);

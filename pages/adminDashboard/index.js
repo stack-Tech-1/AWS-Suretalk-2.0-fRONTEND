@@ -43,21 +43,29 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const profile = await api.getProfile();
-  
-        if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
-          router.replace('/admin/login');
-        }
-      } catch {
+  const checkAdmin = async () => {
+    try {
+      const profile = await api.getProfile();
+
+      // Check if user is admin AND approved
+      if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
         router.replace('/admin/login');
+        return; // Exit early if redirecting
       }
-    };
-  
-    checkAdmin();
-  }, []);
-  
+
+      // ✅ CRITICAL FIX: Update user state and stop loading
+      setUser(profile.data);
+      setLoading(false); 
+
+    } catch (err) {
+      console.error("Admin verification failed:", err);
+      router.replace('/admin/login');
+    }
+  };
+
+  checkAdmin();
+}, []);
+
 
   if (loading) {
     return (
