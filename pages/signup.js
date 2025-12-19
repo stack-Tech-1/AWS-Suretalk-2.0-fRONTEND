@@ -5,6 +5,8 @@ import Link from "next/link";
 import AuthLayout from "../components/auth/AuthLayout";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
+import { api } from "../utils/api";
+import React from "react";
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -72,23 +74,64 @@ export default function Signup() {
     },
   ];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Update the handleSubmit function in your signup.js
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      // API call will go here
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Signup data:", { ...formData, tier: selectedTier });
-      
-      // Simulate successful signup
-      setStep(2);
-    } catch (err) {
-      console.error("Signup failed:", err);
-    } finally {
-      setLoading(false);
+  try {
+    // Validate form
+    if (formData.password !== formData.confirmPassword) {
+      throw new Error("Passwords do not match");
     }
-  };
+
+    if (formData.password.length < 8) {
+      throw new Error("Password must be at least 8 characters long");
+    }
+
+    if (!formData.agreeToTerms) {
+      throw new Error("You must agree to the terms and conditions");
+    }
+
+    // Prepare data for API (note: backend expects 'fullName' not 'firstName' and 'lastName')
+    const apiData = {
+      email: formData.email,
+      phone: formData.phone,
+      fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+      password: formData.password,
+      // Backend automatically sets tier to 'ESSENTIAL' for new users
+      // You can optionally pass subscription_tier if you want to change default
+    };
+
+    console.log("Sending signup data:", apiData);
+
+    // Call the real API
+    const response = await api.register(apiData);
+    
+    console.log("Signup successful:", response);
+
+    // Auto-login after successful registration
+    try {
+      const loginResponse = await api.login(formData.email, formData.password);
+      console.log("Auto-login successful:", loginResponse);
+      
+      // Go to success page (step 2)
+      setStep(2);
+    } catch (loginError) {
+      console.error("Auto-login failed:", loginError);
+      // Still show success page even if auto-login fails
+      setStep(2);
+    }
+
+  } catch (error) {
+    console.error("Signup failed:", error);
+    
+    // Show error to user
+    alert(`Signup failed: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

@@ -1,20 +1,22 @@
-import "@/styles/globals.css";
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter/700.css";
-import { Inter } from 'next/font/google';
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\pages\_app.js
+import { useEffect } from 'react';
+import '../styles/globals.css';
+import { AuthProvider } from '../contexts/AuthContext';
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
+function MyApp({ Component, pageProps }) {
+  useEffect(() => {
+    // Check for saved theme preference
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
 
-export default function App({ Component, pageProps }) {
   return (
-    <main className={`${inter.variable} font-sans`}>
+    <AuthProvider>
       <Component {...pageProps} />
-    </main>
+    </AuthProvider>
   );
 }
+
+export default MyApp;

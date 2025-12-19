@@ -1,3 +1,4 @@
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -34,13 +35,15 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s infinite linear',
+        'float': 'float 3s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -55,10 +58,19 @@ module.exports = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        glow: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' },
+        },
       },
       boxShadow: {
         'glass': '0 8px 32px rgba(0, 0, 0, 0.1)',
         'neumorphic': '20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff',
+        'soft': '0 4px 20px rgba(0, 0, 0, 0.08)',
       },
       backdropBlur: {
         xs: '2px',

@@ -1,4 +1,4 @@
-import { useState } from "react";
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\components\dashboard\Sidebar.js
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { 
@@ -6,169 +6,209 @@ import {
   MessageSquare, 
   Users, 
   Shield, 
-  Settings,
+  Settings, 
+  Bell, 
   BarChart3,
-  Bell,
   FileText,
   Calendar,
+  Archive,
+  Download,
+  Upload,
   HelpCircle,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Smartphone,
   Mic,
-  Archive,
-  Clock
+  Clock,
+  UserCheck,
+  X,
+  FileAudio,
+  Contact,
+  ClipboardList
 } from "lucide-react";
 
-export default function Sidebar({ type, onClose }) {
+export default function Sidebar({ 
+  type, 
+  isOpen, 
+  collapsed, 
+  onCollapse, 
+  onClose 
+}) {
   const router = useRouter();
-  const [activeItem, setActiveItem] = useState(router.pathname);
 
+  // User menu items
   const userMenu = [
-    { label: "Dashboard", href: "/dashboard", icon: <Home className="w-5 h-5" /> },
-    { label: "Voice Notes", href: "/dashboard/voice-notes", icon: <Mic className="w-5 h-5" /> },
-    { label: "Contacts", href: "/dashboard/contacts", icon: <Users className="w-5 h-5" /> },
-    { label: "Legacy Vault", href: "/dashboard/vault", icon: <Archive className="w-5 h-5" /> },
-    { label: "Scheduled Messages", href: "/dashboard/scheduled", icon: <Clock className="w-5 h-5" /> },
-    { label: "Notifications", href: "/dashboard/notifications", icon: <Bell className="w-5 h-5" /> },
-    { label: "Settings", href: "/dashboard/settings", icon: <Settings className="w-5 h-5" /> },
+    { icon: <Home className="w-5 h-5" />, label: "Dashboard", href: "/usersDashboard", count: null },
+    { icon: <Mic className="w-5 h-5" />, label: "Voice Notes", href: "/usersDashboard/voice-notes", count: 12 },
+    { icon: <Users className="w-5 h-5" />, label: "Contacts", href: "/usersDashboard/contacts", count: 5 },
+    { icon: <Shield className="w-5 h-5" />, label: "Legacy Vault", href: "/usersDashboard/vault", count: 3 },
+    { icon: <Calendar className="w-5 h-5" />, label: "Scheduled", href: "/usersDashboard/scheduled", count: 2 },
+    { icon: <Settings className="w-5 h-5" />, label: "Settings", href: "/usersDashboard/settings", count: null },
   ];
 
+  // Admin menu items
   const adminMenu = [
-    { label: "Admin Home", href: "/admin", icon: <Home className="w-5 h-5" /> },
-    { label: "User Management", href: "/admin/users", icon: <Users className="w-5 h-5" /> },
-    { label: "Voice Wills", href: "/admin/wills", icon: <FileText className="w-5 h-5" /> },
-    { label: "Scheduled Messages", href: "/admin/messages", icon: <Calendar className="w-5 h-5" /> },
-    { label: "System Logs", href: "/admin/logs", icon: <BarChart3 className="w-5 h-5" /> },
-    { label: "Platform Metrics", href: "/admin/metrics", icon: <BarChart3 className="w-5 h-5" /> },
-    { label: "Support Tickets", href: "/admin/support", icon: <HelpCircle className="w-5 h-5" /> },
-    { label: "Admin Settings", href: "/admin/settings", icon: <Settings className="w-5 h-5" /> },
+    { icon: <BarChart3 className="w-5 h-5" />, label: "Overview", href: "/adminDashboard", count: null },
+    { icon: <Users className="w-5 h-5" />, label: "Users", href: "/adminDashboard/users", count: 45 },
+    { icon: <MessageSquare className="w-5 h-5" />, label: "Voice Wills", href: "/adminDashboard/wills", count: 8 },
+    { icon: <Clock className="w-5 h-5" />, label: "Scheduled", href: "/adminDashboard/messages", count: 12 },
+    { icon: <FileText className="w-5 h-5" />, label: "System Logs", href: "/adminDashboard/logs", count: null },
+    { icon: <Archive className="w-5 h-5" />, label: "Storage", href: "/adminDashboard/storage", count: null },
+    { icon: <ClipboardList className="w-5 h-5" />, label: "Admin requests", href: "/adminDashboard/admin-requests", count: 4 },
+    { icon: <Settings className="w-5 h-5" />, label: "Settings", href: "/adminDashboard/settings", count: null },
   ];
 
   const menu = type === "admin" ? adminMenu : userMenu;
 
-  const handleItemClick = (href) => {
-    setActiveItem(href);
-    if (onClose) onClose();
+  const NavItem = ({ item }) => {
+    const isActive = router.pathname === item.href;
+    
+    return (
+      <Link href={item.href}>
+        <div 
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer
+            ${isActive 
+              ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-lg' 
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:pl-5'
+            }`}
+          onClick={onClose}
+        >
+          <div className={`${isActive ? 'text-white' : 'text-gray-500 group-hover:text-brand-500'}`}>
+            {item.icon}
+          </div>
+          {!collapsed && (
+            <>
+              <span className="font-medium flex-1">{item.label}</span>
+              {item.count !== null && (
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  isActive 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}>
+                  {item.count}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      </Link>
+    );
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Logo Section */}
-      <div className="p-6 border-b">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-accent-500 
-                        rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">
-              SureTalk {type === "admin" && "Admin"}
-            </h1>
-            <p className="text-xs text-gray-500">
-              {type === "admin" ? "Control Center" : "Voice Messaging"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* User Profile Summary */}
-      {type === "user" && (
-        <div className="p-4 border-b">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
-              <span className="text-brand-600 font-bold">JD</span>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-800">John Doe</h3>
-              <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 
-                               rounded-full text-xs font-medium">
-                  Essential
-                </span>
-                <span className="text-xs text-gray-500">Plan</span>
+    <div className={`h-full flex flex-col ${collapsed ? 'items-center' : ''}`}>
+      {/* Header */}
+      <div className={`p-6 border-b border-gray-200 dark:border-gray-800 ${collapsed ? 'px-4' : ''}`}>
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          {!collapsed ? (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-lg bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
+                  SureTalk
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {type === "admin" ? "Admin Console" : "User Dashboard"}
+                </p>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
+              <Smartphone className="w-5 h-5 text-white" />
+            </div>
+          )}
+          
+          {/* Collapse button - desktop only */}
+          {!collapsed && (
+            <button 
+              onClick={onCollapse}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 
+                       hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          
+          {collapsed && (
+            <button 
+              onClick={onCollapse}
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 
+                       hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+          
+          {/* Close button - mobile only */}
+          <button 
+            onClick={onClose}
+            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 
+                     hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      )}
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 overflow-y-auto">
-        <div className="space-y-1">
-          {menu.map((item, index) => (
-            <Link key={index} href={item.href}>
-              <div
-                onClick={() => handleItemClick(item.href)}
-                className={`sidebar-item ${
-                  activeItem === item.href ? "active" : ""
-                }`}
-              >
-                <div className="mr-3 opacity-70">
-                  {item.icon}
-                </div>
-                <span>{item.label}</span>
-                {item.badge && (
-                  <span className="ml-auto bg-accent-100 text-accent-800 
-                                 text-xs px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
+        
+        {/* User info - only when not collapsed */}
+        {!collapsed && (
+          <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
+                <span className="font-bold text-white text-sm">JD</span>
               </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Quick Stats (Admin Only) */}
-        {type === "admin" && (
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">
-              Quick Stats
-            </h4>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Active Users</span>
-                <span className="font-semibold">1,247</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Premium Users</span>
-                <span className="font-semibold">312</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Storage Used</span>
-                <span className="font-semibold">128 GB</span>
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">John Doe</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {type === "admin" ? "Administrator" : "Premium User"}
+                </p>
               </div>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Navigation */}
+      <nav className={`flex-1 p-4 space-y-2 overflow-y-auto ${collapsed ? 'px-2' : ''}`}>
+        {menu.map((item, index) => (
+          <NavItem key={index} item={item} />
+        ))}
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t">
-        <div className="space-y-2">
-          {type === "user" && (
-            <div className="sidebar-item">
-              <HelpCircle className="w-5 h-5 mr-3 opacity-70" />
-              <span>Help & Support</span>
+      <div className={`p-4 border-t border-gray-200 dark:border-gray-800 ${collapsed ? 'px-2' : ''}`}>
+        <div className="space-y-3">
+          {/* Help */}
+          <Link href="/help">
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 
+                         hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer
+                         ${collapsed ? 'justify-center px-3' : ''}`}>
+              <HelpCircle className="w-5 h-5" />
+              {!collapsed && <span className="font-medium">Help & Support</span>}
+            </div>
+          </Link>
+
+          {/* Logout */}
+          <button 
+            onClick={() => router.push("/")} // This sends the user to the home page
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 
+                        hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors
+                        ${collapsed ? 'justify-center px-3' : ''}`}
+          >
+            <LogOut className="w-5 h-5" />
+            {!collapsed && <span className="font-medium">Logout</span>}
+          </button>
+          
+          {/* Version info - only when not collapsed */}
+          {!collapsed && (
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                v2.0.0 • {type === "admin" ? "Admin" : "User"} Mode
+              </p>
             </div>
           )}
-          
-          <div 
-            className="sidebar-item text-accent-600 hover:text-accent-700"
-            onClick={() => {
-              // Handle logout
-              console.log("Logout clicked");
-            }}
-          >
-            <LogOut className="w-5 h-5 mr-3 opacity-70" />
-            <span>Log Out</span>
-          </div>
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
-            © {new Date().getFullYear()} SureTalk
-            <br />
-            v2.0.0
-          </p>
         </div>
       </div>
     </div>
