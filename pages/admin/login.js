@@ -45,17 +45,24 @@ export default function AdminLogin() {
       }
   
       const userData = response.data.user;
-  
+
       if (!userData.is_admin) {
         throw new Error('This account does not have admin privileges.');
       }
-  
-      if (formData.rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
+      
+      // ✅ Admin approval routing
+      if (userData.admin_status === 'approved') {
+        router.replace('/admin/dashboard');
+        return;
       }
-  
-      console.log("Admin login successful, redirecting...");
-      router.replace('/adminDashboard');
+      
+      if (userData.admin_status === 'pending') {
+        router.replace('/admin/pending');
+        return;
+      }
+      
+      throw new Error('Admin access not approved');
+      
   
     } catch (error) {
       console.error("Admin login error:", error);
@@ -64,14 +71,7 @@ export default function AdminLogin() {
     }
   };
 
-  if (user.is_admin && user.admin_status === 'approved') {
-    router.push('/admin/dashboard');
-  } else if (user.is_admin && user.admin_status === 'pending') {
-    router.push('/admin/pending');
-  } else {
-    throw new Error('Admin access not approved');
-  }
-
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
