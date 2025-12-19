@@ -52,7 +52,7 @@ export default function AdminLogin() {
       
       // ✅ Admin approval routing
       if (userData.admin_status === 'approved') {
-        router.replace('/admin/dashboard');
+        router.replace('/admin/adminDashboard');
         return;
       }
       
