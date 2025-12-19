@@ -43,33 +43,21 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdminAuth = async () => {
+    const checkAdmin = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          router.push('/admin/login');
-          return;
+        const profile = await api.getProfile();
+  
+        if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
+          router.replace('/admin/login');
         }
-
-        const response = await api.getProfile();
-        
-        // Check if user is admin
-        if (!response.data.is_admin) {
-          router.push('/usersDashboard');
-          return;
-        }
-
-        setUser(response.data);
-      } catch (error) {
-        console.error('Admin auth error:', error);
-        router.push('/admin/login');
-      } finally {
-        setLoading(false);
+      } catch {
+        router.replace('/admin/login');
       }
     };
-
-    checkAdminAuth();
-  }, [router]);
+  
+    checkAdmin();
+  }, []);
+  
 
   if (loading) {
     return (

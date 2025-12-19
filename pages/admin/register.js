@@ -81,22 +81,18 @@ export default function AdminRegister() {
       });
 
       // In production, this would call a backend endpoint like:
-      // const response = await api.request('/admin/register-request', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     email: formData.email,
-      //     phone: formData.phone,
-      //     fullName: `${formData.firstName} ${formData.lastName}`,
-      //     password: formData.password,
-      //     reason: formData.reason,
-      //     department: formData.department,
-      //     requestedBy: 'self' // or get from current admin if logged in
-      //   })
-      // });
-
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      await api.request('/auth/admin/request', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          department: formData.department,
+          reason: formData.reason,
+        }),
+      });
+      
       // Move to pending approval step
       setStep(2);
 

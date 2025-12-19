@@ -63,8 +63,14 @@ export default function AdminLogin() {
       setLoading(false);
     }
   };
-  
 
+  if (user.is_admin && user.admin_status === 'approved') {
+    router.push('/admin/dashboard');
+  } else if (user.is_admin && user.admin_status === 'pending') {
+    router.push('/admin/pending');
+  } else {
+    throw new Error('Admin access not approved');
+  }
 
 
   return (
