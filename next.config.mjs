@@ -8,5 +8,4 @@ const nextConfig = {
     unoptimized: true,     // Since Next.js Image optimization doesn’t work in static export
   },
 };
-
-module.exports = nextConfig;
+export default nextConfig;
