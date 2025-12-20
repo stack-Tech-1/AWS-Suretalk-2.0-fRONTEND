@@ -45,30 +45,44 @@ export default function AdminRequests() {
     { id: 'rejected', label: 'Rejected' },
   ];
 
-  const fetchRequests = async () => {
-    try {
-      setLoading(true);
-      const response = await api.getPendingRequests();
-      const requestsData = response.data || [];
-      setRequests(requestsData);
-      
-      // Calculate stats
-      const pending = requestsData.filter(r => r.status === 'pending').length;
-      const approved = requestsData.filter(r => r.status === 'approved').length;
-      const rejected = requestsData.filter(r => r.status === 'rejected').length;
-      
-      setStats({
-        pending,
-        approved,
-        rejected,
-        total: requestsData.length
-      });
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const fetchRequests = async () => {
+          try {
+            setLoading(true);
+        
+            const response = await api.getPendingRequests();
+
+            // 🔍 DEBUG: Look at the first item of the raw response here
+            console.log('RAW DATA FROM API:', response.data?.requests?.[0]);
+            const rawRequests = response.data?.requests || [];
+        
+            const normalizedRequests = rawRequests.map(r => ({
+              ...r,
+              status: r.admin_status,      // 🔑 map backend → frontend
+              reason: r.admin_reason,       // 🔑 fix another mismatch
+            }));
+        
+            setRequests(normalizedRequests);
+        
+            
+            const pending = normalizedRequests.filter(r => r.status === 'pending').length;
+            const approved = normalizedRequests.filter(r => r.status === 'approved').length;
+            const rejected = normalizedRequests.filter(r => r.status === 'rejected').length;
+        
+            setStats({
+              pending,
+              approved,
+              rejected,
+              total: normalizedRequests.length
+            });
+            console.log('ADMIN REQUESTS:', normalizedRequests);
+
+          } catch (error) {
+            console.error('Error fetching requests:', error);
+          } finally {
+            setLoading(false);
+          }
+        };
+  
 
   useEffect(() => {
     fetchRequests();
@@ -379,7 +393,7 @@ export default function AdminRequests() {
                     <td className="py-4 px-6">
                       <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium w-fit ${getStatusColor(request.status)}`}>
                         {getStatusIcon(request.status)}
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        {request.status? request.status.charAt(0).toUpperCase() + request.status.slice(1): 'Unknown'}
                       </div>
                       {request.reviewed_by && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

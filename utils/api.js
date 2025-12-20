@@ -22,43 +22,47 @@ class ApiClient {
 
   // In utils/api.js, update the request function to log responses:
 async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-  
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-  
-    const config = {
-      ...options,
-      headers,
-    };
-  
-    try {
-      console.log(`API Request: ${url}`);
-      const response = await fetch(url, config);
-      const data = await response.json();
-      
-      console.log(`API Response for ${url}:`, data);
-  
-      if (!response.ok) {        
-        if (data.errors && Array.isArray(data.errors)) {
-          throw new Error(data.errors.map(err => err.msg || err.message).join(', '));
-        }
-        
-        throw new Error(data.error || data.message || 'Something went wrong');
-      }
-  
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('token')
+      : null;
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
+
+  const config = {
+    ...options,
+    headers,
+  };
+
+  try {
+    console.log('API Request:', url);
+    console.log('Using token:', token ? 'YES' : 'NO');
+
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    console.log('API Response:', data);
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Request failed');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
 
   // Auth endpoints
   async register(data) {
@@ -95,17 +99,26 @@ async request(endpoint, options = {}) {
         return this.request('/admin/pending-requests');
     }
     
-    async approveAdminRequest(id) {
-        return this.request(`/admin/requests/${id}/approve`, {
-        method: 'POST',
-        });
-    }
     
-    async rejectAdminRequest(id) {
-        return this.request(`/admin/requests/${id}/reject`, {
-        method: 'POST',
-        });
-    }
+
+        async approveAdminRequest(id) {
+            return this.request(`/admin/requests/${id}/action`, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'approve' }), 
+            headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        
+        async rejectAdminRequest(id, notes = '') {
+            return this.request(`/admin/requests/${id}/action`, {
+            method: 'POST',
+            body: JSON.stringify({ 
+                action: 'reject', 
+                notes: notes
+            }),
+            headers: { 'Content-Type': 'application/json' }
+            });
+        }
 
   // Voice notes endpoints
   async getVoiceNotes(params = {}) {
