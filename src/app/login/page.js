@@ -50,29 +50,30 @@ export default function Login() {
             throw new Error('Admin accounts cannot login here. Please use the admin login portal.');
           }
           
-          // Use the Auth Context login function (for non-admin users only)
-          const result = await login(formData.email, formData.password, false);
-          
-          if (!result.success) {
-            throw new Error(result.error || "Login failed");
-          }
-
           // Store remember me preference
-          if (formData.rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
+            if (formData.rememberMe) {
+              localStorage.setItem('rememberMe', 'true');
+              localStorage.setItem('rememberedEmail', formData.email);
+            }
+
+            // Redirect to user dashboard
+            router.push('/usersDashboard');
+
+          } catch (error) {
+            console.error("Login error:", error);
+            
+            // Handle specific error messages
+            if (error.message.includes('Admin accounts cannot login here')) {
+              setError(error.message);
+            } else if (error.message.includes('Invalid credentials')) {
+              setError('Invalid email or password. Please try again.');
+            } else {
+              setError(error.message || "Login failed. Please check your credentials.");
+            }
+          } finally {
+            setLoading(false);
           }
-
-        } catch (error) {
-          console.error("Login error:", error);
-          setError(error.message || "Login failed. Please check your credentials.");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-     
-        
-              
+        };             
 
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">

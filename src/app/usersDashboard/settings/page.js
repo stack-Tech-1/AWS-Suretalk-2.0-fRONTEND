@@ -1,5 +1,4 @@
-// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\pages\usersDashboard\settings.js
-import Layout from "../../../components/dashboard/Layout";
+"use client";
 import { motion } from "framer-motion";
 import { 
   Settings as SettingsIcon,
@@ -58,7 +57,7 @@ export default function Settings() {
   };
 
   return (
-    <Layout type="user">
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -326,6 +325,6 @@ export default function Settings() {
           </div>
         </motion.div>
       </div>
-    </Layout>
+    </div>
   );
 }

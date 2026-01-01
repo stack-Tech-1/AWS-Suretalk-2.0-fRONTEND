@@ -1,3 +1,4 @@
+"use client";
 import { motion } from "framer-motion";
 import { 
   Shield,
@@ -124,7 +125,7 @@ export default function LegacyVault() {
   ];
 
   return (
-    <Layout type="user">
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -348,6 +349,6 @@ export default function LegacyVault() {
           </div>
         </div>
       </motion.div>
-    </Layout>
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+"use client";
 import { motion } from "framer-motion";
 import { 
   Calendar,
@@ -109,7 +110,7 @@ export default function ScheduledMessages() {
   ];
 
   return (
-    <Layout type="user">
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -342,6 +343,6 @@ export default function ScheduledMessages() {
           </div>
         )}
       </motion.div>
-    </Layout>
+    </div>
   );
 }

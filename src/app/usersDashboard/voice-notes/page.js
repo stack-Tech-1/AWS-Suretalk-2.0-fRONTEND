@@ -1,3 +1,4 @@
+"use client";
 import { motion } from "framer-motion";
 import { 
   Mic, 
@@ -115,7 +116,7 @@ export default function VoiceNotes() {
   );
 
   return (
-    <Layout type="user">
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -380,6 +381,6 @@ export default function VoiceNotes() {
           </button>
         </motion.div>
       )}
-    </Layout>
+    </div>
   );
 }

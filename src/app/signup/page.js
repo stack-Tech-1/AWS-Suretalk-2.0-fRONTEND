@@ -1,11 +1,12 @@
+"use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, Check, Star } from "lucide-react";
 import Link from "next/link";
-import AuthLayout from "../components/auth/AuthLayout";
-import Input from "../components/common/Input";
-import Button from "../components/common/Button";
-import { api } from "../utils/api";
+import AuthLayout from "../../components/auth/AuthLayout";
+import Input from "../../components/common/Input";
+import Button from "../../components/common/Button";
+import { api } from "../../utils/api";
 import React from "react";
 
 export default function Signup() {

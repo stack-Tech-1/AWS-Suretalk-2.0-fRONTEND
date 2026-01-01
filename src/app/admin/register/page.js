@@ -1,4 +1,4 @@
-// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\pages\admin\register.js
+"use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
@@ -17,7 +17,7 @@ import {
   Briefcase
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
 
 export default function AdminRegister() {

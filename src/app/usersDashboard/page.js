@@ -1,6 +1,6 @@
+"use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-
 import { 
   Mic, 
   Users, 
@@ -145,7 +145,7 @@ export default function DashboardHome() {
   ];
 
   return (    
-    <Layout type="user">
+    <div>
       {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -499,6 +499,6 @@ export default function DashboardHome() {
           </div>
         </motion.div>
       </div>
-    </Layout>   
+    </div>   
   );
 }

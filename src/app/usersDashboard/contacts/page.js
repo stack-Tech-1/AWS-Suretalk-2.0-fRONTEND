@@ -1,4 +1,4 @@
-// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\pages\usersDashboard\contacts.js
+"use client";
 import Layout from "../../../components/dashboard/Layout";
 import { motion } from "framer-motion";
 import { 
@@ -89,7 +89,7 @@ export default function Contacts() {
   );
 
   return (
-    <Layout type="user">
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -263,6 +263,6 @@ export default function Contacts() {
           </button>
         </motion.div>
       )}
-    </Layout>
+    </div>
   );
 }
