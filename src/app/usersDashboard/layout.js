@@ -10,12 +10,16 @@ import MobileMenuButton from '@/components/dashboard/MobileMenuButton';
 import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
+import { pushManager } from '@/utils/pushManager';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();
+  const analytics = useAnalytics();
   const [userData, setUserData] = useState(null);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [pushInitiated, setPushInitiated] = useState(false);
   
   const {
     sidebarOpen,
@@ -62,6 +66,82 @@ export default function UsersDashboardLayout({ children }) {
     fetchDashboardData();
   }, [router]);
 
+  // Initialize push notifications when user is authenticated and app starts
+  useEffect(() => {
+    if (userData && !pushInitiated) {
+      initializePushNotifications();
+    }
+  }, [userData, pushInitiated]);
+
+  // Request notification permission on user interaction
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (userData && Notification.permission === 'default') {
+        // You could prompt the user here if desired
+        console.log('Notification permission is default - ready to prompt');
+        // Optionally, show a gentle prompt after user interaction
+        promptPushNotificationPermission();
+      }
+    };
+
+    // Add event listeners for user interaction
+    window.addEventListener('click', handleUserInteraction);
+    window.addEventListener('keydown', handleUserInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+    };
+  }, [userData]);
+
+  const initializePushNotifications = async () => {
+    try {
+      console.log('Initializing push notifications for user...');
+      const result = await pushManager.initialize();
+      
+      if (result.supported && result.subscribed) {
+        console.log('Push notifications initialized and subscribed');
+        analytics.recordEvent('push_notifications_initialized', {
+          userId: userData?.id,
+          subscribed: true
+        });
+      } else if (result.supported && !result.subscribed) {
+        console.log('Push notifications supported but not subscribed');
+        // User has not subscribed yet, we can prompt them later
+        analytics.recordEvent('push_notifications_available', {
+          userId: userData?.id,
+          supported: true
+        });
+      }
+      
+      setPushInitiated(true);
+      
+    } catch (error) {
+      console.error('Failed to initialize push notifications:', error);
+      setPushInitiated(true);
+    }
+  };
+
+  const promptPushNotificationPermission = () => {
+    // This is a gentle prompt - you can make this more sophisticated
+    // For example, show a custom modal explaining the benefits
+    const shouldPrompt = localStorage.getItem('pushNotificationPrompted') !== 'true';
+    
+    if (shouldPrompt && userData) {
+      // You could show a custom modal here
+      console.log('Would show push notification prompt now');
+      
+      // Mark as prompted to avoid being annoying
+      localStorage.setItem('pushNotificationPrompted', 'true');
+      
+      // Record analytics
+      analytics.recordEvent('push_notification_prompt_shown', {
+        userId: userData.id
+      });
+    }
+  };
+
+  // Show loading screen while fetching user data
   if (loading) {
     return <LoadingScreen />;
   }
@@ -141,6 +221,30 @@ export default function UsersDashboardLayout({ children }) {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
+      )}
+
+      {/* Push Notification Status Indicator (Optional - for debugging) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                pushManager.isSupported() 
+                  ? pushManager.isGranted() 
+                    ? 'bg-green-500' 
+                    : 'bg-yellow-500'
+                  : 'bg-red-500'
+              }`}></div>
+              <span className="text-gray-700 dark:text-gray-300">
+                Push: {pushManager.isSupported() 
+                  ? pushManager.isGranted() 
+                    ? 'Granted' 
+                    : 'Not Granted'
+                  : 'Not Supported'}
+              </span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

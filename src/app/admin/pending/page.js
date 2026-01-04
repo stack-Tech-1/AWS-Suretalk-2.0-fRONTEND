@@ -1,115 +1,141 @@
 "use client";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  Clock, Shield, Mail, AlertCircle, 
+  RefreshCw, LogOut
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ShieldCheck, Clock, LogOut } from "lucide-react";
-import { api } from "../../../utils/api";
-
-export default function AdminPending() {
+export default function PendingAdminStatus() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        const res = await api.getCurrentUser(); // 🔑 must exist in backend
-        const user = res?.data?.user;
-
-        if (!user || !user.is_admin) {
-          router.replace("/admin/login");
-          return;
-        }
-
-        if (user.admin_status === "approved") {
-          router.replace("/admin/dashboard");
-          return;
-        }
-
-        if (user.admin_status !== "pending") {
-          throw new Error("Admin access not approved");
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Unable to verify admin status");
-        setLoading(false);
-      }
-    };
-
-    checkAdminStatus();
+    // Get email from localStorage or query params
+    const pendingEmail = localStorage.getItem('pending_admin_email');
+    if (pendingEmail) {
+      setEmail(pendingEmail);
+    } else {
+      router.push('/admin/login');
+    }
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      await api.logout();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      router.replace("/admin/login");
-    }
+  const handleCheckStatus = async () => {
+    setLoading(true);
+    // Call API to check status
+    // If approved, redirect to login
+    // If still pending, show message
+    setTimeout(() => setLoading(false), 1000);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-gray-300">
-        Checking admin status...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-red-400">
-        {error}
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    localStorage.removeItem('pending_admin_email');
+    router.push('/admin/login');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 border border-gray-700 shadow-2xl"
+        className="w-full max-w-md"
       >
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-2xl bg-yellow-500/10 flex items-center justify-center">
-            <Clock className="w-10 h-10 text-yellow-400" />
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="p-6 bg-yellow-50 border-b border-yellow-200">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">Admin Access Pending</h1>
+                <p className="text-sm text-gray-600">Your request is under review</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <h1 className="text-2xl font-bold text-white text-center mb-2">
-          Approval Pending
-        </h1>
+          {/* Content */}
+          <div className="p-6">
+            {email && (
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-blue-800">
+                  <Mail className="w-4 h-4" />
+                  <span className="font-medium">Requested for:</span>
+                  <span className="font-mono">{email}</span>
+                </div>
+              </div>
+            )}
 
-        <p className="text-gray-400 text-center mb-6">
-          Your admin access request has been received and is currently under review.
-        </p>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-yellow-500 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-gray-800">Review Process</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Your admin access request is currently being reviewed by our team.
+                    This process typically takes 24-48 hours.
+                  </p>
+                </div>
+              </div>
 
-        <div className="bg-gray-900/60 border border-gray-700 rounded-xl p-4 mb-6">
-          <div className="flex gap-3">
-            <ShieldCheck className="w-5 h-5 text-blue-400 mt-1" />
-            <div className="text-sm text-gray-300">
-              Once approved, you will automatically gain access to the admin dashboard.
-              Please check back later.
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-gray-800">What happens next?</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Once approved, you'll receive an email notification and can log in
+                    using the credentials you provided.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-8 space-y-3">
+              <button
+                onClick={handleCheckStatus}
+                disabled={loading}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white 
+                         rounded-lg font-medium transition-colors flex items-center 
+                         justify-center gap-2 disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Checking Status...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Check Approval Status
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 
+                         rounded-lg font-medium transition-colors flex items-center 
+                         justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Return to Login
+              </button>
+            </div>
+
+            {/* Contact Info */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500 text-center">
+                Need help? Contact{' '}
+                <a href="mailto:admin@suretalk.com" className="text-blue-600 hover:underline">
+                  admin@suretalk.com
+                </a>
+              </p>
             </div>
           </div>
         </div>
-
-        <button
-          onClick={handleLogout}
-          className="w-full py-3 bg-gray-900 hover:bg-gray-800 transition rounded-xl border border-gray-700 text-gray-300 flex items-center justify-center gap-2"
-        >
-          <LogOut className="w-4 h-4" />
-          Log out
-        </button>
-
-        <p className="text-xs text-gray-500 text-center mt-6">
-          © {new Date().getFullYear()} SureTalk Systems
-        </p>
       </motion.div>
     </div>
   );

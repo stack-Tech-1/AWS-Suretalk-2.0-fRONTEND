@@ -199,7 +199,14 @@ async request(endpoint, options = {}) {
 
   // Scheduled messages endpoints
   async getScheduledMessages(params = {}) {
-    const query = new URLSearchParams(params).toString();
+    // Filter out undefined and 'undefined' string values
+    const filteredParams = {};
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== 'undefined' && value !== null && value !== '') {
+        filteredParams[key] = value;
+      }
+    }    
+    const query = new URLSearchParams(filteredParams).toString();
     return this.request(`/scheduled${query ? `?${query}` : ''}`);
   }
 
@@ -625,6 +632,288 @@ async deleteArticle(id) {
 async getKBStats() {
   return this.request('/admin/support/knowledge-base/stats');
 }
+
+// Get storage usage
+async getStorageUsage() {
+  return this.request('/storage/usage');
+}
+
+// Get scheduled messages count for dashboard
+async getScheduledMessagesCount() {
+  return this.request('/scheduled/stats');
+}
+
+// Get voice note statistics
+async getVoiceNotesStats() {
+  return this.request('/voice-notes/stats');
+}
+
+// Get user limits
+async getUserLimits() {
+  return this.request('/users/limits');
+}
+
+// Get contact statistics
+async getContactStats() {
+  return this.request('/contacts/stats');
+}
+
+// Get vault statistics
+async getVaultStats() {
+  return this.request('/vault/stats');
+}
+
+// Analytics endpoints
+async getActivityAnalytics(period = 'week', timezone = 'UTC') {
+  return this.request(`/users/activity?period=${period}&timezone=${timezone}`);
+}
+
+async recordAnalyticsEvent(eventData) {
+  return this.request('/users/event', {
+    method: 'POST',
+    body: JSON.stringify(eventData),
+  });
+}
+
+async getAnalyticsStats(startDate = null, endDate = null) {
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  
+  const query = params.toString();
+  return this.request(`/users/stats${query ? `?${query}` : ''}`);
+}
+
+// Schedule message with contacts
+async scheduleMessageWithContacts(data) {
+  return this.request('/scheduled/schedule-with-contacts', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// Send test message
+async sendTestMessage(data) {
+  return this.request('/scheduled/send-test', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// Get scheduled messages with contacts
+async getScheduledMessagesWithContacts(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return this.request(`/scheduled/with-contacts${query ? `?${query}` : ''}`);
+}
+
+// Cancel scheduled message
+async cancelScheduledMessage(id) {
+  return this.request(`/scheduled/${id}/cancel`, {
+    method: 'PUT',
+  });
+}
+
+
+async deleteContact(id) {
+  return this.request(`/contacts/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+async getContact(id) {
+  return this.request(`/contacts/${id}`);
+}
+
+
+
+
+
+
+
+// In your utils/api.js, add these methods to the ApiClient class:
+
+// Mark voice note as permanent
+async markAsPermanent(voiceNoteId) {
+  return this.request(`/vault/${voiceNoteId}/mark-permanent`, {
+    method: 'POST',
+  });
+}
+
+// Generate vault upload URL
+async getVaultUploadUrl(fileName, fileType, isWill = false) {
+  return this.request('/vault/upload-url', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, fileType, isWill }),
+  });
+}
+
+
+
+// Add these methods to your ApiClient class:
+
+// Settings endpoints
+async getSettings() {
+  return this.request('/users/settings');
+}
+
+async updateSettings(category, key, value) {
+  return this.request('/users/settings', {
+    method: 'PUT',
+    body: JSON.stringify({ category, key, value }),
+  });
+}
+
+async updateAllSettings(settings) {
+  return this.request('/users/settings/all', {
+    method: 'PUT',
+    body: JSON.stringify({ settings }),
+  });
+}
+
+// Devices endpoints
+async getConnectedDevices() {
+  return this.request('/users/devices');
+}
+
+async revokeDevice(deviceId) {
+  return this.request(`/users/devices/${deviceId}`, {
+    method: 'DELETE',
+  });
+}
+
+async revokeAllDevices() {
+  return this.request('/users/devices/revoke-all', {
+    method: 'POST',
+  });
+}
+
+// Backup endpoints
+async getBackupSettings() {
+  return this.request('/users/settings/backup');
+}
+
+async updateBackupSettings(settings) {
+  return this.request('/users/settings/backup', {
+    method: 'PUT',
+    body: JSON.stringify({ settings }),
+  });
+}
+
+async createBackup(options = {}) {
+  return this.request('/users/backup/create', {
+    method: 'POST',
+    body: JSON.stringify(options),
+  });
+}
+
+async getBackupStatus(backupId) {
+  return this.request(`/users/backup/status/${backupId}`);
+}
+
+async getBackupList(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return this.request(`/users/backup/list${query ? `?${query}` : ''}`);
+}
+
+// Export data
+async exportData(options = {}) {
+  return this.request('/users/settings/export', {
+    method: 'POST',
+    body: JSON.stringify(options),
+  });
+}
+
+// Delete account
+async deleteAccount(confirmation, reason = '') {
+  return this.request('/users/settings/account', {
+    method: 'DELETE',
+    body: JSON.stringify({ confirmation, reason }),
+  });
+}
+
+// Profile management
+async updateProfile(data) {
+  return this.request('/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+async changePassword(currentPassword, newPassword) {
+  return this.request('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+// Two-factor authentication
+async setupTwoFactor() {
+  return this.request('/auth/2fa/setup');
+}
+
+async verifyTwoFactor(token) {
+  return this.request('/auth/2fa/verify', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+async disableTwoFactor() {
+  return this.request('/auth/2fa/disable', {
+    method: 'POST',
+  });
+}
+
+
+// In utils/api.js, add these methods:
+
+// Notifications endpoints
+async getNotifications(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return this.request(`/notifications${query ? `?${query}` : ''}`);
+}
+
+async markNotificationAsRead(id) {
+  return this.request(`/notifications/${id}/read`, {
+    method: 'POST'
+  });
+}
+
+async markAllNotificationsAsRead() {
+  return this.request('/notifications/mark-all-read', {
+    method: 'POST'
+  });
+}
+
+async deleteNotification(id) {
+  return this.request(`/notifications/${id}`, {
+    method: 'DELETE'
+  });
+}
+
+async clearAllNotifications() {
+  return this.request('/notifications', {
+    method: 'DELETE'
+  });
+}
+
+async getNotificationStats() {
+  return this.request('/notifications/stats');
+}
+
+async subscribeToPushNotifications(subscriptionData) {
+  return this.request('/notifications/subscribe', {
+    method: 'POST',
+    body: JSON.stringify(subscriptionData)
+  });
+}
+
+
+// In your api.js, add:
+async getAdminProfile  () {
+  return this.request('/auth/admin-profile');
+};
+
 
 }
 export const api = new ApiClient();

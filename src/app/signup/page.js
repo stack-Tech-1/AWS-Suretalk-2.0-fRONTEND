@@ -75,7 +75,7 @@ export default function Signup() {
     },
   ];
 
-  // Update the handleSubmit function in your signup.js
+  // Update the handleSubmit function:
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
@@ -94,14 +94,13 @@ const handleSubmit = async (e) => {
       throw new Error("You must agree to the terms and conditions");
     }
 
-    // Prepare data for API (note: backend expects 'fullName' not 'firstName' and 'lastName')
+    // Prepare data for API - NOW INCLUDING SELECTED TIER
     const apiData = {
       email: formData.email,
       phone: formData.phone,
       fullName: `${formData.firstName} ${formData.lastName}`.trim(),
       password: formData.password,
-      // Backend automatically sets tier to 'ESSENTIAL' for new users
-      // You can optionally pass subscription_tier if you want to change default
+      subscriptionTier: selectedTier, 
     };
 
     console.log("Sending signup data:", apiData);

@@ -402,7 +402,7 @@ export default function Home() {
                 <Link href="/signup">
                   <Button
                     variant={tier.highlighted ? "primary" : "secondary"}
-                    fullWidth
+                    fullwidth
                     size="lg"
                   >
                     {tier.buttonText}
