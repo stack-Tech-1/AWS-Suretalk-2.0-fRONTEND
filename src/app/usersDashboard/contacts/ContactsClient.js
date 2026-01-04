@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { useAnalytics } from "@/hooks/useAnalytics.client";
-import ContactsSelector from "@/components/shared/ContactsSelector";
+//import ContactsSelector from "@/components/shared/ContactsSelector";
 
 export default function Contacts() {
   const router = useRouter();
