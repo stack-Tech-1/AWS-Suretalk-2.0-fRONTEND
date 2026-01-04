@@ -10,7 +10,7 @@ import {
   Users, Star
 } from "lucide-react";
 import { api } from '@/utils/api';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 
 export default function RecordVoiceNote() {
   const router = useRouter();

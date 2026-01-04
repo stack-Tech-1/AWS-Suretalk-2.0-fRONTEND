@@ -18,7 +18,7 @@ import {
   Star
 } from 'lucide-react';
 import { pushManager } from '@/utils/pushManager';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 
 export default function PushNotificationSettings() {
   const analytics = useAnalytics();

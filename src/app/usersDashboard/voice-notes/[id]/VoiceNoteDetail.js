@@ -33,7 +33,7 @@ import {
   Bell
 } from "lucide-react";
 import { api } from '@/utils/api';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 import Link from 'next/link';
 import AudioPlayer from '@/components/audio/AudioPlayer';
 

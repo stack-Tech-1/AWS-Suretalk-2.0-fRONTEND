@@ -26,7 +26,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { api } from '@/utils/api';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 import Link from 'next/link';
 
 export default function VoiceNotes() {

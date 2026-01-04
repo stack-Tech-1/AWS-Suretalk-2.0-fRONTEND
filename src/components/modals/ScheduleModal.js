@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import ContactsSelector from '@/components/shared/ContactsSelector';
 import { api } from '@/utils/api';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 
 export default function ScheduleModal({ voiceNote, isOpen, onClose, onSuccess }) {
   const analytics = useAnalytics();

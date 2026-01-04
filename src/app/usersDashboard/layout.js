@@ -11,7 +11,7 @@ import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
 import { pushManager } from '@/utils/pushManager';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import { useAnalytics } from '@/hooks/useAnalytics.client';
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();

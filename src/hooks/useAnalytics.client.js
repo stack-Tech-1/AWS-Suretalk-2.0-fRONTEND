@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useCallback, useContext } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { api } from '@/utils/api';
