@@ -12,7 +12,8 @@ import {
   Play,
   Headphones,
   Phone,
-  Globe
+  Globe,
+  Image
 } from "lucide-react";
 import Button from "../components/common/Button";
 
@@ -104,10 +105,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-accent-500 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
+            <Link href="/" className="flex items-center space-x-2">
+                
+                  <img 
+                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
+                    alt="SureTalk Logo" 
+                    className="w-10 h-10 object-contain"
+                  />
+                
                 <span className="text-xl font-bold text-gray-800">SureTalk</span>
               </Link>
             </div>

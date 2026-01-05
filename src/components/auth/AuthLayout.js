@@ -34,9 +34,11 @@ export default function AuthLayout({
         <nav className="relative z-10 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-accent-500 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-white" />
-              </div>
+            <img 
+                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
+                    alt="SureTalk Logo" 
+                    className="w-10 h-10 object-contain"
+                  />
               <span className="text-xl font-bold text-gray-800">SureTalk</span>
             </Link>
             

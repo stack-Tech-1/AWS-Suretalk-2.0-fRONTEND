@@ -284,10 +284,11 @@ export default function SecureAdminLogin() {
         <div className="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800/50 to-gray-900/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600/20 to-cyan-600/20 
-                            border border-blue-500/30 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-blue-400" />
-              </div>
+            <img 
+                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
+                    alt="SureTalk Logo" 
+                    className="w-10 h-10 object-contain"
+                  />
               <div>
                 <h1 className="text-xl font-bold text-white">SureTalk Admin</h1>
                 <p className="text-sm text-gray-400">Secure Gateway v2.0</p>
