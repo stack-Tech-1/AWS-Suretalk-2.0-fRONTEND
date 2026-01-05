@@ -26,7 +26,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { api } from '@/utils/api';
-import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { useAnalyticsContext } from "@/context/AnalyticsContext";
 import Link from 'next/link';
 
 export default function VoiceNotes() {
@@ -43,7 +43,7 @@ export default function VoiceNotes() {
     total: 0,
     totalPages: 0
   });
-  const analytics = useAnalytics();
+  const analytics = useAnalyticsContext();
 
   const [voiceNotes, setVoiceNotes] = useState([]);
   const [stats, setStats] = useState({

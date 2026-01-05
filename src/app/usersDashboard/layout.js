@@ -11,11 +11,12 @@ import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
 import { pushManager } from '@/utils/pushManager';
-import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { AnalyticsProvider } from '@/context/AnalyticsContext'; // ADD THIS
+
+
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();
-  const analytics = useAnalytics();
   const [userData, setUserData] = useState(null);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -146,8 +147,10 @@ export default function UsersDashboardLayout({ children }) {
     return <LoadingScreen />;
   }
 
+  
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <AnalyticsProvider fallback={<LoadingScreen />}> {/* WRAP WITH AnalyticsProvider */}
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
@@ -247,5 +250,6 @@ export default function UsersDashboardLayout({ children }) {
         </div>
       )}
     </div>
+    </AnalyticsProvider>
   );
 }

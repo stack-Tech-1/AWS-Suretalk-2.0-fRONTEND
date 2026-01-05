@@ -25,12 +25,12 @@ import {
   Plus
 } from "lucide-react";
 import { api } from "@/utils/api";
-import { useAnalytics } from "@/hooks/useAnalytics.client";
+import { useAnalyticsContext } from "@/context/AnalyticsContext";
 //import ContactsSelector from "@/components/shared/ContactsSelector";
 
 export default function Contacts() {
   const router = useRouter();
-  const analytics = useAnalytics();
+  const analytics = useAnalyticsContext();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);

@@ -17,13 +17,13 @@ import {
 } from 'recharts';
 import { api } from '@/utils/api';
 import Link from 'next/link';
-import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { useAnalyticsContext } from "@/context/AnalyticsContext";
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const analytics = useAnalytics();
+  const analytics = useAnalyticsContext();
   
   // State for all dashboard data
   const [userData, setUserData] = useState(null);
