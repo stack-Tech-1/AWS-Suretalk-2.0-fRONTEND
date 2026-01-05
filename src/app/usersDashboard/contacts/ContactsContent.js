@@ -25,7 +25,7 @@ import {
   Plus
 } from "lucide-react";
 import { api } from "@/utils/api";
-import { useAnalyticsContext } from "@/context/AnalyticsContext";
+import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 //import ContactsSelector from "@/components/shared/ContactsSelector";
 
 export default function Contacts() {

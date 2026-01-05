@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import { api } from '@/utils/api';
 import Link from 'next/link';
-import { useAnalyticsContext } from "@/context/AnalyticsContext";
+import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);

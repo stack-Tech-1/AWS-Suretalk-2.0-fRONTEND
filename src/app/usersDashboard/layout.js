@@ -11,7 +11,7 @@ import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
 import { pushManager } from '@/utils/pushManager';
-import { AnalyticsProvider } from '@/context/AnalyticsContext'; // ADD THIS
+import { AnalyticsProvider } from '@/contexts/AnalyticsContext'; // ADD THIS
 
 
 
