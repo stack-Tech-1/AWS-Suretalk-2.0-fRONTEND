@@ -1,5 +1,6 @@
 // src/app/layout.js
 import '../styles/globals.css';
+import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 
 export const metadata = {
   title: 'SureTalk - Voice Legacy Platform',
@@ -10,7 +11,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" >
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {children}
+      <AnalyticsProvider>
+          {children}
+        </AnalyticsProvider>
       </body>
     </html>
   );
