@@ -121,3 +121,29 @@ body {
 .skeleton {
   @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded;
 }
+
+/* Add to the bottom of your globals.css file */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl 
+           bg-gradient-to-r from-brand-600 to-accent-500 text-white 
+           hover:shadow-lg hover:scale-[1.02] transform transition-all duration-300 
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl 
+           bg-white text-gray-900 border border-gray-300
+           hover:bg-gray-50 hover:border-gray-400 hover:shadow-md 
+           transform transition-all duration-300 
+           focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+  
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl 
+           border-2 border-brand-500 text-brand-600 
+           hover:bg-brand-50 hover:border-brand-600 hover:shadow-sm 
+           transform transition-all duration-300 
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+}
