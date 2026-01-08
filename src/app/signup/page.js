@@ -32,9 +32,9 @@ export default function Signup() {
       description: "Perfect for trying out voice messaging",
       features: [
         "Up to 3 contacts",
-        "Up to 3 voice notes",
-        "180-day storage",
-        "Phone access only",
+        "Up to 3 voice notes",        
+        "Phone access",
+        "Web dashboard access",
         "Basic IVR menu",
       ],
       color: "blue",
