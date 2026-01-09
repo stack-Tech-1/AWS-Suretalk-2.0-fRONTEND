@@ -63,7 +63,19 @@ export default function Login() {
             console.error("Login error:", error);
             
             // Handle specific error messages
-            if (error.message.includes('Admin accounts cannot login here')) {
+            if (error.message.includes('Please verify your email address')) {
+              setError('Email not verified. Please check your inbox for verification link.');
+              
+              // Add resend verification option
+              setTimeout(() => {
+                if (confirm('Would you like us to resend the verification email?')) {
+                  api.resendVerification({ email: formData.email })
+                    .then(() => alert('Verification email resent!'))
+                    .catch(err => alert('Failed to resend: ' + err.message));
+                }
+              }, 1000);
+              
+            } else if (error.message.includes('Admin accounts cannot login here')) {
               setError(error.message);
             } else if (error.message.includes('Invalid credentials')) {
               setError('Invalid email or password. Please try again.');

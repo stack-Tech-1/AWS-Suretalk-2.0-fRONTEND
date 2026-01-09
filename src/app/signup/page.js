@@ -110,18 +110,8 @@ const handleSubmit = async (e) => {
     
     console.log("Signup successful:", response);
 
-    // Auto-login after successful registration
-    try {
-      const loginResponse = await api.login(formData.email, formData.password);
-      console.log("Auto-login successful:", loginResponse);
-      
-      // Go to success page (step 2)
-      setStep(2);
-    } catch (loginError) {
-      console.error("Auto-login failed:", loginError);
-      // Still show success page even if auto-login fails
-      setStep(2);
-    }
+     // Show verification message instead of auto-login
+     setStep(2); 
 
   } catch (error) {
     console.error("Signup failed:", error);
@@ -166,7 +156,7 @@ const handleSubmit = async (e) => {
           
           <p className="text-gray-600 mb-6">
             We've sent a verification email to <strong>{formData.email}</strong>. 
-            Please check your inbox and click the verification link to activate your account.
+            Please check your inbox (or spam) and click the verification link to activate your account.
           </p>
           
           <div className="bg-brand-50 rounded-lg p-4 mb-6">
@@ -196,6 +186,25 @@ const handleSubmit = async (e) => {
             >
               Go to Login
             </Button>
+
+            <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              try {
+                setLoading(true);
+                await api.resendVerification({ email: formData.email });
+                alert('Verification email resent successfully!');
+              } catch (error) {
+                alert('Failed to resend: ' + error.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+          >
+            {loading ? 'Sending...' : 'Resend Verification Email'}
+          </Button>
             
             <Button
               variant="outline"
@@ -205,6 +214,7 @@ const handleSubmit = async (e) => {
               Create Another Account
             </Button>
           </div>
+          
         </motion.div>
       </AuthLayout>
     );

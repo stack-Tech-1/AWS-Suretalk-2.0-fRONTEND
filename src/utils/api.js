@@ -914,6 +914,21 @@ async getAdminProfile  () {
   return this.request('/auth/admin-profile');
 };
 
+// Add to your ApiClient class:
+
+// Resend verification email
+async resendVerification(data) {
+  return this.request('/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// Verify email with token (if you want a dedicated method)
+async verifyEmail(token) {
+  return this.request(`/auth/verify-email?token=${token}`);
+}
+
 
 }
 export const api = new ApiClient();
