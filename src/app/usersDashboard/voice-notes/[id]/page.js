@@ -206,8 +206,7 @@ export default function VoiceNoteDetail() {
 
   const handleDownload = async () => {
     try {
-      const downloadResponse = await api.getVoiceNoteDownloadUrl(id);
-      const downloadUrl = downloadResponse.data.downloadUrl;
+      const downloadUrl = note.downloadUrl;
 
       // Record analytics
       analytics.recordEvent('voice_note_downloaded', {
@@ -216,18 +215,18 @@ export default function VoiceNoteDetail() {
       });
 
       // Trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp3`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.webm`; 
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    } catch (error) {
-      console.error('Failed to download note:', error);
-      alert('Failed to download voice note. Please try again.');
-    }
-  };
+  } catch (error) {
+    console.error('Failed to download note:', error);
+    alert('Failed to download voice note. Please try again.');
+  }
+};
 
   const handleEditSave = async () => {
     try {
@@ -536,10 +535,18 @@ export default function VoiceNoteDetail() {
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Listen</h3>
               <AudioPlayer
                 audioUrl={async () => {
-                  const response = await api.getVoiceNoteDownloadUrl(id);
-                  return response.data.downloadUrl;
+                  try {
+                    const response = await api.getVoiceNoteDownloadUrl(id);
+                    if (response.success && response.data?.downloadUrl) {
+                      return response.data.downloadUrl;
+                    }
+                    throw new Error('Invalid response');
+                  } catch (error) {
+                    console.error('Failed to get audio URL:', error);
+                    return '';
+                  }
                 }}
-                title={note.title}
+                title={note?.title}
                 onPlay={() => analytics.recordEvent('voice_note_played', { noteId: id })}
               />
             </div>

@@ -34,6 +34,7 @@ export const useAnalytics = () => {
         'voice_note_created',
         'voice_note_played',
         'voice_note_shared',
+        'voice_note_viewed',
         'voice_note_downloaded',
         'voice_note_favorited',
         'voice_note_deleted',
@@ -47,7 +48,15 @@ export const useAnalytics = () => {
         'vault_item_accessed',
         'login',
         'logout',
-        'error'
+        'error',
+        'push_notifications_initialized', // Add this
+        'recording_started', // Add this
+        'recording_stopped', // Add this
+        'recording_error', // Add this
+        'recording_reset', // Add this
+        'audio_file_selected', // Add this
+        'voice_note_creation_failed', // Add this
+        'cta_click' // Add this
       ];
 
       // Only warn in development

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Play,
   Pause,
@@ -7,8 +7,7 @@ import {
   VolumeX,
   SkipBack,
   SkipForward,
-  RotateCcw,
-  Download
+  RotateCcw
 } from 'lucide-react';
 
 export default function AudioPlayer({ audioUrl, title, onPlay }) {
@@ -24,51 +23,102 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
   const audioRef = useRef(null);
   const progressBarRef = useRef(null);
   const volumeBarRef = useRef(null);
+  const isInitializedRef = useRef(false);
 
-  // Initialize audio
+  // Initialize audio - ONE TIME ONLY
   useEffect(() => {
+    console.log('AudioPlayer useEffect running, isInitialized:', isInitializedRef.current);
+    
+    // Prevent multiple initializations
+    if (isInitializedRef.current) {
+      console.log('Audio already initialized, skipping...');
+      return;
+    }
+
+    let isMounted = true;
+    let audioElement = null;
+    
     const initAudio = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
+        // Get the URL
         const url = typeof audioUrl === 'function' ? await audioUrl() : audioUrl;
         
-        if (!audioRef.current) {
-          audioRef.current = new Audio(url);
-        } else {
-          audioRef.current.src = url;
+        console.log('AudioPlayer received URL:', url);
+        
+        if (!url) {
+          throw new Error('No audio URL provided');
         }
-
-        audioRef.current.preload = 'metadata';
+        
+        // Create a new Audio element
+        audioElement = new Audio();
+        
+        console.log('Setting audio src to:', url);
+        audioElement.src = url;
+        audioElement.preload = 'metadata';
         
         // Set up event listeners
-        audioRef.current.addEventListener('loadedmetadata', () => {
-          setDuration(audioRef.current.duration);
+        const handleLoadedMetadata = () => {
+          if (!isMounted) return;
+          console.log('Audio loaded, duration:', audioElement.duration);
+          setDuration(audioElement.duration);
           setIsLoading(false);
-        });
+        };
         
-        audioRef.current.addEventListener('timeupdate', () => {
-          setCurrentTime(audioRef.current.currentTime);
-        });
+        const handleTimeUpdate = () => {
+          if (!isMounted) return;
+          setCurrentTime(audioElement.currentTime);
+        };
         
-        audioRef.current.addEventListener('ended', () => {
+        const handleEnded = () => {
+          if (!isMounted) return;
           setIsPlaying(false);
           setCurrentTime(0);
-        });
+        };
         
-        audioRef.current.addEventListener('error', (e) => {
-          console.error('Audio error:', e);
-          setError('Failed to load audio');
+        const handleError = (e) => {
+          if (!isMounted) return;
+          console.error('Audio error details:', {
+            error: e,
+            errorCode: e.target.error?.code,
+            errorMessage: e.target.error?.message,
+            src: e.target.src,
+            networkState: e.target.networkState,
+            readyState: e.target.readyState
+          });
+          
+          const errorCode = e.target.error?.code;
+          let errorMessage = 'Failed to load audio';
+          
+          if (errorCode === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
+            errorMessage = 'Audio format not supported or URL is invalid';
+          } else if (errorCode === 3) { // MEDIA_ERR_DECODE
+            errorMessage = 'Audio file is corrupted or unsupported format';
+          } else if (errorCode === 2) { // MEDIA_ERR_NETWORK
+            errorMessage = 'Network error loading audio file';
+          }
+          
+          setError(errorMessage);
           setIsLoading(false);
-        });
+        };
         
-        audioRef.current.volume = volume;
-        audioRef.current.playbackRate = playbackRate;
+        audioElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audioElement.addEventListener('timeupdate', handleTimeUpdate);
+        audioElement.addEventListener('ended', handleEnded);
+        audioElement.addEventListener('error', handleError);
+        
+        audioElement.volume = volume;
+        audioElement.playbackRate = playbackRate;
+        
+        audioRef.current = audioElement;
+        isInitializedRef.current = true;
 
       } catch (err) {
+        if (!isMounted) return;
         console.error('Failed to initialize audio:', err);
-        setError('Failed to load audio');
+        setError(err.message || 'Failed to load audio');
         setIsLoading(false);
       }
     };
@@ -77,30 +127,48 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
 
     // Cleanup
     return () => {
+      console.log('AudioPlayer cleanup');
+      isMounted = false;
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.src = '';
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
         audioRef.current = null;
       }
+      isInitializedRef.current = false;
     };
-  }, [audioUrl]);
+  }, []); // Empty dependency array - initialize once only
+
+  // Update volume and playback rate when they change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
 
   // Toggle play/pause
   const togglePlayPause = () => {
-    if (!audioRef.current) return;
+    const audioElement = audioRef.current;
+    if (!audioElement) return;
     
     if (isPlaying) {
-      audioRef.current.pause();
+      audioElement.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play()
+      audioElement.play()
         .then(() => {
           setIsPlaying(true);
           if (onPlay) onPlay();
         })
         .catch(err => {
           console.error('Play failed:', err);
-          setError('Failed to play audio');
+          setError('Failed to play audio: ' + err.message);
         });
     }
   };
@@ -186,18 +254,64 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Retry loading
+  const handleRetry = () => {
+    setError(null);
+    setIsLoading(true);
+    // Force re-initialization
+    isInitializedRef.current = false;
+    // This will cause the useEffect to run again
+    const init = async () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute('src');
+        audioRef.current.load();
+        audioRef.current = null;
+      }
+      isInitializedRef.current = false;
+      
+      // Re-fetch URL and create new audio element
+      try {
+        const url = typeof audioUrl === 'function' ? await audioUrl() : audioUrl;
+        if (!url) throw new Error('No URL');
+        
+        const newAudio = new Audio(url);
+        newAudio.preload = 'metadata';
+        
+        newAudio.addEventListener('loadedmetadata', () => {
+          setDuration(newAudio.duration);
+          setIsLoading(false);
+        });
+        
+        newAudio.addEventListener('error', () => {
+          setError('Failed to load audio');
+          setIsLoading(false);
+        });
+        
+        audioRef.current = newAudio;
+        isInitializedRef.current = true;
+      } catch (err) {
+        setError('Failed to load audio');
+        setIsLoading(false);
+      }
+    };
+    init();
+  };
+
   if (error) {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
         <div className="text-center">
           <div className="text-red-500 text-lg mb-2">Audio Error</div>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
-            Retry
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -244,7 +358,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
           <button
             onClick={skipBackward}
             className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            disabled={isLoading}
+            disabled={isLoading || !audioRef.current}
             title="Skip backward 10 seconds"
           >
             <SkipBack className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -252,7 +366,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
           
           <button
             onClick={togglePlayPause}
-            disabled={isLoading}
+            disabled={isLoading || !audioRef.current}
             className="p-4 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 
                      text-white hover:shadow-lg transition-all disabled:opacity-50"
             title={isPlaying ? 'Pause' : 'Play'}
@@ -269,7 +383,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
           <button
             onClick={skipForward}
             className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            disabled={isLoading}
+            disabled={isLoading || !audioRef.current}
             title="Skip forward 10 seconds"
           >
             <SkipForward className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -283,6 +397,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
             <button
               onClick={toggleMute}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              disabled={!audioRef.current}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? (
@@ -314,6 +429,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
             <button
               onClick={resetPlayback}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              disabled={!audioRef.current}
               title="Reset to beginning"
             >
               <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -323,6 +439,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
               onClick={changePlaybackRate}
               className="px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600 
                        hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
+              disabled={!audioRef.current}
               title="Change playback speed"
             >
               {playbackRate}x

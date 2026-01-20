@@ -23,7 +23,8 @@ import {
   AlertCircle,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Users
 } from "lucide-react";
 import { api } from '@/utils/api';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
