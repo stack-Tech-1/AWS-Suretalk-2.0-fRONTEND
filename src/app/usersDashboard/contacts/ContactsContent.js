@@ -196,7 +196,20 @@ export default function Contacts() {
     try {
       setLoading(true);
       
-      const response = await api.createContact(newContact);
+      // Format the data to match backend expectations
+      const contactData = {
+        name: newContact.name,
+        phone: newContact.phone,
+        email: newContact.email || undefined, // Send undefined if empty
+        relationship: newContact.relationship || undefined,
+        isBeneficiary: newContact.isBeneficiary, 
+        canReceiveMessages: newContact.canReceiveMessages, 
+        notes: newContact.notes || undefined
+      };
+      
+      console.log('Sending contact data:', contactData); 
+      
+      const response = await api.createContact(contactData);
       
       if (response.success) {
         // Reset form
@@ -225,7 +238,12 @@ export default function Contacts() {
         
         alert('Contact added successfully!');
       } else {
-        throw new Error(response.error);
+        // Log the specific errors from backend
+        if (response.errors) {
+          console.error('Backend validation errors:', response.errors);
+          throw new Error(response.errors.map(err => err.msg || err).join(', '));
+        }
+        throw new Error(response.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Failed to create contact:', error);

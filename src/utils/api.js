@@ -164,7 +164,8 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/contacts${query ? `?${query}` : ''}`);
   }
 
-  async createContact(data) {
+  async createContact(data) {   
+    console.log('API Request Body:', JSON.stringify(data));  
     return this.request('/contacts', {
       method: 'POST',
       body: JSON.stringify(data),
