@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\vault\page.js
 "use client";
 import { motion } from "framer-motion";
 import { 
@@ -10,40 +11,34 @@ import {
   MoreVertical,
   Plus,
   Search,
-  Filter,
   Eye,
-  EyeOff,
   AlertTriangle,
   Key,
   Archive,
   Clock3,
   CheckCircle,
   X,
-  Edit,
   Trash2,
   Play,
-  Info,
   Loader2,
   RefreshCw,
   AlertCircle,
   FileAudio,
-  Mic,
-  Zap,
-  Crown,
-  LockKeyhole
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from '@/utils/api';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function LegacyVault() {
   const router = useRouter();
+  const { user, hasLegacyVault, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingWills, setLoadingWills] = useState(false);
   const [error, setError] = useState(null);
   const [vaultItems, setVaultItems] = useState([]);
@@ -60,12 +55,16 @@ export default function LegacyVault() {
     total: 0,
     totalPages: 1
   });
-  const [userTier, setUserTier] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showMarkPermanentModal, setShowMarkPermanentModal] = useState(false);
-  const [showCreateWillModal, setShowCreateWillModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  
+  // Use refs for abort controllers and flags
+  const abortControllerRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const hasInitializedRef = useRef(false); // ✅ Prevent double initialization
 
   const filters = [
     { id: "all", label: "All Items" },
@@ -75,114 +74,137 @@ export default function LegacyVault() {
     { id: "protected", label: "Protected" },
   ];
 
-  // Check user tier first
-  const checkUserTier = useCallback(async () => {
-    try {
-      setLoadingProfile(true);
-      const profileResponse = await api.getProfile();
-      if (profileResponse.success) {
-        const tier = profileResponse.data.subscription_tier;
-        setUserTier(tier);
-        
-        // If user is not PREMIUM, don't try to load vault data
-        if (tier !== 'LEGACY_VAULT_PREMIUM') {
-          setLoading(false);
-          setLoadingProfile(false);
-          return false;
-        }
-        return true;
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      return false;
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      setError('Failed to verify account tier');
-      return false;
-    } finally {
-      setLoadingProfile(false);
-    }
+    };
   }, []);
 
-  // Fetch vault data only for PREMIUM users
-  const fetchVaultData = useCallback(async (page = 1) => {
+  // ✅ Main fetch function - no longer checks user tier (AuthContext does that)
+  const fetchVaultData = async (page = 1, forceRefresh = false) => {
+    // Prevent concurrent fetches
+    if (isFetching && !forceRefresh) return;
+    
+    // Abort previous request if exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
     try {
+      setIsFetching(true);
       setLoading(true);
       setError(null);
 
-      // First check if user is PREMIUM
-      const isPremium = await checkUserTier();
-      if (!isPremium) {
-        setLoading(false);
-        return;
-      }
+      // ✅ No tier check needed - component won't render if no access
+      const apiOptions = { signal: abortControllerRef.current.signal };
+
+      // Fetch data in parallel
+      const fetchPromises = [];
 
       // Fetch vault items with pagination
-      const vaultResponse = await api.getVaultItems({
-        page,
-        limit: pagination.limit,
-        filter: selectedFilter === 'wills' ? 'wills' : undefined,
-        search: searchQuery || undefined
-      });
+      fetchPromises.push(
+        api.getVaultItems({
+          page,
+          limit: 12,
+          filter: selectedFilter === 'wills' ? 'wills' : undefined,
+          search: searchQuery || undefined
+        }, apiOptions)
+      );
 
-      if (vaultResponse.success) {
+      // Fetch vault statistics
+      fetchPromises.push(api.getVaultStats(apiOptions));
+
+      // Fetch voice wills only if needed
+      if (selectedFilter === 'wills' || selectedFilter === 'all') {
+        setLoadingWills(true);
+        fetchPromises.push(api.getVoiceWills(apiOptions));
+      }
+
+      // Wait for all promises
+      const [vaultResponse, statsResponse, willsResponse] = await Promise.all(fetchPromises);
+
+      // Check if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Process vault items response
+      if (vaultResponse?.success) {
         setVaultItems(vaultResponse.data.items || []);
         setPagination(vaultResponse.data.pagination || {
           page,
-          limit: pagination.limit,
+          limit: 12,
           total: 0,
           totalPages: 1
         });
       }
 
-      // Fetch voice wills if needed
-      if (selectedFilter === 'wills' || selectedFilter === 'all') {
-        setLoadingWills(true);
-        const willsResponse = await api.getVoiceWills();
-        if (willsResponse.success) {
-          setVoiceWills(willsResponse.data.wills || []);
-        }
-        setLoadingWills(false);
-      }
-
-      // Fetch vault statistics
-      const statsResponse = await api.getVaultStats();
-      if (statsResponse.success) {
+      // Process stats response
+      if (statsResponse?.success) {
         setStats(statsResponse.data);
       }
 
+      // Process wills response
+      if (willsResponse?.success) {
+        setVoiceWills(willsResponse.data.wills || []);
+      }
+
+      setLoadingWills(false);
+
     } catch (error) {
+      // Ignore abort errors
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return;
+      }
+      
       console.error('Failed to fetch vault data:', error);
-      // Don't show error if it's just tier restriction
-      if (!error.message.includes('LEGACY_VAULT_PREMIUM')) {
+      if (isMountedRef.current) {
         setError(error.message || 'Failed to load vault data');
       }
     } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+        setIsFetching(false);
+      }
+    }
+  };
+
+  // ✅ Initial load - only runs when auth is ready and user has access
+  useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+    
+    // Prevent double initialization
+    if (hasInitializedRef.current) return;
+    
+    // Only fetch if user has Legacy Vault access
+    if (hasLegacyVault()) {
+      hasInitializedRef.current = true;
+      fetchVaultData(1);
+    } else {
+      // User doesn't have access, stop loading
       setLoading(false);
     }
-  }, [selectedFilter, searchQuery, pagination.limit, checkUserTier]);
+  }, [authLoading, hasLegacyVault]); // ✅ Depend on auth state
 
-  // Initial load
+  // Debounced search/filter
   useEffect(() => {
-    fetchVaultData();
-  }, [fetchVaultData]);
+    // Don't search if auth is loading or user doesn't have access
+    if (authLoading || !hasLegacyVault()) return;
+    
+    const timeout = setTimeout(() => {
+      fetchVaultData(1, true);
+    }, 400);
 
-  // Handle search with debounce
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (!loading && userTier === 'LEGACY_VAULT_PREMIUM') {
-        fetchVaultData(1);
-      }
-    }, 500);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, selectedFilter, authLoading, hasLegacyVault]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, fetchVaultData, loading, userTier]);
-
-  // Handle filter change
-  useEffect(() => {
-    if (!loading && userTier === 'LEGACY_VAULT_PREMIUM') {
-      fetchVaultData(1);
-    }
-  }, [selectedFilter, fetchVaultData, loading, userTier]);
- 
   // Format file size
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -242,11 +264,9 @@ export default function LegacyVault() {
   // Handle download
   const handleDownload = async (item) => {
     try {
-      // For vault items that have downloadUrl from API
       if (item.downloadUrl) {
         window.open(item.downloadUrl, '_blank');
       } else if (item.s3_key && item.s3_bucket) {
-        // Generate download URL
         const response = await api.getDownloadUrl(item.s3_key, item.s3_bucket, 3600);
         if (response.success && response.data.downloadUrl) {
           window.open(response.data.downloadUrl, '_blank');
@@ -262,18 +282,11 @@ export default function LegacyVault() {
   const handleDelete = async (itemId, isWill = false) => {
     try {
       if (isWill) {
-        // TODO: Implement delete voice will if endpoint exists
-        // For now, just remove from state
         setVoiceWills(prev => prev.filter(will => will.id !== itemId));
       } else {
-        // For voice notes, use the voice note delete endpoint
         await api.deleteVoiceNote(itemId);
         setVaultItems(prev => prev.filter(item => item.id !== itemId));
-        // Refresh stats
-        const statsResponse = await api.getVaultStats();
-        if (statsResponse.success) {
-          setStats(statsResponse.data);
-        }
+        await fetchVaultData(pagination.page, true);
       }
       setShowDeleteConfirm(null);
     } catch (error) {
@@ -289,17 +302,12 @@ export default function LegacyVault() {
     try {
       const response = await api.markAsPermanent(selectedNote.id);
       if (response.success) {
-        // Update the item in state
         setVaultItems(prev => prev.map(item =>
           item.id === selectedNote.id
             ? { ...item, is_permanent: true, retention_policy: 'permanent' }
             : item
         ));
-        // Refresh stats
-        const statsResponse = await api.getVaultStats();
-        if (statsResponse.success) {
-          setStats(statsResponse.data);
-        }
+        await fetchVaultData(pagination.page, true);
         setShowMarkPermanentModal(false);
         setSelectedNote(null);
       }
@@ -309,24 +317,10 @@ export default function LegacyVault() {
     }
   };
 
-  // Handle create voice will
-  const handleCreateWill = async (formData) => {
-    try {
-      // This would open a modal or navigate to will creation page
-      // For now, just navigate to a new page
-      router.push('/usersDashboard/vault/create-will');
-    } catch (error) {
-      console.error('Create will failed:', error);
-      setError('Failed to create voice will');
-    }
-  };
-
   // Handle upload to vault
   const handleUploadToVault = async () => {
     try {
       setUploading(true);
-      // This would open file selection and upload flow
-      // For now, navigate to voice notes page with vault flag
       router.push('/usersDashboard/voice-notes?destination=vault');
     } catch (error) {
       console.error('Upload failed:', error);
@@ -374,19 +368,52 @@ export default function LegacyVault() {
 
   const displayItems = getDisplayItems();
 
-  // Filter items based on search
+  // Filter items based on search (client-side filtering)
   const filteredItems = displayItems.filter(item => 
     item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Loading state
-  if (loading) {
+  // ✅ Show loading state while auth is loading
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 mx-auto" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Check if user has access to vault (using AuthContext)
+  if (!hasLegacyVault()) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Shield className="w-20 h-20 text-gray-400 mb-4" />
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Legacy Vault Access Required</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          The Legacy Vault is available only for LEGACY_VAULT_PREMIUM subscribers.
+          Upgrade your plan to access permanent storage and legacy features.
+        </p>
+        <Link
+          href="/usersDashboard/billing"
+          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 
+                   text-white rounded-xl hover:shadow-lg transition-all font-medium"
+        >
+          Upgrade to Premium
+        </Link>
+      </div>
+    );
+  }
+
+  // Loading state for vault data
+  if (loading && vaultItems.length === 0 && voiceWills.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading vault data...</p>
         </div>
       </div>
@@ -401,10 +428,15 @@ export default function LegacyVault() {
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Error Loading Vault</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">{error}</p>
         <button
-          onClick={() => fetchVaultData()}
+          onClick={() => fetchVaultData(1, true)}
           className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600 flex items-center gap-2"
+          disabled={isFetching}
         >
-          <RefreshCw className="w-4 h-4" />
+          {isFetching ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
           Retry
         </button>
       </div>
@@ -512,7 +544,13 @@ export default function LegacyVault() {
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                          bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                          focus:border-transparent transition-all"
+                disabled={isFetching}
               />
+              {isFetching && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2">
@@ -520,7 +558,8 @@ export default function LegacyVault() {
               <button
                 key={filter.id}
                 onClick={() => setSelectedFilter(filter.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                disabled={isFetching}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap disabled:opacity-50 ${
                   selectedFilter === filter.id
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -573,6 +612,7 @@ export default function LegacyVault() {
               onClick={handleUploadToVault}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 
                        text-white rounded-xl hover:shadow-lg transition-all"
+              disabled={isFetching}
             >
               Add Your First Item
             </button>
@@ -705,7 +745,6 @@ export default function LegacyVault() {
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
                         title="Share"
                         onClick={() => {
-                          // TODO: Implement share functionality
                           console.log('Share item:', item.id);
                         }}
                       >
@@ -722,7 +761,7 @@ export default function LegacyVault() {
               <div className="flex items-center justify-center gap-2 mt-8">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
+                  disabled={pagination.page === 1 || isFetching}
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
@@ -745,11 +784,12 @@ export default function LegacyVault() {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`w-10 h-10 rounded-lg ${
+                        disabled={isFetching}
+                        className={`w-10 h-10 rounded-lg transition-all ${
                           pagination.page === pageNum
                             ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                             : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
+                        } ${isFetching ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {pageNum}
                       </button>
@@ -758,7 +798,7 @@ export default function LegacyVault() {
                 </div>
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.totalPages}
+                  disabled={pagination.page === pagination.totalPages || isFetching}
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
@@ -828,7 +868,6 @@ export default function LegacyVault() {
             </div>
             
             <div className="space-y-4">
-              {/* TODO: Add voice note selection */}
               <p className="text-gray-600 dark:text-gray-400 py-4 text-center">
                 Voice note selection will be implemented here
               </p>

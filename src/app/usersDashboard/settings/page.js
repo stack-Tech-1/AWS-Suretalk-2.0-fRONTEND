@@ -37,19 +37,24 @@ import {
   Eye,
   EyeOff,
   Clock,
-  UserX
+  UserX,
+  Sun
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/utils/api";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function Settings() {
   const router = useRouter();
+  const { user, loading: authLoading, logout, refreshProfile } = useAuth(); // ✅ Use AuthContext
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
+  
+  // ✅ Remove userProfile state - use AuthContext user instead
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -81,38 +86,35 @@ export default function Settings() {
   const [exportLoading, setExportLoading] = useState(false);
   const [theme, setTheme] = useState('light');
 
-  // Load user profile and settings
+  // Load user settings
   useEffect(() => {
-    loadUserData();
-    loadSystemSettings();
-  }, []);
+    if (!authLoading) {
+      loadSettings();
+    }
+  }, [authLoading]);
 
-  const loadUserData = async () => {
+  const loadSettings = async () => {
     try {
       setLoading(true);
       
-      // Load user profile
-      const profileResponse = await api.getProfile();
-      if (profileResponse.success) {
-        setUserProfile(profileResponse.data);
-        
-        // Load user-specific settings from localStorage or API
-        const savedSettings = localStorage.getItem('userSettings');
-        if (savedSettings) {
-          setSettings(JSON.parse(savedSettings));
-        }
-        
-        // Load theme preference
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(savedTheme);
-        setSettings(prev => ({
-          ...prev,
-          appearance: { ...prev.appearance, theme: savedTheme }
-        }));
+      // ✅ User data is already in AuthContext - no separate API call needed
+      
+      // Load user-specific settings from localStorage or API
+      const savedSettings = localStorage.getItem('userSettings');
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
       }
       
+      // Load theme preference
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      setTheme(savedTheme);
+      setSettings(prev => ({
+        ...prev,
+        appearance: { ...prev.appearance, theme: savedTheme }
+      }));
+      
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      console.error('Failed to load settings:', error);
       toast.error('Failed to load user settings');
     } finally {
       setLoading(false);
@@ -121,10 +123,8 @@ export default function Settings() {
 
   const loadSystemSettings = async () => {
     try {
-      // Load system settings from API if available
       const settingsResponse = await api.getSettings();
       if (settingsResponse.success) {
-        // You can map system settings to local settings here
         console.log('System settings loaded:', settingsResponse.data);
       }
     } catch (error) {
@@ -142,11 +142,8 @@ export default function Settings() {
     };
     
     setSettings(newSettings);
-    
-    // Save to localStorage immediately
     localStorage.setItem('userSettings', JSON.stringify(newSettings));
     
-    // If theme changed, update document and localStorage
     if (category === 'appearance' && key === 'theme') {
       setTheme(value);
       localStorage.setItem('theme', value);
@@ -160,7 +157,7 @@ export default function Settings() {
     try {
       setSaving(true);
       
-      // Save notification preferences (you might want to create an API endpoint for this)
+      // Save notification preferences
       const notificationData = {
         email_notifications: settings.notifications.email,
         push_notifications: settings.notifications.push,
@@ -175,10 +172,9 @@ export default function Settings() {
         session_timeout_minutes: settings.security.sessionTimeout
       };
       
-      // Here you would call your backend API to save settings
-      // For example: await api.updateUserSettings({ notifications: notificationData, security: securityData });
+      // Call API to save settings
+      // await api.updateUserSettings({ notifications: notificationData, security: securityData });
       
-      // For now, just update localStorage
       localStorage.setItem('userSettings', JSON.stringify(settings));
       
       toast.success('All settings saved successfully');
@@ -196,13 +192,12 @@ export default function Settings() {
       setExportLoading(true);
       setShowConfirmModal(null);
       
-      // Get current date for filename
       const date = new Date().toISOString().split('T')[0];
       
       // Prepare data to export
       const exportData = {
         exportedAt: new Date().toISOString(),
-        userProfile,
+        userProfile: user, // ✅ Use user from AuthContext
         settings,
         connectedDevices
       };
@@ -235,16 +230,12 @@ export default function Settings() {
       setSaving(true);
       setShowConfirmModal(null);
       
-      // Note: This is a destructive action. In production, you should:
-      // 1. Send a confirmation email
-      // 2. Soft delete first
-      // 3. Have a recovery period
-      
+      // Note: This is a destructive action
       toast.success('Account deletion request submitted. Check your email for confirmation.');
       
-      // Redirect to logout
+      // Use logout from AuthContext
       setTimeout(() => {
-        api.logout();
+        logout();
         router.push('/login');
       }, 3000);
       
@@ -257,10 +248,8 @@ export default function Settings() {
 
   const handleRemoveDevice = async (deviceId) => {
     try {
-      // Call API to remove device
       // await api.revokeDevice(deviceId);
       
-      // Update local state
       setConnectedDevices(prev => prev.filter(device => device.id !== deviceId));
       toast.success('Device removed successfully');
       
@@ -282,29 +271,42 @@ export default function Settings() {
     router.push('/usersDashboard/billing');
   };
 
-  // Mock connected devices (replace with real API call)
+  // Mock connected devices
   useEffect(() => {
-    // In production, fetch from API: api.getConnectedDevices()
-    const devices = [
-      { 
-        id: '1', 
-        name: "Chrome on Windows", 
-        type: "browser",
-        location: "New York, US", 
-        lastActive: new Date().toISOString(),
-        current: true
-      },
-      { 
-        id: '2', 
-        name: "Safari on iPhone", 
-        type: "mobile",
-        location: "Home", 
-        lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        current: false
-      },
-    ];
-    setConnectedDevices(devices);
-  }, []);
+    if (!authLoading) {
+      const devices = [
+        { 
+          id: '1', 
+          name: "Chrome on Windows", 
+          type: "browser",
+          location: "New York, US", 
+          lastActive: new Date().toISOString(),
+          current: true
+        },
+        { 
+          id: '2', 
+          name: "Safari on iPhone", 
+          type: "mobile",
+          location: "Home", 
+          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          current: false
+        },
+      ];
+      setConnectedDevices(devices);
+    }
+  }, [authLoading]);
+
+  // ✅ Show loading while auth loads
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-brand-500 mx-auto" />
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -431,8 +433,8 @@ export default function Settings() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="lg:col-span-2 space-y-8"
         >
-          {/* Notifications Settings */}
-          {activeSection === "notifications" && (
+           {/* Notifications Settings */}
+           {activeSection === "notifications" && (
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Bell className="w-6 h-6 text-blue-500" />
@@ -768,21 +770,21 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Profile Settings */}
-          {activeSection === "profile" && (
+           {/* Profile Settings - UPDATED to use AuthContext */}
+           {activeSection === "profile" && (
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <UserCog className="w-6 h-6 text-blue-500" />
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">Profile Settings</h2>
               </div>
-              {userProfile ? (
+              {user ? (
                 <div className="space-y-6">
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium text-gray-800 dark:text-white">Personal Information</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {userProfile.full_name} • {userProfile.email}
+                          {user.full_name} • {user.email} {/* ✅ Use user from context */}
                         </p>
                       </div>
                       <button
@@ -798,32 +800,32 @@ export default function Settings() {
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                       <h3 className="font-medium text-gray-800 dark:text-white mb-2">Subscription Tier</h3>
                       <div className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${
-                        userProfile.subscription_tier === 'PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                        userProfile.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                        user.subscription_tier === 'LEGACY_VAULT_PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
+                        user.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
                         'bg-gradient-to-r from-gray-500 to-gray-700 text-white'
                       }`}>
-                        {userProfile.subscription_tier}
+                        {user.subscription_tier}
                       </div>
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                       <h3 className="font-medium text-gray-800 dark:text-white mb-2">Account Created</h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {new Date(userProfile.created_at).toLocaleDateString()}
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                       <h3 className="font-medium text-gray-800 dark:text-white mb-2">Last Login</h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {new Date(userProfile.last_login).toLocaleString()}
+                        {user.last_login ? new Date(user.last_login).toLocaleString() : 'N/A'}
                       </p>
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                       <h3 className="font-medium text-gray-800 dark:text-white mb-2">Storage Limit</h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {userProfile.storage_limit_gb} GB
+                        {user.storage_limit_gb || 5} GB
                       </p>
                     </div>
                   </div>
@@ -951,8 +953,8 @@ export default function Settings() {
         </motion.div>
       </div>
 
-      {/* Confirmation Modals */}
-      {showConfirmModal && (
+       {/* Confirmation Modals */}
+       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -1070,30 +1072,3 @@ function Activity(props) {
   );
 }
 
-// Sun icon component
-function Sun(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="5"></circle>
-      <line x1="12" y1="1" x2="12" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="23"></line>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-      <line x1="1" y1="12" x2="3" y2="12"></line>
-      <line x1="21" y1="12" x2="23" y2="12"></line>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-  );
-}

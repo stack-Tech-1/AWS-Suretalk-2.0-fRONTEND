@@ -24,17 +24,24 @@ import {
   Smartphone,
   Zap,
   Check,
-  Plus
+  Plus,
+  User,
+  CreditCard
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/utils/api";
 import { toast } from "react-hot-toast";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useRouter } from "next/navigation";
 
 export default function NotificationsPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, unread, read
-  const [typeFilter, setTypeFilter] = useState('all'); // all, voice_note, message, vault, etc.
+  const [filter, setFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [selectedNotifications, setSelectedNotifications] = useState([]);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,8 +54,10 @@ export default function NotificationsPage() {
 
   // Load notifications on component mount
   useEffect(() => {
-    loadNotifications();
-  }, [filter, typeFilter]);
+    if (!authLoading) {
+      loadNotifications();
+    }
+  }, [filter, typeFilter, authLoading]);
 
   const loadNotifications = async () => {
     try {
@@ -218,12 +227,10 @@ export default function NotificationsPage() {
   };
 
   const filteredNotifications = notifications.filter(notification => {
-    // Apply type filter
     if (typeFilter !== 'all' && notification.type !== typeFilter) {
       return false;
     }
     
-    // Apply status filter
     if (filter === 'unread' && notification.is_read) {
       return false;
     }
@@ -231,7 +238,6 @@ export default function NotificationsPage() {
       return false;
     }
     
-    // Apply search filter
     if (searchQuery && !notification.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !notification.message.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
@@ -239,6 +245,18 @@ export default function NotificationsPage() {
     
     return true;
   });
+
+  // ✅ Show loading state while auth is loading
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading notifications...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && notifications.length === 0) {
     return (
@@ -294,7 +312,7 @@ export default function NotificationsPage() {
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Add user-specific info if needed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {['total', 'unread', 'voice_notes', 'messages'].map((stat, index) => (
           <motion.div
@@ -694,47 +712,6 @@ function formatTime(dateString) {
   });
 }
 
-// User icon component
-function User(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-  );
-}
-
-// CreditCard icon component
-function CreditCard(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-      <line x1="1" y1="10" x2="23" y2="10"></line>
-    </svg>
-  );
-}
 
 // ChevronRight icon component
 function ChevronRight(props) {

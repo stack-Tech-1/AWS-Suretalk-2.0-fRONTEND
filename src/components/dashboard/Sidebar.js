@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Sidebar.js
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -8,8 +9,7 @@ import {
   Contact, ClipboardList, Lock, Crown
 } from "lucide-react";
 import { UserProfileSkeleton, SidebarCountSkeleton } from '../ui/Skeleton';
-import { useState, useEffect } from "react";
-import { api } from '@/utils/api';
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function Sidebar({ 
   type, 
@@ -17,32 +17,17 @@ export default function Sidebar({
   collapsed, 
   onCollapse, 
   onClose,
-  userData,
+  userData, // Still passed from layout for backwards compatibility
   stats,
   loading = false
 }) {
   const router = useRouter();
-  const [userTier, setUserTier] = useState(null);
-  const [loadingTier, setLoadingTier] = useState(true);
+  const { user, hasLegacyVault, loading: authLoading } = useAuth(); // ✅ Use AuthContext
 
-  // Fetch user tier on component mount
-  useEffect(() => {
-    const fetchUserTier = async () => {
-      try {
-        setLoadingTier(true);
-        const profileResponse = await api.getProfile();
-        if (profileResponse.success) {
-          setUserTier(profileResponse.data.subscription_tier);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user tier:', error);
-      } finally {
-        setLoadingTier(false);
-      }
-    };
-
-    fetchUserTier();
-  }, []);
+  // ✅ Use user from AuthContext if available, fallback to prop
+  const currentUser = user || userData;
+  const userTier = currentUser?.subscription_tier;
+  const loadingTier = authLoading;
 
   // User menu items - DYNAMIC BASED ON TIER
   const getUserMenu = () => {
@@ -52,46 +37,46 @@ export default function Sidebar({
         label: "Dashboard", 
         href: "/usersDashboard", 
         count: null,
-        availableFor: ['LITE', 'ESSENTIAL', 'PREMIUM']
+        availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
       { 
         icon: <Mic className="w-5 h-5" />, 
         label: "Voice Notes", 
         href: "/usersDashboard/voice-notes", 
         count: loading ? null : stats?.voiceNotes || 0,
-        availableFor: ['LITE', 'ESSENTIAL', 'PREMIUM']
+        availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
       { 
         icon: <Users className="w-5 h-5" />, 
         label: "Contacts", 
         href: "/usersDashboard/contacts", 
         count: loading ? null : stats?.contacts || 0,
-        availableFor: ['LITE', 'ESSENTIAL', 'PREMIUM']
+        availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
       { 
         icon: <Calendar className="w-5 h-5" />, 
         label: "Scheduled", 
         href: "/usersDashboard/scheduled", 
         count: loading ? null : stats?.scheduled || 0,
-        availableFor: ['ESSENTIAL', 'PREMIUM'] // LITE doesn't get scheduled
+        availableFor: ['ESSENTIAL', 'LEGACY_VAULT_PREMIUM'] // LITE doesn't get scheduled
       },
       { 
         icon: <Settings className="w-5 h-5" />, 
         label: "Settings", 
         href: "/usersDashboard/settings", 
         count: null,
-        availableFor: ['LITE', 'ESSENTIAL', 'PREMIUM']
+        availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
     ];
 
-    // Add Legacy Vault ONLY for PREMIUM users
-    if (userTier === 'PREMIUM') {
+    // ✅ Add Legacy Vault ONLY for LEGACY_VAULT_PREMIUM users (using helper from context)
+    if (hasLegacyVault()) {
       baseMenu.splice(3, 0, { // Insert after Contacts, before Scheduled
         icon: <Shield className="w-5 h-5" />, 
         label: "Legacy Vault", 
         href: "/usersDashboard/vault", 
         count: loading ? null : stats?.vault || 0,
-        availableFor: ['PREMIUM'],
+        availableFor: ['LEGACY_VAULT_PREMIUM'],
         premium: true
       });
     }
@@ -254,10 +239,10 @@ export default function Sidebar({
           {!collapsed ? (
             <div className="flex items-center gap-3">
               <img 
-                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
-                    alt="SureTalk Logo" 
-                    className="w-10 h-10 object-contain"
-                  />
+                src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
+                alt="SureTalk Logo" 
+                className="w-10 h-10 object-contain"
+              />
               <div>
                 <h2 className="font-bold text-lg bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
                   SureTalk
@@ -314,16 +299,16 @@ export default function Sidebar({
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
                     <span className="font-bold text-white text-sm">
-                      {userData?.full_name?.charAt(0) || 'U'}
+                      {currentUser?.full_name?.charAt(0) || 'U'}
                     </span>
                   </div>
                   {/* Tier badge */}
                   {userTier && (
                     <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 flex items-center justify-center
-                      ${userTier === 'PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                      ${userTier === 'LEGACY_VAULT_PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
                         userTier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' :
                         'bg-gradient-to-r from-gray-500 to-gray-400'}`}>
-                      {userTier === 'PREMIUM' ? (
+                      {userTier === 'LEGACY_VAULT_PREMIUM' ? (
                         <Crown className="w-2.5 h-2.5 text-white" />
                       ) : userTier === 'ESSENTIAL' ? (
                         <Shield className="w-2.5 h-2.5 text-white" />
@@ -335,13 +320,13 @@ export default function Sidebar({
                 </div>
                 <div>
                   <p className="font-medium text-gray-800 dark:text-white">
-                    {userData?.full_name || 'User'}
+                    {currentUser?.full_name || 'User'}
                   </p>
                   <div className="flex items-center gap-1">
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       {userTier?.replace(/_/g, ' ') || 'Loading...'}
                     </p>
-                    {userTier === 'PREMIUM' && (
+                    {userTier === 'LEGACY_VAULT_PREMIUM' && (
                       <Crown className="w-3 h-3 text-yellow-500" />
                     )}
                   </div>
@@ -358,8 +343,8 @@ export default function Sidebar({
           <NavItem key={index} item={item} stats={stats} />
         ))}
         
-        {/* Upgrade Prompt for non-PREMIUM users */}
-        {type !== "admin" && userTier && userTier !== 'PREMIUM' && !collapsed && (
+        {/* ✅ Upgrade Prompt for non-LEGACY_VAULT_PREMIUM users (using helper) */}
+        {type !== "admin" && !hasLegacyVault() && !collapsed && (
           <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 
                          dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 
                          dark:border-purple-800">
@@ -390,14 +375,14 @@ export default function Sidebar({
       <div className={`p-4 border-t border-gray-200 dark:border-gray-800 ${collapsed ? 'px-2' : ''}`}>
         <div className="space-y-3">
           {/* Help */}
-            <Link href={type === "admin" ? "/adminDashboard/helpandsupport" : "/usersDashboard/helpandsupport"}>
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 
-                              hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer
-                              ${collapsed ? 'justify-center px-3' : ''}`}>
-                <HelpCircle className="w-5 h-5" />
-                {!collapsed && <span className="font-medium">Help & Support</span>}
-              </div>
-            </Link>
+          <Link href={type === "admin" ? "/adminDashboard/helpandsupport" : "/usersDashboard/helpandsupport"}>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 
+                            hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer
+                            ${collapsed ? 'justify-center px-3' : ''}`}>
+              <HelpCircle className="w-5 h-5" />
+              {!collapsed && <span className="font-medium">Help & Support</span>}
+            </div>
+          </Link>
 
           {/* Logout */}
           <button 

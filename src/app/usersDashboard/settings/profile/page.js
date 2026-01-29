@@ -1,4 +1,3 @@
-// /app/usersDashboard/settings/profile/page.js
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -17,9 +16,12 @@ import {
 import { api } from "@/utils/api";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function ProfileSettings() {
   const router = useRouter();
+  const { user, loading: authLoading, refreshProfile } = useAuth(); // ✅ Use AuthContext
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -28,34 +30,19 @@ export default function ProfileSettings() {
     phone: '',
     profileImageUrl: ''
   });
-  const [userProfile, setUserProfile] = useState(null);
+  // ✅ Remove userProfile state - use AuthContext user instead
 
-  // Load user profile
+  // Load user profile from AuthContext
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await api.getProfile();
-      
-      if (response.success) {
-        const profile = response.data;
-        setUserProfile(profile);
-        setFormData({
-          fullName: profile.full_name || '',
-          phone: profile.phone || '',
-          profileImageUrl: profile.profile_image_url || ''
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load profile:', error);
-      toast.error('Failed to load profile');
-    } finally {
+    if (!authLoading && user) {
+      setFormData({
+        fullName: user.full_name || '',
+        phone: user.phone || '',
+        profileImageUrl: user.profile_image_url || ''
+      });
       setLoading(false);
     }
-  };
+  }, [authLoading, user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,8 +55,8 @@ export default function ProfileSettings() {
       
       if (response.success) {
         toast.success('Profile updated successfully');
-        // Reload profile to get updated data
-        await loadProfile();
+        // ✅ Use refreshProfile from AuthContext to update user data
+        await refreshProfile();
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -84,29 +71,21 @@ export default function ProfileSettings() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
       toast.error('Image must be less than 5MB');
       return;
     }
 
     try {
-      // In production, upload to S3 and get URL
-      // For now, create a local URL
       const imageUrl = URL.createObjectURL(file);
       setFormData(prev => ({ ...prev, profileImageUrl: imageUrl }));
       
-      // In production, you would:
-      // 1. Get upload URL from backend
-      // 2. Upload file to S3
-      // 3. Get permanent URL
-      // 4. Update profile with permanent URL
-      
+      // In production, upload to backend and update profile
       toast.success('Image uploaded (preview only - not saved)');
     } catch (error) {
       console.error('Image upload failed:', error);
@@ -114,7 +93,8 @@ export default function ProfileSettings() {
     }
   };
 
-  if (loading) {
+  // ✅ Show loading while auth loads
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
@@ -202,7 +182,7 @@ export default function ProfileSettings() {
               </label>
               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                 <Mail className="w-5 h-5 text-gray-500" />
-                <span className="text-gray-800 dark:text-white">{userProfile?.email}</span>
+                <span className="text-gray-800 dark:text-white">{user?.email}</span> {/* ✅ Use user from context */}
               </div>
               <p className="text-xs text-gray-500 mt-2">
                 Email cannot be changed. Contact support for assistance.
@@ -252,7 +232,7 @@ export default function ProfileSettings() {
           </div>
         </div>
 
-        {/* Account Information */}
+        {/* Account Information - UPDATED to use AuthContext */}
         <div className="glass rounded-2xl p-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
             Account Information
@@ -262,30 +242,30 @@ export default function ProfileSettings() {
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
               <h3 className="font-medium text-gray-800 dark:text-white mb-1">Subscription Tier</h3>
               <div className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${
-                userProfile?.subscription_tier === 'PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                userProfile?.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
+                user?.subscription_tier === 'LEGACY_VAULT_PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
+                user?.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
                 'bg-gradient-to-r from-gray-500 to-gray-700 text-white'
               }`}>
-                {userProfile?.subscription_tier || 'Loading...'}
+                {user?.subscription_tier || 'Loading...'}
               </div>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
               <h3 className="font-medium text-gray-800 dark:text-white mb-1">Storage Limit</h3>
-              <p className="text-gray-600 dark:text-gray-400">{userProfile?.storage_limit_gb || 0} GB</p>
+              <p className="text-gray-600 dark:text-gray-400">{user?.storage_limit_gb || 5} GB</p>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
               <h3 className="font-medium text-gray-800 dark:text-white mb-1">Account Created</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {userProfile?.created_at ? new Date(userProfile.created_at).toLocaleDateString() : 'Loading...'}
+                {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Loading...'}
               </p>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
               <h3 className="font-medium text-gray-800 dark:text-white mb-1">Last Login</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {userProfile?.last_login ? new Date(userProfile.last_login).toLocaleString() : 'Loading...'}
+                {user?.last_login ? new Date(user.last_login).toLocaleString() : 'Loading...'}
               </p>
             </div>
           </div>

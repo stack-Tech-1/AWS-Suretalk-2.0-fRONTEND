@@ -11,13 +11,12 @@ import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
 import { pushManager } from '@/utils/pushManager';
-import { useAnalyticsContext } from '@/contexts/AnalyticsContext'; // ADD THIS
-
-
+import { useAnalyticsContext } from '@/contexts/AnalyticsContext';
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();
-  const [userData, setUserData] = useState(null);
+  const { user, loading: authLoading, isAdmin } = useAuth(); // ✅ Use AuthContext
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [pushInitiated, setPushInitiated] = useState(false);
@@ -32,69 +31,45 @@ export default function UsersDashboardLayout({ children }) {
     getMainMargin
   } = useDashboardLayout();
 
+  // ✅ Check auth state and redirect if needed
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        
-        // Get user profile
-        const profile = await api.getProfile();
-        
-        // Check if user is logged in (non-admin)
-        if (profile.data.is_admin) {
-          router.replace('/adminDashboard');
-          return;
-        }
-        
-        setUserData(profile.data);
-        
-        // Get user dashboard stats
-        try {
-          const statsResponse = await api.getUserDashboardStats();
-          setStats(statsResponse.data || {});
-        } catch (statsError) {
-          console.warn('Could not fetch user stats:', statsError);
-          // Continue without stats
-        }
-        
-      } catch (error) {
-        console.error('User dashboard data fetch failed:', error);
-        router.replace('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (authLoading) return; // Wait for auth to load
 
-    fetchDashboardData();
-  }, [router]);
+    // Redirect admin users
+    if (isAdmin) {
+      router.replace('/adminDashboard');
+      return;
+    }
 
-  // Initialize push notifications when user is authenticated and app starts
+    // Redirect unauthenticated users
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+
+    // User is authenticated and not admin, load stats
+    loadDashboardStats();
+  }, [authLoading, user, isAdmin, router]);
+
+  // ✅ Fetch only dashboard stats (not user profile)
+  const loadDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const statsResponse = await api.getUserDashboardStats();
+      setStats(statsResponse.data || {});
+    } catch (error) {
+      console.warn('Could not fetch user stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize push notifications when user is authenticated
   useEffect(() => {
-    if (userData && !pushInitiated) {
+    if (user && !pushInitiated) {
       initializePushNotifications();
     }
-  }, [userData, pushInitiated]);
-
-  // Request notification permission on user interaction
-  useEffect(() => {
-    const handleUserInteraction = () => {
-      if (userData && Notification.permission === 'default') {
-        // You could prompt the user here if desired
-        console.log('Notification permission is default - ready to prompt');
-        // Optionally, show a gentle prompt after user interaction
-        promptPushNotificationPermission();
-      }
-    };
-
-    // Add event listeners for user interaction
-    window.addEventListener('click', handleUserInteraction);
-    window.addEventListener('keydown', handleUserInteraction);
-
-    return () => {
-      window.removeEventListener('click', handleUserInteraction);
-      window.removeEventListener('keydown', handleUserInteraction);
-    };
-  }, [userData]);
+  }, [user, pushInitiated]);
 
   const initializePushNotifications = async () => {
     try {
@@ -104,54 +79,30 @@ export default function UsersDashboardLayout({ children }) {
       if (result.supported && result.subscribed) {
         console.log('Push notifications initialized and subscribed');
         analytics.recordEvent('push_notifications_initialized', {
-          userId: userData?.id,
+          userId: user?.id,
           subscribed: true
-        });
-      } else if (result.supported && !result.subscribed) {
-        console.log('Push notifications supported but not subscribed');
-        // User has not subscribed yet, we can prompt them later
-        analytics.recordEvent('push_notifications_available', {
-          userId: userData?.id,
-          supported: true
         });
       }
       
       setPushInitiated(true);
-      
     } catch (error) {
       console.error('Failed to initialize push notifications:', error);
       setPushInitiated(true);
     }
   };
 
-  const promptPushNotificationPermission = () => {
-    // This is a gentle prompt - you can make this more sophisticated
-    // For example, show a custom modal explaining the benefits
-    const shouldPrompt = localStorage.getItem('pushNotificationPrompted') !== 'true';
-    
-    if (shouldPrompt && userData) {
-      // You could show a custom modal here
-      console.log('Would show push notification prompt now');
-      
-      // Mark as prompted to avoid being annoying
-      localStorage.setItem('pushNotificationPrompted', 'true');
-      
-      // Record analytics
-      analytics.recordEvent('push_notification_prompt_shown', {
-        userId: userData.id
-      });
-    }
-  };
-
-  // Show loading screen while fetching user data
-  if (loading) {
+  // ✅ Show loading while auth is checking
+  if (authLoading) {
     return <LoadingScreen />;
   }
 
-  
+  // ✅ Don't render layout if redirecting
+  if (!user || isAdmin) {
+    return <LoadingScreen />;
+  }
+
   return (
-    
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
@@ -189,9 +140,9 @@ export default function UsersDashboardLayout({ children }) {
           collapsed={sidebarCollapsed}
           onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           onClose={() => setSidebarOpen(false)}
-          userData={userData}
+          userData={user} // ✅ Pass user from AuthContext
           stats={stats}
-          loading={false}
+          loading={loading}
         />
       </motion.aside>
 
@@ -201,8 +152,8 @@ export default function UsersDashboardLayout({ children }) {
           type="user"
           onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           sidebarCollapsed={sidebarCollapsed}
-          userData={userData}
-          loading={false}
+          userData={user} // ✅ Pass user from AuthContext
+          loading={loading}
         />
         
         <main className="pt-16">
@@ -226,31 +177,6 @@ export default function UsersDashboardLayout({ children }) {
           setSidebarOpen={setSidebarOpen}
         />
       )}
-
-      {/* Push Notification Status Indicator (Optional - for debugging) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 text-xs">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
-                pushManager.isSupported() 
-                  ? pushManager.isGranted() 
-                    ? 'bg-green-500' 
-                    : 'bg-yellow-500'
-                  : 'bg-red-500'
-              }`}></div>
-              <span className="text-gray-700 dark:text-gray-300">
-                Push: {pushManager.isSupported() 
-                  ? pushManager.isGranted() 
-                    ? 'Granted' 
-                    : 'Not Granted'
-                  : 'Not Supported'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-    
   );
 }

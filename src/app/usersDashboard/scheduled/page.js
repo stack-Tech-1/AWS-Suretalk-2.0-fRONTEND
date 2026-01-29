@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\scheduled\page.js
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -45,9 +46,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, parseISO, isBefore, isAfter, addDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function ScheduledMessages() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -70,7 +74,7 @@ export default function ScheduledMessages() {
     total: 0,
     totalPages: 1
   });
-  const [userTier, setUserTier] = useState(null);
+  // ✅ Remove userTier state - get from AuthContext
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showTestModal, setShowTestModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -105,22 +109,9 @@ export default function ScheduledMessages() {
     { id: "cancelled", label: "Cancelled", icon: X },
   ];
 
-  // Fetch user tier
-  const fetchUserTier = async () => {
-    try {
-      const profileResponse = await api.getProfile();
-      if (profileResponse.success) {
-        setUserTier(profileResponse.data.subscription_tier);
-        return profileResponse.data.subscription_tier;
-      }
-      return null;
-    } catch (error) {
-      console.error('Failed to fetch user tier:', error);
-      return null;
-    }
-  };
+  // ✅ Remove fetchUserTier function - user tier is in AuthContext
 
-  // Fetch scheduled messages - FIXED VERSION
+  // Fetch scheduled messages
   const fetchScheduledMessages = useCallback(async (page = 1) => {
     try {
       setLoading(true);
@@ -140,28 +131,21 @@ export default function ScheduledMessages() {
         limit: pagination.limit
       };
 
-      // Only add status if it's defined and not undefined string
       if (status) {
         params.status = status;
       }
 
-      // Only add search if there's actually a search query
       if (searchQuery && searchQuery.trim()) {
         params.search = searchQuery.trim();
       }
-
-      console.log('Fetching scheduled messages with params:', params);
 
       // Fetch scheduled messages
       const response = await api.getScheduledMessages(params);
 
       if (response.success) {
-        console.log('Scheduled messages response:', response);
-        
         const messagesData = response.data?.messages || [];
         const paginationData = response.data?.pagination;
         
-        // Add derived properties for easier UI handling
         const formattedMessages = messagesData.map(msg => ({
           ...msg,
           isUpcoming: msg.delivery_status === 'scheduled' && 
@@ -226,15 +210,15 @@ export default function ScheduledMessages() {
     }
   }, [messages]);
 
-  // Initial load - FIXED to prevent infinite loop
+  // Initial load - wait for auth to load first
   useEffect(() => {
-    if (initialLoadRef.current) return;
+    if (authLoading || initialLoadRef.current) return;
     
     initialLoadRef.current = true;
     
     const loadInitialData = async () => {
       try {
-        await fetchUserTier();
+        // ✅ No need to fetch user tier - it's in AuthContext
         await fetchScheduledMessages();
       } catch (error) {
         console.error('Initial load failed:', error);
@@ -242,25 +226,25 @@ export default function ScheduledMessages() {
     };
     
     loadInitialData();
-  }, []);
+  }, [authLoading, fetchScheduledMessages]);
 
-  // Handle search with debounce - FIXED
+  // Handle search with debounce
   useEffect(() => {
-    if (!initialLoadRef.current) return;
+    if (!initialLoadRef.current || authLoading) return;
     
     const timeoutId = setTimeout(() => {
       fetchScheduledMessages(1);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, fetchScheduledMessages]);
+  }, [searchQuery, fetchScheduledMessages, authLoading]);
 
-  // Handle filter change - FIXED
+  // Handle filter change
   useEffect(() => {
-    if (!initialLoadRef.current) return;
+    if (!initialLoadRef.current || authLoading) return;
     
     fetchScheduledMessages(1);
-  }, [selectedFilter, fetchScheduledMessages]);
+  }, [selectedFilter, fetchScheduledMessages, authLoading]);
 
   // Format date
   const formatDate = (dateString) => {
@@ -374,7 +358,6 @@ export default function ScheduledMessages() {
       
       const response = await api.cancelScheduledMessage(messageId);
       if (response.success) {
-        // Update local state
         setMessages(prev => prev.map(msg =>
           msg.id === messageId
             ? { ...msg, delivery_status: 'cancelled' }
@@ -461,24 +444,8 @@ Status: ${message.delivery_status}`;
     fetchScheduledMessages(pagination.page);
   };
 
-  // Also, let's fix the ApiClient request method to handle undefined params properly:
-  // In your utils/api.js, update the getScheduledMessages method:
-  
-  /*
-  // In utils/api.js, update the method:
-  async getScheduledMessages(params = {}) {
-    // Filter out undefined values
-    const filteredParams = Object.fromEntries(
-      Object.entries(params).filter(([_, value]) => value !== undefined && value !== 'undefined')
-    );
-    
-    const query = new URLSearchParams(filteredParams).toString();
-    return this.request(`/scheduled${query ? `?${query}` : ''}`);
-  }
-  */
-
   // Render loading state
-  if (loading && messages.length === 0) {
+  if ((loading || authLoading) && messages.length === 0) { // ✅ Check both
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
@@ -504,6 +471,11 @@ Status: ${message.delivery_status}`;
       </div>
     );
   }
+
+  // ✅ Use user tier from AuthContext for tier limitations
+  const userTier = user?.subscription_tier || 'LITE';
+  const isLiteTier = userTier === 'LITE';
+
 
   return (
     <div>
@@ -551,6 +523,28 @@ Status: ${message.delivery_status}`;
           </div>
         </div>
       </motion.div>
+
+      {/* Tier Limitation Warning for LITE users */}
+      {isLiteTier && messages.length >= 3 && (
+        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-gray-800 dark:text-white">LITE Tier Limitation</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                You have reached the maximum of 3 scheduled messages for LITE tier. 
+                Upgrade to ESSENTIAL for unlimited scheduling.
+              </p>
+              <Link
+                href="/usersDashboard/billing"
+                className="inline-block mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Upgrade Plan →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <motion.div

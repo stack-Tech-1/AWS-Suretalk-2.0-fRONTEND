@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\voice-notes\page.js
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";

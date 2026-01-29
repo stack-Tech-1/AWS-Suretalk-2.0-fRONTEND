@@ -23,15 +23,20 @@ import {
   Bell,
   CalendarClock,
   Shield,
-  Zap
+  Zap,
+  Sun,
+  Activity
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { format, addDays, parseISO, isBefore } from "date-fns";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function CreateScheduledMessage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  
   const [loading, setLoading] = useState(false);
   const [loadingVoiceNotes, setLoadingVoiceNotes] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
@@ -48,7 +53,7 @@ export default function CreateScheduledMessage() {
     customMessage: "",
     isRecurring: false,
     recurrence: {
-      type: "none", // none, daily, weekly, monthly, yearly
+      type: "none",
       interval: 1,
       endDate: "",
       occurrences: 1
@@ -58,7 +63,7 @@ export default function CreateScheduledMessage() {
   // Data state
   const [voiceNotes, setVoiceNotes] = useState([]);
   const [contacts, setContacts] = useState([]);
-  const [userTier, setUserTier] = useState("LITE");
+  // ✅ Remove userTier state - get from AuthContext
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [showVoiceNoteSelector, setShowVoiceNoteSelector] = useState(false);
   const [availableTimes, setAvailableTimes] = useState([]);
@@ -87,17 +92,15 @@ export default function CreateScheduledMessage() {
 
   // Load initial data
   useEffect(() => {
-    loadInitialData();
-    generateTimeSlots();
-  }, []);
+    if (!authLoading) {
+      loadInitialData();
+      generateTimeSlots();
+    }
+  }, [authLoading]);
 
   const loadInitialData = async () => {
     try {
-      // Load user profile for tier
-      const profile = await api.getProfile();
-      if (profile.success) {
-        setUserTier(profile.data.subscription_tier);
-      }
+      // ✅ User data comes from AuthContext - no separate API call needed
 
       // Load voice notes
       setLoadingVoiceNotes(true);
@@ -147,6 +150,23 @@ export default function CreateScheduledMessage() {
       return;
     }
 
+    // ✅ Check LITE tier limitations
+    if (user?.subscription_tier === 'LITE') {
+      // Check existing scheduled messages count
+      try {
+        const scheduledResponse = await api.getScheduledMessages({ limit: 1 });
+        const totalMessages = scheduledResponse.data?.pagination?.total || 0;
+        
+        if (totalMessages >= 3) {
+          toast.error("LITE tier limited to 3 scheduled messages. Upgrade to schedule more.");
+          router.push('/usersDashboard/billing');
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to check scheduled messages count:", error);
+      }
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -161,7 +181,7 @@ export default function CreateScheduledMessage() {
         customMessage: formData.customMessage || undefined,
         metadata: {
           createdVia: "dashboard",
-          userTier: userTier,
+          userTier: user?.subscription_tier, // ✅ Use from context
           isRecurring: formData.isRecurring,
           recurrence: formData.isRecurring ? formData.recurrence : undefined
         }
@@ -325,6 +345,19 @@ export default function CreateScheduledMessage() {
       scheduledFor: date.toISOString()
     }));
   };
+
+  // ✅ Show loading while auth loads
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500" />
+      </div>
+    );
+  }
+
+  // ✅ Use helper from AuthContext
+  const isLiteTier = user?.subscription_tier === 'LITE';
+  const isLegacyVault = user?.subscription_tier === 'LEGACY_VAULT_PREMIUM';
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -1083,54 +1116,54 @@ export default function CreateScheduledMessage() {
               />
             </div>
 
-            {/* Tier Limitations */}
-            {userTier === "LITE" && (
-              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-gray-800 dark:text-white">LITE Tier Limitation</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      You can only schedule up to 3 messages at a time. Upgrade to ESSENTIAL for unlimited scheduling.
-                    </p>
-                    <Link
-                      href="/usersDashboard/billing"
-                      className="inline-block mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Upgrade Plan →
-                    </Link>
-                  </div>
-                </div>
+             {/* Tier Limitations */}
+        {isLiteTier && (
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-gray-800 dark:text-white">LITE Tier Limitation</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  You can only schedule up to 3 messages at a time. Upgrade to ESSENTIAL for unlimited scheduling.
+                </p>
+                <Link
+                  href="/usersDashboard/billing"
+                  className="inline-block mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Upgrade Plan →
+                </Link>
               </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <Link
-                href="/usersDashboard/scheduled"
-                className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-center transition-colors"
-              >
-                Cancel
-              </Link>
-              <button
-                type="submit"
-                disabled={loading || !formData.voiceNoteId || !formData.scheduledFor}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Scheduling...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="w-5 h-5" />
-                    Schedule Message
-                  </>
-                )}
-              </button>
             </div>
           </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <Link
+            href="/usersDashboard/scheduled"
+            className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-center transition-colors"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={loading || !formData.voiceNoteId || !formData.scheduledFor}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Scheduling...
+              </>
+            ) : (
+              <>
+                <Calendar className="w-5 h-5" />
+                Schedule Message
+              </>
+            )}
+          </button>
+        </div>
+        </div>
         </motion.div>
       </form>
     </div>

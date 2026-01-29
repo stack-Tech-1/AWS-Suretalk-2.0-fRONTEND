@@ -1,4 +1,4 @@
-// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\components\dashboard\Topbar.js (Updated)
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Topbar.js
 import { useState, useEffect } from "react";
 import { 
   Search, 
@@ -20,12 +20,19 @@ import {
   AlertTriangle,
   CheckCircle,
   X,
-  Check
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { toast } from "react-hot-toast";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
-export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, userData = null, loading = false }) {
+export default function Topbar({ 
+  type, 
+  onMenuClick, 
+  sidebarCollapsed = false, 
+  userData = null, // Still passed for backwards compatibility
+  loading = false 
+}) {
+  const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -33,6 +40,10 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // ✅ Use user from AuthContext if available, fallback to prop
+  const currentUser = user || userData;
+  const isLoading = authLoading || loading;
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -67,7 +78,6 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
   };
 
   const setupWebSocket = () => {
-    // Connect to WebSocket for real-time notifications
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.hostname}:5000`;
     const ws = new WebSocket(wsUrl);
@@ -79,11 +89,9 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'notification') {
-        // Add new notification to the top
         setNotifications(prev => [data.notification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
-        // Show desktop notification if allowed
         if (Notification.permission === 'granted' && data.notification.priority !== 'low') {
           showDesktopNotification(data.notification);
         }
@@ -105,7 +113,6 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
     if (Notification.permission === 'default') {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        // Subscribe to push notifications
         subscribeToPushNotifications();
       }
     } else if (Notification.permission === 'granted') {
@@ -114,20 +121,17 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
   };
 
   const subscribeToPushNotifications = async () => {
-    // Skip for admin pages
     if (window.location.pathname.includes('/adminDashboard')) {
       console.log('Skipping push notifications for admin page');
       return;
     }
     
     try {
-      // Check if service worker is supported
       if (!('serviceWorker' in navigator)) {
         console.log('Service workers not supported');
         return;
       }
       
-      // Check if we're on HTTPS (required for push notifications)
       if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
         console.log('Push notifications require HTTPS in production');
         return;
@@ -135,13 +139,11 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
       
       const registration = await navigator.serviceWorker.ready;
       
-      // Check if pushManager is available
       if (!('pushManager' in registration)) {
         console.log('Push notifications not supported');
         return;
       }
       
-      // Check for VAPID key
       if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
         console.warn('VAPID public key not configured');
         return;
@@ -163,7 +165,6 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
       console.log('Push notification subscription successful');
       
     } catch (error) {
-      // Don't show error for admin pages or if push is not supported
       if (error.name === 'AbortError' || 
           error.name === 'NotAllowedError' || 
           error.message.includes('push service')) {
@@ -296,7 +297,6 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
     return "lg:left-64 lg:w-[calc(100%-16rem)]";
   };
 
-  // Utility function for VAPID key
   const urlBase64ToUint8Array = (base64String) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
@@ -370,9 +370,8 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
             )}
           </button>
 
-
-           {/* Help */}
-           <button
+          {/* Help */}
+          <button
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title="Help & Support"
           >
@@ -494,13 +493,13 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
                 <span className="font-bold text-white text-sm">
-                  {loading ? '' : (userData?.full_name?.charAt(0) || 'U')}
+                  {isLoading ? '' : (currentUser?.full_name?.charAt(0) || 'U')}
                 </span>
               </div>
               {!isMobile && (
                 <>
                   <div className="hidden md:block text-left">
-                    {loading ? (
+                    {isLoading ? (
                       <div className="space-y-1">
                         <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                         <div className="h-2 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -508,10 +507,10 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
                     ) : (
                       <>
                         <p className="text-sm font-medium text-gray-800 dark:text-white">
-                          {userData?.full_name || (type === "admin" ? "Administrator" : "User")}
+                          {currentUser?.full_name || (type === "admin" ? "Administrator" : "User")}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {type === "admin" ? "System Admin" : userData?.subscription_tier || 'User'}
+                          {type === "admin" ? "System Admin" : currentUser?.subscription_tier || 'User'}
                         </p>
                       </>
                     )}
@@ -531,7 +530,7 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl 
                               border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    {loading ? (
+                    {isLoading ? (
                       <div className="space-y-2">
                         <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                         <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -539,10 +538,10 @@ export default function Topbar({ type, onMenuClick, sidebarCollapsed = false, us
                     ) : (
                       <>
                         <p className="font-medium text-gray-800 dark:text-white">
-                          {userData?.full_name || 'User'}
+                          {currentUser?.full_name || 'User'}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {userData?.email || (type === "admin" ? "admin@suretalk.com" : "user@example.com")}
+                          {currentUser?.email || (type === "admin" ? "admin@suretalk.com" : "user@example.com")}
                         </p>
                       </>
                     )}

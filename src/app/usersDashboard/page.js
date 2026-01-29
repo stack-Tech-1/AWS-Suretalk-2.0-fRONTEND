@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\page.js
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -18,6 +19,7 @@ import {
 import { api } from '@/utils/api';
 import Link from 'next/link';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
+import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);
@@ -25,8 +27,11 @@ export default function DashboardHome() {
   const [error, setError] = useState(null);
   const analytics = useAnalyticsContext();
   
+  // ✅ Use AuthContext instead of separate user state
+  const { user, hasLegacyVault, loading: authLoading, refreshProfile } = useAuth();
+  
   // State for all dashboard data
-  const [userData, setUserData] = useState(null);
+  // ✅ Remove userData state - use AuthContext user instead
   const [analyticsData, setAnalyticsData] = useState(null);
   const [recentRecordings, setRecentRecordings] = useState([]);
   const [storageData, setStorageData] = useState([]);
@@ -44,15 +49,17 @@ export default function DashboardHome() {
   }, []);
 
   const fetchDashboardData = async () => {
+    // ✅ Wait for auth to load
+    if (authLoading) return;
+    
     try {
       setLoading(true);
       setError(null);
 
-      // 1. Fetch user profile
-      const profileResponse = await api.getProfile();
-      setUserData(profileResponse.data);
+      // ✅ User data comes from AuthContext - no separate API call needed
+      // user is already available from useAuth()
 
-      // 2. Fetch analytics data
+      // 1. Fetch analytics data
       const statsResponse = await api.getUserDashboardStats();
       const actualStats = statsResponse.data?.stats || {};
 
@@ -61,7 +68,7 @@ export default function DashboardHome() {
       const contactsTotal = parseInt(actualStats.contacts_total) || 0;
       const scheduledTotal = parseInt(actualStats.scheduled_messages_total) || 0;
 
-      // 3. Fetch analytics data for charts only
+      // 2. Fetch analytics data for charts only
       const analyticsResponse = await api.getActivityAnalytics('week');
       setAnalyticsData(analyticsResponse.data);
 
@@ -70,7 +77,7 @@ export default function DashboardHome() {
         setActivityData(analyticsResponse.data.weekly);
       }
 
-      // 4. Fetch recent voice notes
+      // 3. Fetch recent voice notes
       const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
       const notesWithFormattedData = notesResponse.data.notes.map((note) => ({
         id: note.id,
@@ -94,15 +101,13 @@ export default function DashboardHome() {
       const subscriptionResponse = await api.getSubscription();
       setSubscriptionInfo(subscriptionResponse.data);
 
-      
-      
       setQuickStats({
         voiceNotes: {
           value: voiceNotesTotal.toString(),
           change: calculateChange(voiceNotesTotal, 0)
         },
         contacts: {
-          value: `${contactsTotal}/${profileResponse.data.contacts_limit || 0}`,
+          value: `${contactsTotal}/${user?.contacts_limit || 0}`, // ✅ Use user from context
           change: `+${contactsTotal}`
         },
         vaultItems: {
@@ -135,10 +140,8 @@ export default function DashboardHome() {
   // Fallback data loading if analytics fails
   const loadFallbackData = async () => {
     try {
+      // ✅ No need to load profile - user is already in context
       // Just load basic data without analytics
-      const profileResponse = await api.getProfile();
-      setUserData(profileResponse.data);
-      
       const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
       const notesWithFormattedData = notesResponse.data.notes.map((note) => ({
         id: note.id,
@@ -301,7 +304,7 @@ export default function DashboardHome() {
   };
 
   // Loading and error states (same as before)
-  if (loading) {
+  if (loading || authLoading) { // ✅ Check both loadings
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
@@ -409,12 +412,14 @@ export default function DashboardHome() {
     return sum + (parseFloat(value) * multiplier);
   }, 0);
   
-  const storageLimitGB = userData?.storage_limit_gb || 5;
+  const userName = user?.full_name?.split(' ')[0] || 'User';
+  const storageLimitGB = user?.storage_limit_gb || 5;
   const storageLimitBytes = storageLimitGB * 1024 * 1024 * 1024;
   const storageUsedPercentage = totalStorageBytes > 0 ? (totalStorageBytes / storageLimitBytes) * 100 : 0;
   const storageUsedGB = totalStorageBytes / (1024 * 1024 * 1024);
 
-  return (    
+  
+   return (    
     <div>
       {/* Welcome Section */}
       <motion.div
@@ -426,7 +431,7 @@ export default function DashboardHome() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Welcome back, <span className="gradient-text">{userData?.full_name?.split(' ')[0] || 'User'}!</span>
+              Welcome back, <span className="gradient-text">{userName}!</span> {/* ✅ Updated */}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               {analyticsData?.totals?.total_notes_played 
@@ -437,7 +442,7 @@ export default function DashboardHome() {
           </div>
           <div className="flex items-center gap-4">
             <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${
-              subscriptionInfo?.currentTier === 'LEGACY_VAULT_PREMIUM'
+              hasLegacyVault() // ✅ Use helper from context
                 ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
                 : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200'
             }`}>

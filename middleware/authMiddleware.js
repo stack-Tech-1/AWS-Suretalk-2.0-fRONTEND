@@ -1,3 +1,4 @@
+//C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\middleware\authMiddleware.js
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../src/contexts/AuthContext';
