@@ -30,11 +30,14 @@ import { api } from '@/utils/api';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useAuth } from '@/contexts/AuthContext';
+
+// ✅ MODULE-LEVEL FLAG - Persists across component remounts
+let hasInitializedGlobal = false;
 
 export default function LegacyVault() {
   const router = useRouter();
-  const { user, hasLegacyVault, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  const { user, hasLegacyVault, loading: authLoading } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -64,7 +67,7 @@ export default function LegacyVault() {
   // Use refs for abort controllers and flags
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
-  const hasInitializedRef = useRef(false); // ✅ Prevent double initialization
+  const isFirstRenderRef = useRef(true); // ✅ Track first render after mount
 
   const filters = [
     { id: "all", label: "All Items" },
@@ -84,10 +87,15 @@ export default function LegacyVault() {
     };
   }, []);
 
-  // ✅ Main fetch function - no longer checks user tier (AuthContext does that)
+  // ✅ Main fetch function
   const fetchVaultData = async (page = 1, forceRefresh = false) => {
+    console.log('📡 FETCH VAULT DATA - page:', page, 'forceRefresh:', forceRefresh, 'isFetching:', isFetching);
+    
     // Prevent concurrent fetches
-    if (isFetching && !forceRefresh) return;
+    if (isFetching && !forceRefresh) {
+      console.log('📡 FETCH BLOCKED - already fetching');
+      return;
+    }
     
     // Abort previous request if exists
     if (abortControllerRef.current) {
@@ -102,7 +110,6 @@ export default function LegacyVault() {
       setLoading(true);
       setError(null);
 
-      // ✅ No tier check needed - component won't render if no access
       const apiOptions = { signal: abortControllerRef.current.signal };
 
       // Fetch data in parallel
@@ -175,35 +182,86 @@ export default function LegacyVault() {
     }
   };
 
-  // ✅ Initial load - only runs when auth is ready and user has access
-  useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) return;
-    
-    // Prevent double initialization
-    if (hasInitializedRef.current) return;
-    
-    // Only fetch if user has Legacy Vault access
-    if (hasLegacyVault()) {
-      hasInitializedRef.current = true;
-      fetchVaultData(1);
-    } else {
-      // User doesn't have access, stop loading
-      setLoading(false);
-    }
-  }, [authLoading, hasLegacyVault]); // ✅ Depend on auth state
+  // ✅ Reset first render flag on mount
+useEffect(() => {
+  isFirstRenderRef.current = true;
+}, []);
 
-  // Debounced search/filter
-  useEffect(() => {
-    // Don't search if auth is loading or user doesn't have access
-    if (authLoading || !hasLegacyVault()) return;
-    
-    const timeout = setTimeout(() => {
-      fetchVaultData(1, true);
-    }, 400);
+// ✅ Initial load - uses GLOBAL flag to prevent re-initialization
+useEffect(() => {
+  console.log('🔵 INITIAL LOAD EFFECT - authLoading:', authLoading, 'hasInitializedGlobal:', hasInitializedGlobal);
+  
+  // Wait for auth to finish loading
+  if (authLoading) return;
+  
+  // ✅ Check GLOBAL flag
+  if (hasInitializedGlobal) {
+    console.log('🔵 SKIPPED - Already initialized globally');
+    setLoading(false); // ✅ Stop loading if already initialized
+    return;
+  }
+  
+  // Check if user has access
+  const hasAccess = hasLegacyVault();
+  console.log('🔵 Has vault access:', hasAccess);
+  
+  // Only fetch if user has Legacy Vault access
+  if (hasAccess) {
+    console.log('🔵 INITIALIZING - Fetching vault data');
+    hasInitializedGlobal = true; // ✅ Set GLOBAL flag
+    fetchVaultData(1);
+  } else {
+    // User doesn't have access, stop loading
+    setLoading(false);
+    hasInitializedGlobal = true; // ✅ Set GLOBAL flag even without access
+  }
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [authLoading]);
 
-    return () => clearTimeout(timeout);
-  }, [searchQuery, selectedFilter, authLoading, hasLegacyVault]);
+// ✅ Debounced search/filter - ONLY runs when user actually changes search/filter
+useEffect(() => {
+  console.log('🟢 SEARCH EFFECT - isFirstRender:', isFirstRenderRef.current, 'searchQuery:', searchQuery, 'selectedFilter:', selectedFilter);
+  
+  // ✅ Skip on first render after mount
+  if (isFirstRenderRef.current) {
+    console.log('🟢 SEARCH EFFECT - SKIPPED (first render)');
+    isFirstRenderRef.current = false;
+    return;
+  }
+  
+  // Skip if not initialized yet
+  if (!hasInitializedGlobal) {
+    console.log('🟢 SEARCH EFFECT - SKIPPED (not initialized)');
+    return;
+  }
+  
+  // Don't search if auth is loading
+  if (authLoading) {
+    console.log('🟢 SEARCH EFFECT - SKIPPED (auth loading)');
+    return;
+  }
+  
+  // Check if user has access
+  const hasAccess = hasLegacyVault();
+  if (!hasAccess) {
+    console.log('🟢 SEARCH EFFECT - SKIPPED (no access)');
+    return;
+  }
+  
+  console.log('🟢 SEARCH EFFECT - SCHEDULING FETCH');
+  const timeout = setTimeout(() => {
+    console.log('🟢 SEARCH EFFECT - EXECUTING FETCH');
+    fetchVaultData(1, true);
+  }, 400);
+
+  return () => {
+    console.log('🟢 SEARCH EFFECT - CLEANUP');
+    clearTimeout(timeout);
+  };
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [searchQuery, selectedFilter]);
 
   // Format file size
   const formatFileSize = (bytes) => {
