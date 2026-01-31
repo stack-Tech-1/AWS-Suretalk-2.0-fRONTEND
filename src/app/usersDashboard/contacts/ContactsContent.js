@@ -1,3 +1,4 @@
+
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -142,7 +143,7 @@ export default function Contacts() {
           total: paginationData.total || 0,
           totalPages: paginationData.totalPages || 1
         });
-
+        
         // Fetch contact statistics
         fetchContactStats();
 
