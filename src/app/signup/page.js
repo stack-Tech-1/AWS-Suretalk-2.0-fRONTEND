@@ -57,7 +57,7 @@ export default function Signup() {
       highlighted: true,
     },
     {
-      id: "PREMIUM",
+      id: "LEGACY_VAULT_PREMIUM",
       name: "Legacy Vault",
       price: "$9.99",
       period: "per month",

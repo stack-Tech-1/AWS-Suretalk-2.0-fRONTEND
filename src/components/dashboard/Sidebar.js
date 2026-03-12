@@ -197,9 +197,9 @@ export default function Sidebar({
     const renderPremiumBadge = () => {
       if (item.premium && !collapsed) {
         return (
-          <span className="ml-auto px-1.5 py-0.5 text-xs bg-gradient-to-r from-purple-500 to-pink-500 
+          <span className="ml-auto px-1.5 py-0.5 text-xs bg-gradient-to-r from-brand-700 to-accent-600
                          text-white rounded-full">
-            PREMIUM
+            LEGACY VAULT
           </span>
         );
       }
@@ -345,11 +345,11 @@ export default function Sidebar({
         
         {/* ✅ Upgrade Prompt for non-LEGACY_VAULT_PREMIUM users (using helper) */}
         {type !== "admin" && !hasLegacyVault() && !collapsed && (
-          <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 
-                         dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 
-                         dark:border-purple-800">
+          <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-accent-50
+                         dark:from-brand-900/20 dark:to-accent-900/20 border border-brand-200
+                         dark:border-brand-800">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-brand-700 to-accent-600">
                 <Crown className="w-4 h-4 text-white" />
               </div>
               <div>
@@ -357,10 +357,10 @@ export default function Sidebar({
                   Unlock Legacy Vault
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Upgrade to PREMIUM for permanent storage
+                  Upgrade to Legacy Vault for permanent storage
                 </p>
                 <Link href="/usersDashboard/billing" className="mt-2 block">
-                  <button className="w-full mt-2 px-3 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 
+                  <button className="w-full mt-2 px-3 py-1.5 text-xs bg-gradient-to-r from-brand-700 to-accent-600
                                    text-white rounded-lg hover:shadow-sm transition-all">
                     Upgrade Now
                   </button>

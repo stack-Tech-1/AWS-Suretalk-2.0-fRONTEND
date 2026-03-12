@@ -1,15 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Lock, Mail, Smartphone, Eye, EyeOff, AlertCircle, Shield } from "lucide-react";
+import { Lock, Mail, Smartphone, Eye, EyeOff, AlertCircle, Shield, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "../../utils/api";
 import { useAuth } from '../../contexts/AuthContext';
 
-export default function Login() {
+function LoginInner() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activated = searchParams.get('activated');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -123,7 +125,21 @@ export default function Login() {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
             Welcome Back
           </h2>
-          
+
+          {/* Account activated banner */}
+          {activated === 'true' && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-start gap-3"
+            >
+              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-green-700 dark:text-green-400">
+                Account activated! Sign in with your new credentials.
+              </div>
+            </motion.div>
+          )}
+
           {/* Error Message */}
           {error && (
             <motion.div
@@ -297,13 +313,24 @@ export default function Login() {
           {/* Signup Link */}
           <p className="text-center mt-8 text-gray-600 dark:text-gray-400">
             Don't have an account?{" "}
-            <Link 
-              href="/signup" 
+            <Link
+              href="/signup"
               className="font-semibold text-brand-600 hover:text-brand-700 transition-colors"
             >
               Create account
             </Link>
           </p>
+
+          {/* IVR claim link */}
+          <div className="text-center mt-3">
+            <Link
+              href="/claim-account"
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors inline-flex items-center gap-1"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              Registered via phone call? Activate your web account →
+            </Link>
+          </div>
         </div>
 
         {/* Footer */}
@@ -317,5 +344,13 @@ export default function Login() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense>
+      <LoginInner />
+    </Suspense>
   );
 }

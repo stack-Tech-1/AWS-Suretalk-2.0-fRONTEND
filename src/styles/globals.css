@@ -10,14 +10,17 @@
   --background-end-rgb: 241, 245, 249;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.2);
+  --brand-primary: 29, 78, 216;       /* #1D4ED8 brand-700 */
+  --brand-accent: 220, 38, 38;        /* #DC2626 accent-600 */
+  --brand-primary-light: 59, 130, 246; /* #3B82F6 brand-500 */
 }
 
 .dark {
   --foreground-rgb: 226, 232, 240;
   --background-start-rgb: 15, 23, 42;
   --background-end-rgb: 30, 41, 59;
-  --glass-bg: rgba(30, 41, 59, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.75);
+  --glass-border: rgba(59, 130, 246, 0.15);
 }
 
 * {
@@ -78,7 +81,11 @@ body {
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-brand-700 to-accent-600 bg-clip-text text-transparent;
+  }
+
+  .brand-gradient {
+    @apply bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600;
   }
   
   .gradient-bg {
@@ -125,9 +132,9 @@ body {
 /* Add to the bottom of your globals.css file */
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl 
-           bg-gradient-to-r from-brand-600 to-accent-500 text-white 
-           hover:shadow-lg hover:scale-[1.02] transform transition-all duration-300 
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl
+           bg-gradient-to-r from-brand-700 to-accent-600 text-white
+           hover:shadow-lg hover:scale-[1.02] transform transition-all duration-300
            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
   }
   
@@ -140,10 +147,30 @@ body {
   }
   
   .btn-outline {
-    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl 
-           border-2 border-brand-500 text-brand-600 
-           hover:bg-brand-50 hover:border-brand-600 hover:shadow-sm 
-           transform transition-all duration-300 
+    @apply inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl
+           border-2 border-brand-500 text-brand-600
+           hover:bg-brand-50 hover:border-brand-600 hover:shadow-sm
+           transform transition-all duration-300
            focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+
+  .glass-premium {
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(29, 78, 216, 0.12);
+    box-shadow:
+      0 4px 24px rgba(29, 78, 216, 0.07),
+      0 1px 4px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+
+  .dark .glass-premium {
+    background: rgba(29, 78, 216, 0.07);
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 }

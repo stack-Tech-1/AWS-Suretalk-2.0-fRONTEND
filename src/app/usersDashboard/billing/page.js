@@ -29,12 +29,16 @@ import {
   BarChart
 } from "lucide-react";
 import { api } from "@/utils/api";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
+import { Suspense } from "react";
 
-export default function BillingPage() {
+function BillingPageInner() {
   const router = useRouter();
   const analytics = useAnalyticsContext();
+  const searchParams = useSearchParams();
+  const checkoutSuccess = searchParams.get('success') === 'true';
+  const checkoutCancelled = searchParams.get('cancelled') === 'true';
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -143,31 +147,33 @@ export default function BillingPage() {
     try {
       setProcessing(true);
       setSelectedPlan(plan);
-  
-      console.log('🔼 Attempting to upgrade to plan:', plan.name);
-      
-      // If it's the free plan
+
+      // If it's the free plan, just change tier directly
       if (plan.price === "$0") {
         await handlePlanChange(plan.id);
         return;
       }
-  
-      // For paid plans
-      const successUrl = `${window.location.origin}/usersDashboard/billing/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${window.location.origin}/usersDashboard/billing`;
-  
-      console.log('🌐 URLs:', { successUrl, cancelUrl });
-  
+
+      // Ensure a Stripe customer exists before creating a checkout session
+      if (!subscription?.stripeCustomerId) {
+        const customerRes = await api.request('/billing/create-customer', {
+          method: 'POST',
+        });
+        if (!customerRes.success) {
+          throw new Error(customerRes.error || 'Failed to create billing customer');
+        }
+      }
+
+      const successUrl = `${window.location.origin}/usersDashboard/billing?success=true`;
+      const cancelUrl  = `${window.location.origin}/usersDashboard/billing?cancelled=true`;
+
       const checkoutResponse = await api.createCheckoutSession(
         plan.stripePriceId,
         successUrl,
         cancelUrl
       );
-  
-      console.log('✅ Checkout response:', checkoutResponse);
-  
+
       if (checkoutResponse.success) {
-        console.log('🔗 Redirecting to Stripe checkout...');
         window.location.href = checkoutResponse.data.url;
       } else {
         throw new Error(checkoutResponse.error || 'Failed to create checkout session');
@@ -309,6 +315,32 @@ export default function BillingPage() {
           )}
         </div>
       </motion.div>
+
+      {/* Checkout success/cancel banners */}
+      {checkoutSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-start gap-3"
+        >
+          <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-green-700 dark:text-green-400 font-medium">
+            Payment successful! Your plan has been activated.
+          </div>
+        </motion.div>
+      )}
+      {checkoutCancelled && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl flex items-start gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+            Checkout cancelled. Your plan was not changed.
+          </div>
+        </motion.div>
+      )}
 
       {/* Current Plan Details */}
       {currentPlan && subscription && (
@@ -548,5 +580,13 @@ export default function BillingPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense>
+      <BillingPageInner />
+    </Suspense>
   );
 }
