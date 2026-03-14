@@ -4,6 +4,46 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 class ApiClient {
   constructor() {
     this.token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    this._cache = new Map();
+    this._ttl = {
+      default: 30 * 1000,
+      profile: 60 * 1000,
+      stats: 45 * 1000,
+      notifications: 20 * 1000,
+      billing: 120 * 1000,
+      plans: 10 * 60 * 1000,
+    };
+  }
+
+  _getTtl(endpoint) {
+    if (endpoint.includes('/auth/profile')) return this._ttl.profile;
+    if (endpoint.includes('/stats') || endpoint.includes('/overview')) return this._ttl.stats;
+    if (endpoint.includes('/notifications')) return this._ttl.notifications;
+    if (endpoint.includes('/billing/subscription')) return this._ttl.billing;
+    if (endpoint.includes('/billing/plans')) return this._ttl.plans;
+    return this._ttl.default;
+  }
+
+  _invalidateCache(endpoint) {
+    const patterns = [];
+    if (endpoint.includes('/voice-notes')) patterns.push('/voice-notes', '/stats', '/storage');
+    if (endpoint.includes('/contacts')) patterns.push('/contacts', '/stats');
+    if (endpoint.includes('/scheduled')) patterns.push('/scheduled', '/stats');
+    if (endpoint.includes('/vault')) patterns.push('/vault', '/stats');
+    if (endpoint.includes('/notifications')) patterns.push('/notifications');
+    if (endpoint.includes('/auth/profile') || endpoint.includes('/users/settings')) patterns.push('/auth/profile', '/users/stats');
+
+    if (patterns.length > 0) {
+      for (const [key] of this._cache) {
+        if (patterns.some(p => key.includes(p))) {
+          this._cache.delete(key);
+        }
+      }
+    }
+  }
+
+  clearCache() {
+    this._cache.clear();
   }
 
   setToken(token) {
@@ -20,48 +60,58 @@ class ApiClient {
     }
   }
 
-  // In utils/api.js, update the request function to log responses:
-async request(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const method = (options.method || 'GET').toUpperCase();
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
 
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('token')
-      : null;
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const config = {
-    ...options,
-    headers,
-  };
-
-  try {
-    console.log('API Request:', url);
-    console.log('Using token:', token ? 'YES' : 'NO');
-
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    console.log('API Response:', data);
-
-    if (!response.ok) {
-      throw new Error(data.error || data.message || 'Request failed');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
     }
 
-    return data;
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
+    // Only cache GET requests
+    if (method === 'GET') {
+      const cacheKey = `${token ? 'auth' : 'anon'}:${endpoint}`;
+      const cached = this._cache.get(cacheKey);
+      if (cached && Date.now() < cached.expiresAt) {
+        return cached.data;
+      }
+    }
+
+    const config = { ...options, headers };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Request failed');
+      }
+
+      // Store successful GET responses in cache
+      if (method === 'GET') {
+        const cacheKey = `${token ? 'auth' : 'anon'}:${endpoint}`;
+        this._cache.set(cacheKey, {
+          data,
+          expiresAt: Date.now() + this._getTtl(endpoint),
+        });
+      }
+
+      // Invalidate related cache entries on mutations
+      if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        this._invalidateCache(endpoint);
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
   }
-}
 
 
   // Auth endpoints
@@ -80,13 +130,15 @@ async request(endpoint, options = {}) {
     
     if (response.data.token) {
       this.setToken(response.data.token);
+      this.clearCache();
     }
-    
+
     return response;
   }
 
   async logout() {
     await this.request('/auth/logout', { method: 'POST' });
+    this.clearCache();
     this.removeToken();
   }
 
@@ -508,11 +560,6 @@ async runLogAnalysis() {
   });
 }
 
-// Settings methods
-async getSettings() {
-  return this.request('/admin/settings');
-}
-
 async updateSetting(category, key, value) {
   return this.request('/admin/settings', {
     method: 'PUT',
@@ -777,11 +824,11 @@ async updateAllSettings(settings) {
 
 // Devices endpoints
 async getConnectedDevices() {
-  return this.request('/users/devices');
+  return this.request('/devices');
 }
 
 async revokeDevice(deviceId) {
-  return this.request(`/users/devices/${deviceId}`, {
+  return this.request(`/devices/${deviceId}`, {
     method: 'DELETE',
   });
 }
@@ -848,6 +895,20 @@ async changePassword(currentPassword, newPassword) {
   return this.request('/auth/change-password', {
     method: 'POST',
     body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+async forgotPassword(email) {
+  return this.request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+async resetPassword(token, newPassword) {
+  return this.request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
   });
 }
 

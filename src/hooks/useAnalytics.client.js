@@ -12,6 +12,7 @@ export const useAnalytics = () => {
 
   // Record page view
   const recordPageView = useCallback(async () => {
+    if (!localStorage.getItem('token')) return;
     try {
       await api.recordAnalyticsEvent({
         eventType: 'page_view',

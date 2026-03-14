@@ -62,33 +62,20 @@ export default function AdminRequests() {
               api.getPendingRequests(),
               api.getAdminRequestStats()
             ]);
-        
-            const response = await api.getPendingRequests();
 
-            // 🔍 DEBUG: Look at the first item of the raw response here
-            console.log('RAW DATA FROM API:', response.data?.requests?.[0]);
-            const rawRequests = response.data?.requests || [];
-        
-            const normalizedRequests = rawRequests.map(r => ({
-              ...r,
-              status: r.admin_status,      // 🔑 map backend → frontend
-              reason: r.admin_reason,       // 🔑 fix another mismatch
-            }));
-        
-            setRequests(normalizedRequests);
-        
-            
-            const pending = normalizedRequests.filter(r => r.status === 'pending').length;
-            const approved = normalizedRequests.filter(r => r.status === 'approved').length;
-            const rejected = normalizedRequests.filter(r => r.status === 'rejected').length;
-        
+            const rawRequests = requestsResponse.data?.requests || [];
+            setRequests(rawRequests);
+
+            const pending = rawRequests.filter(r => r.status === 'pending').length;
+            const approved = rawRequests.filter(r => r.status === 'approved').length;
+            const rejected = rawRequests.filter(r => r.status === 'rejected').length;
+
             setStats({
               pending,
               approved,
               rejected,
-              total: normalizedRequests.length
+              total: rawRequests.length
             });
-            console.log('ADMIN REQUESTS:', normalizedRequests);
 
             if (statsResponse.success) {
               setStats({

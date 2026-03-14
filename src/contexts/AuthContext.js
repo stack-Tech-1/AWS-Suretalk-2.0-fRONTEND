@@ -39,8 +39,14 @@ export const AuthProvider = ({ children }) => {
       const isAdmin = !!userData.is_admin;
       localStorage.setItem('isAdmin', String(isAdmin));
     } catch (err) {
-      console.warn('Auth check failed, clearing session');
-      localStorage.clear();
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        // Network error — server unreachable, keep token so session survives reconnect
+        console.warn('Auth check failed: network error, keeping session');
+        return; // finally still runs setLoading(false)
+      }
+      // Actual auth failure (401 etc) — remove token only, not all of localStorage
+      console.warn('Auth check failed, removing token');
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -79,6 +85,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     localStorage.setItem('isAdmin', String(isAdmin));
 
+    await new Promise(resolve => setTimeout(resolve, 100));
     router.replace(isAdmin ? '/adminDashboard' : '/usersDashboard');
   };
 

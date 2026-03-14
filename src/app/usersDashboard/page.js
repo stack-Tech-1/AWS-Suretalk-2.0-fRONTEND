@@ -79,7 +79,7 @@ export default function DashboardHome() {
 
       // 3. Fetch recent voice notes
       const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
-      const notesWithFormattedData = notesResponse.data.notes.map((note) => ({
+      const notesWithFormattedData = (notesResponse.data.voiceNotes || notesResponse.data.notes || []).map((note) => ({
         id: note.id,
         title: note.title || 'Untitled Recording',
         duration: formatDuration(note.duration_seconds || 0),
@@ -94,7 +94,7 @@ export default function DashboardHome() {
       setRecentRecordings(notesWithFormattedData);
 
       // 4. Calculate storage usage
-      const storageDistribution = calculateStorageDistribution(notesResponse.data.notes);
+      const storageDistribution = calculateStorageDistribution(notesResponse.data.voiceNotes || notesResponse.data.notes || []);
       setStorageData(storageDistribution);
 
       // 5. Fetch subscription info
@@ -111,7 +111,7 @@ export default function DashboardHome() {
           change: `+${contactsTotal}`
         },
         vaultItems: {
-          value: notesResponse.data.notes.filter(n => n.is_permanent).length.toString(),
+          value: (notesResponse.data.voiceNotes || notesResponse.data.notes || []).filter(n => n.is_permanent).length.toString(),
           change: "Protected"
         },
         scheduled: {
@@ -143,7 +143,7 @@ export default function DashboardHome() {
       // ✅ No need to load profile - user is already in context
       // Just load basic data without analytics
       const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
-      const notesWithFormattedData = notesResponse.data.notes.map((note) => ({
+      const notesWithFormattedData = (notesResponse.data.voiceNotes || notesResponse.data.notes || []).map((note) => ({
         id: note.id,
         title: note.title || 'Untitled Recording',
         duration: formatDuration(note.duration_seconds || 0),

@@ -114,8 +114,9 @@ export default function Sidebar({
     const isActive = router.pathname === item.href;
     
     // Check if item should be available for current user tier
-    const isAvailable = !item.availableFor || 
-                       item.availableFor.includes(userTier || 'ESSENTIAL');
+    const isAvailable = !item.availableFor ||
+                       !userTier ||
+                       item.availableFor.includes(userTier);
     
     // If loading tier, show skeleton
     if (loadingTier && type !== 'admin' && item.availableFor) {
@@ -344,7 +345,7 @@ export default function Sidebar({
         ))}
         
         {/* ✅ Upgrade Prompt for non-LEGACY_VAULT_PREMIUM users (using helper) */}
-        {type !== "admin" && !hasLegacyVault() && !collapsed && (
+        {type !== "admin" && !(hasLegacyVault?.()) && !collapsed && (
           <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-accent-50
                          dark:from-brand-900/20 dark:to-accent-900/20 border border-brand-200
                          dark:border-brand-800">

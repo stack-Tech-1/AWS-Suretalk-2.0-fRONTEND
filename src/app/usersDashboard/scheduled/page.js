@@ -325,22 +325,23 @@ export default function ScheduledMessages() {
   const getDeliveryMethodInfo = (method) => {
     switch (method) {
       case 'phone':
+      case 'sms':
         return {
           icon: Phone,
           color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-500',
-          label: 'Phone'
+          label: '📞 Call + SMS'
         };
       case 'email':
         return {
           icon: Mail,
           color: 'bg-green-100 dark:bg-green-900/30 text-green-500',
-          label: 'Email'
+          label: '📧 Email'
         };
       case 'both':
         return {
           icon: Users,
           color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500',
-          label: 'Both'
+          label: '📧📞 Email + Call'
         };
       default:
         return {
@@ -762,7 +763,11 @@ Status: ${message.delivery_status}`;
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3 mt-1">
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium ${deliveryMethodInfo.color}`}>
+                                  {deliveryMethodInfo.label}
+                                </span>
+                                <span className="text-xs text-gray-400">·</span>
                                 <span className="text-xs text-gray-500">
                                   {formatRelativeTime(message.created_at)}
                                 </span>
@@ -831,6 +836,13 @@ Status: ${message.delivery_status}`;
                             <statusInfo.icon className="w-4 h-4" />
                             {statusInfo.label}
                           </div>
+                          {message.delivery_status === 'delivered' && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {message.twilio_call_sid
+                                ? 'Call delivered · SMS sent'
+                                : 'Email sent'}
+                            </p>
+                          )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2" ref={dropdownRef}>

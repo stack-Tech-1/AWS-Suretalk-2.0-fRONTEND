@@ -689,23 +689,62 @@ export default function CreateScheduledMessage() {
                   Delivery Method
                 </label>
                 <div className="flex gap-2">
-                  {["email", "phone", "both"].map((method) => (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, deliveryMethod: method }))}
-                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        formData.deliveryMethod === method
-                          ? method === 'email' ? 'bg-green-500 text-white' :
-                            method === 'phone' ? 'bg-blue-500 text-white' :
-                            'bg-purple-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {method === 'email' ? 'Email' : method === 'phone' ? 'Phone' : 'Both'}
-                    </button>
-                  ))}
+                  {/* Email only — always available */}
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, deliveryMethod: 'email' }))}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.deliveryMethod === 'email'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    📧 Email only
+                  </button>
+
+                  {/* Call + SMS — premium only */}
+                  <button
+                    type="button"
+                    onClick={() => isLegacyVault && setFormData(prev => ({ ...prev, deliveryMethod: 'phone' }))}
+                    title={!isLegacyVault ? 'Upgrade to Legacy Vault to enable call delivery' : undefined}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.deliveryMethod === 'phone'
+                        ? 'bg-blue-500 text-white'
+                        : isLegacyVault
+                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    📞 Call + SMS via Twilio
+                  </button>
+
+                  {/* Email + Call + SMS — premium only */}
+                  <button
+                    type="button"
+                    onClick={() => isLegacyVault && setFormData(prev => ({ ...prev, deliveryMethod: 'both' }))}
+                    title={!isLegacyVault ? 'Upgrade to Legacy Vault to enable call delivery' : undefined}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.deliveryMethod === 'both'
+                        ? 'bg-purple-500 text-white'
+                        : isLegacyVault
+                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    📧📞 Email + Call + SMS
+                  </button>
                 </div>
+
+                {/* Upgrade prompt for non-premium users */}
+                {!isLegacyVault && (
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <span>⚡</span>
+                    <Link href="/usersDashboard/billing" className="underline hover:no-underline">
+                      Upgrade to Legacy Vault
+                    </Link>
+                    {" "}to enable Twilio call &amp; SMS delivery.
+                  </p>
+                )}
               </div>
 
               {formData.deliveryMethod.includes("email") && (
