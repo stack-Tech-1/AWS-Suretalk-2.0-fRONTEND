@@ -265,7 +265,7 @@ useEffect(() => {
 
   // Format file size
   const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 Bytes';
+    if (bytes === null || bytes === undefined || isNaN(bytes) || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -340,6 +340,7 @@ useEffect(() => {
   const handleDelete = async (itemId, isWill = false) => {
     try {
       if (isWill) {
+        await api.deleteVoiceWill(itemId);
         setVoiceWills(prev => prev.filter(will => will.id !== itemId));
       } else {
         await api.deleteVoiceNote(itemId);
@@ -539,7 +540,7 @@ useEffect(() => {
                   Legacy Vault
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {stats.totalItems} items • {formatFileSize(stats.total_storage_bytes || 0)} protected
+                  {stats?.totalItems || 0} items • {formatFileSize(stats?.totalStorageBytes || stats?.total_storage_bytes || 0)} protected
                 </p>
               </div>
             </div>

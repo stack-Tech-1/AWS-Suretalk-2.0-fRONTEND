@@ -251,7 +251,17 @@ export default function RecordVoiceNote() {
 
       let resolvedContactId = formData.contactId;
       if (formData.newContact && !formData.contactPending) {
-        const contactResp = await api.createContact(formData.newContact);
+        const contactPayload = {
+          name: formData.newContact.name,
+          phone: formData.newContact.phone,
+        };
+        if (formData.newContact.email && formData.newContact.email.trim()) {
+          contactPayload.email = formData.newContact.email.trim();
+        }
+        if (formData.newContact.relationship && formData.newContact.relationship.trim()) {
+          contactPayload.relationship = formData.newContact.relationship.trim();
+        }
+        const contactResp = await api.createContact(contactPayload);
         if (contactResp.success) {
           resolvedContactId = contactResp.data.id;
           setContacts(prev => [contactResp.data, ...prev]);
