@@ -78,8 +78,12 @@ export default function Topbar({
   };
 
   const setupWebSocket = () => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.hostname}:5000`;
+    const WS_URL = process.env.NEXT_PUBLIC_WS_URL ||
+      (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
+        .replace('https://', 'wss://')
+        .replace('http://', 'ws://')
+        .replace('/api', '');
+    const wsUrl = WS_URL;
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
