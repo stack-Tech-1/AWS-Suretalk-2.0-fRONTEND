@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { api } from '@/utils/api';
 import { format, formatDistanceToNow } from 'date-fns';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
 function formatFileSize(bytes) {
   if (!bytes || bytes === 0) return '0 Bytes';
@@ -72,9 +72,14 @@ export default function VoiceWillDetail() {
     </div>
   );
 
-  const audioSrc = will.downloadUrl?.startsWith('/audio/')
-    ? `${API_BASE}${will.downloadUrl}`
-    : will.downloadUrl;
+  const getAudioSrc = (will) => {
+    if (!will?.downloadUrl) return null;
+    if (will.downloadUrl.startsWith('/audio/')) {
+      return `${API_BASE}/api${will.downloadUrl}`;
+    }
+    return will.downloadUrl;
+  };
+  const audioSrc = getAudioSrc(will);
 
   return (
     <div>
@@ -128,14 +133,8 @@ export default function VoiceWillDetail() {
             <Play className="w-5 h-5 text-purple-500" />
             Play Recording
           </h2>
-          {will.has_audio && will.downloadUrl ? (
+          {audioSrc ? (
             <audio controls src={audioSrc} className="w-full" />
-          ) : will.source === 'ivr' && !will.downloadUrl ? (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
-              <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-                This recording is stored in Twilio. If playback fails, the recording may have expired.
-              </p>
-            </div>
           ) : (
             <p className="text-gray-500 dark:text-gray-400">No audio available for this will</p>
           )}
