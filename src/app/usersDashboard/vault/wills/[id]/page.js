@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { api } from '@/utils/api';
 import { format, formatDistanceToNow } from 'date-fns';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 function formatFileSize(bytes) {
   if (!bytes || bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -70,6 +72,10 @@ export default function VoiceWillDetail() {
     </div>
   );
 
+  const audioSrc = will.downloadUrl?.startsWith('/audio/')
+    ? `${API_BASE}${will.downloadUrl}`
+    : will.downloadUrl;
+
   return (
     <div>
       {/* Header */}
@@ -123,7 +129,7 @@ export default function VoiceWillDetail() {
             Play Recording
           </h2>
           {will.has_audio && will.downloadUrl ? (
-            <audio controls src={will.downloadUrl} className="w-full" />
+            <audio controls src={audioSrc} className="w-full" />
           ) : will.source === 'ivr' && !will.downloadUrl ? (
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
               <p className="text-yellow-700 dark:text-yellow-300 text-sm">
