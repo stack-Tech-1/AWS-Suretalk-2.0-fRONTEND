@@ -407,6 +407,24 @@ useEffect(() => {
       }));
     }
 
+    if (selectedFilter === 'all') {
+      const willsMapped = voiceWills.map(will => ({
+        ...will,
+        type: 'will',
+        title: will.title || 'Voice Will',
+        description: will.description || 'Legacy voice will',
+        size: formatFileSize(will.file_size_bytes || 0),
+        createdAt: formatDate(will.created_at),
+        expires: will.release_condition === 'date' && will.release_date
+          ? format(new Date(will.release_date), 'PPpp')
+          : 'Conditional',
+        encrypted: true,
+        status: will.is_released ? 'released' : 'active',
+        tags: ['will', 'legacy', 'protected']
+      }));
+      return [...vaultItems.map(item => ({ ...item, type: item.is_permanent ? 'permanent' : 'voice_note' })), ...willsMapped];
+    }
+
     return vaultItems.map(item => ({
       ...item,
       type: item.is_permanent ? 'permanent' : 'voice_note',
@@ -734,7 +752,7 @@ useEffect(() => {
                               Download
                             </button>
                             <Link
-                              href={`/usersDashboard/voice-notes/${item.id}`}
+                              href={`/usersDashboard/${item.type === 'will' ? 'vault/wills' : 'voice-notes'}/${item.id}`}
                               className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                             >
                               <Eye className="w-4 h-4" />

@@ -254,6 +254,14 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request('/vault/wills');
   }
 
+  async getVoiceWill(id) {
+    return this.request(`/vault/wills/${id}`);
+  }
+
+  async deleteVoiceWill(id) {
+    return this.request(`/vault/wills/${id}`, { method: 'DELETE' });
+  }
+
   // Scheduled messages endpoints
   async getScheduledMessages(params = {}) {
     // Filter out undefined and 'undefined' string values
