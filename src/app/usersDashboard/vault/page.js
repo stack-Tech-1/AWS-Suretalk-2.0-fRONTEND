@@ -32,9 +32,6 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-const resolveUrl = (url) => url?.startsWith('/') ? `${API_BASE}${url}` : url;
-
 // ✅ MODULE-LEVEL FLAG - Persists across component remounts
 let hasInitializedGlobal = false;
 
@@ -326,11 +323,11 @@ useEffect(() => {
   const handleDownload = async (item) => {
     try {
       if (item.downloadUrl) {
-        window.open(resolveUrl(item.downloadUrl), '_blank');
+        window.open(item.downloadUrl, '_blank');
       } else if (item.s3_key && item.s3_bucket) {
         const response = await api.getDownloadUrl(item.s3_key, item.s3_bucket, 3600);
         if (response.success && response.data.downloadUrl) {
-          window.open(resolveUrl(response.data.downloadUrl), '_blank');
+          window.open(response.data.downloadUrl, '_blank');
         }
       }
     } catch (error) {
