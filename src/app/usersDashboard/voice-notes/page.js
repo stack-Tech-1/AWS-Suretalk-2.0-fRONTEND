@@ -103,20 +103,28 @@ export default function VoiceNotes() {
       const response = await api.getVoiceNotes(params);
       
       if (response.success) {
-        const notes = response.data.notes || [];
+        const notes = response.data.voiceNotes || response.data.notes || [];
         const paginationData = response.data.pagination || {};
         
         // Format notes for display
         const formattedNotes = await Promise.all(
           notes.map(async (note) => {
             try {
-              // Get download URL
+              // Get download URL — skip API call for IVR notes (Twilio SID or direct HTTP)
               let downloadUrl = null;
-              try {
-                const downloadResponse = await api.getVoiceNoteDownloadUrl(note.id);
-                downloadUrl = downloadResponse.data.downloadUrl;
-              } catch (downloadError) {
-                console.warn(`Could not get download URL for note ${note.id}:`, downloadError);
+              if (note.s3_key && note.s3_bucket &&
+                  !note.s3_key.startsWith('http') &&
+                  !note.s3_key.startsWith('RE') &&
+                  note.s3_bucket !== 'suretalk-voicenotes-prod') {
+                try {
+                  const downloadResponse = await api.getVoiceNoteDownloadUrl(note.id);
+                  downloadUrl = downloadResponse?.data?.downloadUrl || null;
+                } catch (urlError) {
+                  console.warn('Could not get download URL for note', note.id, urlError.message);
+                }
+              } else if (note.recording_url && note.recording_url.startsWith('http')) {
+                // IVR note with a direct recording URL
+                downloadUrl = note.recording_url;
               }
 
               // Determine type based on tags and permanent status
