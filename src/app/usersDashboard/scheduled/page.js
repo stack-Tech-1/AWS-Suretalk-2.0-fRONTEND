@@ -185,30 +185,31 @@ export default function ScheduledMessages() {
     }
   }, [selectedFilter, searchQuery, pagination.limit]);
 
-  // Fetch statistics
-  const fetchStats = useCallback(async () => {
-    try {
-      setLoadingStats(true);
-      
-      const statsResponse = await api.getScheduledMessagesCount();
-      if (statsResponse.success) {
-        const upcomingCount = messages.filter(msg => 
-          msg.delivery_status === 'scheduled' && 
-          msg.scheduled_for && 
-          isAfter(parseISO(msg.scheduled_for), new Date())
-        ).length;
-        
-        setStats({
-          ...statsResponse.data,
-          upcoming: upcomingCount
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setLoadingStats(false);
-    }
+  // Derive statistics directly from the loaded messages
+  const fetchStats = useCallback(() => {
+    const now = new Date();
+    const total = messages.length;
+    const upcoming = messages.filter(msg =>
+      msg.delivery_status === 'scheduled' &&
+      msg.scheduled_for &&
+      isAfter(parseISO(msg.scheduled_for), now)
+    ).length;
+    const sent     = messages.filter(msg => msg.delivery_status === 'delivered').length;
+    const failed   = messages.filter(msg => msg.delivery_status === 'failed').length;
+    const scheduled = messages.filter(msg => msg.delivery_status === 'scheduled').length;
+
+    setStats({
+      total_messages: total,
+      scheduled,
+      delivered: sent,
+      failed,
+      upcoming,
+    });
   }, [messages]);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   // Initial load - wait for auth to load first
   useEffect(() => {
@@ -764,7 +765,7 @@ Status: ${message.delivery_status}`;
                                 )}
                               </div>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium ${deliveryMethodInfo.color}`}>
+                                <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${deliveryMethodInfo.color}`}>
                                   {deliveryMethodInfo.label}
                                 </span>
                                 <span className="text-xs text-gray-400">·</span>
