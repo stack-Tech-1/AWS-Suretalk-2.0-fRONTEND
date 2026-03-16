@@ -419,8 +419,8 @@ export default function DashboardHome() {
   const storageUsedGB = totalStorageBytes / (1024 * 1024 * 1024);
 
   
-   return (    
-    <div>
+   return (
+    <div className="page-enter">
       {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -468,12 +468,12 @@ export default function DashboardHome() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stagger-children"
       >
         {stats.map((stat, index) => (
           <div 
             key={index}
-            className="glass rounded-2xl p-6 card-hover"
+            className="card card-hover p-6"
           >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} bg-opacity-10`}>
@@ -489,7 +489,7 @@ export default function DashboardHome() {
                 {stat.change}
               </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">{stat.value}</h3>
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-1 stat-number">{stat.value}</h3>
             <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
           </div>
         ))}
@@ -613,7 +613,7 @@ export default function DashboardHome() {
 
             {recentRecordings.length > 0 ? (
               <>
-                <div className="space-y-4">
+                <div className="space-y-4 stagger-children">
                   {recentRecordings.map((recording) => (
                     <div 
                       key={recording.id}

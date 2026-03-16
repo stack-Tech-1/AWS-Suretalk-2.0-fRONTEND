@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
+import BottomNav from '@/components/mobile/BottomNav';
 import MobileMenuButton from '@/components/dashboard/MobileMenuButton';
 import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
@@ -132,6 +133,7 @@ export default function UsersDashboardLayout({ children }) {
           width: { duration: 0.3 }
         }}
         className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-900 shadow-2xl
+          hidden md:block
           ${isMobile ? 'w-64 top-16 bottom-0' : ''}`}
       >
         <Sidebar 
@@ -157,7 +159,7 @@ export default function UsersDashboardLayout({ children }) {
         />
         
         <main className="pt-16">
-          <div className="p-4 md:p-6 lg:p-8">
+          <div className="p-4 md:p-6 lg:p-8 mobile-content-pad">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -172,11 +174,13 @@ export default function UsersDashboardLayout({ children }) {
 
       {/* Floating Mobile Menu Button */}
       {isMobile && (
-        <MobileMenuButton 
+        <MobileMenuButton
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
       )}
+
+      <BottomNav />
     </div>
   );
 }

@@ -626,7 +626,7 @@ const selectAllNotes = () => {
   }
 
   return (
-    <div>
+    <div className="page-enter">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -648,8 +648,7 @@ const selectAllNotes = () => {
           </div>
           <Link
             href="/usersDashboard/voice-notes/record"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
-                     text-white rounded-xl hover:shadow-lg transition-all"
+            className="btn-primary brand-glow-hover flex items-center gap-2"
             onClick={() => analytics.recordEvent('cta_click', { cta: 'new_recording_voice_notes' })}
           >
             <Plus className="w-4 h-4" />
@@ -747,13 +746,13 @@ const selectAllNotes = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger-children"
       >
-        <div className="glass rounded-xl p-4">
+        <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Notes</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">
+              <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.totalNotes}
               </p>
             </div>
@@ -761,11 +760,11 @@ const selectAllNotes = () => {
           </div>
         </div>
         
-        <div className="glass rounded-xl p-4">
+        <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Duration</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">
+              <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : formatTotalDuration(stats.totalDuration)}
               </p>
             </div>
@@ -773,11 +772,11 @@ const selectAllNotes = () => {
           </div>
         </div>
         
-        <div className="glass rounded-xl p-4">
+        <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Favorites</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">
+              <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.favoriteNotes}
               </p>
             </div>
@@ -785,11 +784,11 @@ const selectAllNotes = () => {
           </div>
         </div>
         
-        <div className="glass rounded-xl p-4">
+        <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Legacy</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-white">
+              <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.permanentNotes}
               </p>
             </div>
@@ -882,7 +881,7 @@ const selectAllNotes = () => {
         {voiceNotes.map((note) => (
           <div
           key={note.id}
-          className={`glass rounded-2xl p-6 card-hover relative ${
+          className={`card card-hover press-effect relative p-6 ${
             selectedNotes.includes(note.id) ? 'ring-2 ring-brand-500 ring-offset-2' : ''
           }`}
           onClick={(e) => {
@@ -975,7 +974,7 @@ const selectAllNotes = () => {
               <button
                 onClick={() => handlePlayAudio(note)}
                 disabled={loading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex items-center gap-2 md:px-4 md:py-2 px-5 py-3 rounded-xl transition-all press-effect disabled:opacity-50 disabled:cursor-not-allowed ${
                   playingAudio === note.id
                     ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -997,7 +996,7 @@ const selectAllNotes = () => {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => handleDownload(note)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   title="Download"
                   disabled={loading || !note.downloadUrl}
                 >
@@ -1008,7 +1007,7 @@ const selectAllNotes = () => {
                     analytics.recordEvent('voice_note_share_click', { noteId: note.id });
                     alert('Share functionality coming soon!');
                   }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   title="Share"
                   disabled={loading}
                 >
@@ -1016,7 +1015,7 @@ const selectAllNotes = () => {
                 </button>
                 <button 
                   onClick={() => handleDeleteNote(note)}
-                  className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
+                  className="p-3 md:p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
                   title="Delete"
                   disabled={loading}
                 >
@@ -1024,7 +1023,7 @@ const selectAllNotes = () => {
                 </button>
                 <Link 
                   href={`/usersDashboard/voice-notes/${note.id}`}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Link>

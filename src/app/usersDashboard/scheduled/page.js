@@ -480,7 +480,7 @@ Status: ${message.delivery_status}`;
 
 
   return (
-    <div>
+    <div className="page-enter">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -516,8 +516,7 @@ Status: ${message.delivery_status}`;
             </button>
             <Link
               href="/usersDashboard/scheduled/create"
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 
-                       text-white rounded-xl hover:shadow-lg transition-all"
+              className="btn-primary brand-glow-hover flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Schedule Message
@@ -553,7 +552,7 @@ Status: ${message.delivery_status}`;
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children"
       >
         {[
           { 
@@ -583,12 +582,12 @@ Status: ${message.delivery_status}`;
         ].map((stat, index) => (
           <div 
             key={index}
-            className="glass rounded-xl p-4"
+            className="card p-4"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-white">{stat.value}</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">{stat.value}</p>
               </div>
               <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color} bg-opacity-10`}>
                 <div className={`bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}>
@@ -716,7 +715,77 @@ Status: ${message.delivery_status}`;
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="md:hidden p-4 space-y-3">
+              {messages.map((message) => {
+                const statusInfo = getStatusInfo(message);
+                const canCancel = message.delivery_status === 'scheduled' && message.isUpcoming;
+                const canEdit = message.delivery_status === 'scheduled';
+                const canTest = message.delivery_status === 'scheduled';
+                return (
+                  <div key={message.id} className="card p-4 press-effect">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                          {message.voice_note_title || 'Untitled Message'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {message.recipient_name || message.recipient_phone || message.recipient_email || 'No recipient'}
+                        </p>
+                      </div>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${statusInfo.color}`}>
+                        <statusInfo.icon className="w-3 h-3" />
+                        {statusInfo.label}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {message.formattedDate}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleViewDetails(message.id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleEditMessage(message.id)}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canTest && (
+                          <button
+                            onClick={() => { setSelectedMessage(message); setShowTestModal(true); }}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            title="Send Test"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canCancel && (
+                          <button
+                            onClick={() => setShowDeleteConfirm(message.id)}
+                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>

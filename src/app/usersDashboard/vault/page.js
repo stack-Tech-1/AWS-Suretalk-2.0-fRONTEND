@@ -521,7 +521,7 @@ useEffect(() => {
   }
 
   return (
-    <div>
+    <div className="page-enter">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -556,8 +556,7 @@ useEffect(() => {
             <button
               onClick={handleUploadToVault}
               disabled={uploading}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 
-                       text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+              className="btn-primary brand-glow-hover flex items-center gap-2 disabled:opacity-50"
             >
               {uploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -575,7 +574,7 @@ useEffect(() => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children"
       >
         {[
           { label: "Total Items", value: stats.totalItems || 0, icon: Archive, color: "from-blue-500 to-cyan-500" },
@@ -585,12 +584,12 @@ useEffect(() => {
         ].map((stat, index) => (
           <div 
             key={index}
-            className="glass rounded-xl p-4"
+            className="card p-4"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-white">{stat.value}</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">{stat.value}</p>
               </div>
               <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color} bg-opacity-10`}>
                 <div className={`bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}>
@@ -630,7 +629,7 @@ useEffect(() => {
               )}
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {filters.map((filter) => (
               <button
                 key={filter.id}
@@ -702,7 +701,7 @@ useEffect(() => {
                 return (
                   <div
                     key={item.id}
-                    className="glass rounded-2xl p-6 card-hover group"
+                    className="card card-hover press-effect group p-6"
                   >
                     {/* Item Header */}
                     <div className="flex items-start justify-between mb-4">
