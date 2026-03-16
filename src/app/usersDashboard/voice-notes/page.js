@@ -1,6 +1,6 @@
 //C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\voice-notes\page.js
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Mic, 
@@ -33,6 +33,7 @@ import Link from 'next/link';
 
 export default function VoiceNotes() {
   const [playingAudio, setPlayingAudio] = useState(null);
+  const audioRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -444,33 +445,66 @@ const selectAllNotes = () => {
 
   // Handle audio playback
   const handlePlayAudio = async (note) => {
+    // Clicking the same note again — pause it
     if (playingAudio === note.id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       setPlayingAudio(null);
       return;
     }
-    
+
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlayingAudio(null);
+
     try {
-      if (!note.downloadUrl) {
-        // Get download URL if not already available
+      let url = note.downloadUrl;
+
+      if (!url) {
         const downloadResponse = await api.getVoiceNoteDownloadUrl(note.id);
-        note.downloadUrl = downloadResponse.data.downloadUrl;
+        url = downloadResponse.data.downloadUrl;
+        setVoiceNotes(prev => prev.map(n =>
+          n.id === note.id ? { ...n, downloadUrl: url } : n
+        ));
       }
 
-      // Record play analytics
+      if (!url) {
+        alert('No audio available for this recording');
+        return;
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setPlayingAudio(null);
+        audioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        setPlayingAudio(null);
+        audioRef.current = null;
+        alert('Failed to play audio. The file may not be supported by your browser.');
+      };
+
+      await audio.play();
+      setPlayingAudio(note.id);
+
       await analytics.recordEvent('voice_note_played', {
         noteId: note.id,
         title: note.title,
         duration: note.duration
       });
 
-      setPlayingAudio(note.id);
-      
-      // Here you would implement actual audio playback
-      // Example: new Audio(note.downloadUrl).play();
-      console.log('Playing audio:', note.downloadUrl);
-      
     } catch (error) {
       console.error('Failed to play audio:', error);
+      setPlayingAudio(null);
+      audioRef.current = null;
       alert('Failed to play audio. Please try again.');
     }
   };
