@@ -263,6 +263,10 @@ async getVoiceNoteDownloadUrl(id) {
   }
 
   // Scheduled messages endpoints
+  async getScheduledMessage(id) {
+    return this.request(`/scheduled/${id}`);
+  }
+
   async getScheduledMessages(params = {}) {
     // Filter out undefined and 'undefined' string values
     const filteredParams = {};
