@@ -267,6 +267,26 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/scheduled/${id}`);
   }
 
+  async updateScheduledMessage(id, data) {
+    return this.request(`/scheduled/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteScheduledMessage(id) {
+    return this.request(`/scheduled/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async rescheduleMessage(id, scheduledFor) {
+    return this.request(`/scheduled/${id}/reschedule`, {
+      method: 'PUT',
+      body: JSON.stringify({ scheduledFor }),
+    });
+  }
+
   async getScheduledMessages(params = {}) {
     // Filter out undefined and 'undefined' string values
     const filteredParams = {};
