@@ -78,33 +78,31 @@ export default function Topbar({
   };
 
   const setupWebSocket = () => {
-    const WS_URL = process.env.NEXT_PUBLIC_WS_URL ||
-      (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
-        .replace('https://', 'wss://')
-        .replace('http://', 'ws://')
-        .replace('/api', '');
-    const wsUrl = WS_URL;
+    // Only connect if NEXT_PUBLIC_WS_URL is explicitly set.
+    // Leave it unset in production (AppRunner doesn't support WebSocket).
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (!wsUrl) return;
+
     const ws = new WebSocket(wsUrl);
-    
+
     ws.onopen = () => {
       console.log('WebSocket connected for notifications');
     };
-    
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'notification') {
         setNotifications(prev => [data.notification, ...prev]);
         setUnreadCount(prev => prev + 1);
-        
         if (Notification.permission === 'granted' && data.notification.priority !== 'low') {
           showDesktopNotification(data.notification);
         }
       }
     };
-    
+
     ws.onclose = () => {
       console.log('WebSocket disconnected, reconnecting...');
-      setTimeout(setupWebSocket, 3000);
+      if (process.env.NEXT_PUBLIC_WS_URL) setTimeout(setupWebSocket, 3000);
     };
   };
 
