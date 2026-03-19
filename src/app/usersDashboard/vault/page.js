@@ -272,6 +272,14 @@ useEffect(() => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const safeStorage = (bytes) => {
+    if (!bytes || isNaN(bytes) || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown date';
@@ -540,7 +548,7 @@ useEffect(() => {
                   Legacy Vault
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {stats?.totalItems || 0} items • {formatFileSize(stats?.totalStorageBytes || stats?.total_storage_bytes || 0)} protected
+                  {stats?.totalItems || 0} items • {safeStorage(stats?.totalStorageBytes || 0)} protected
                 </p>
               </div>
             </div>
@@ -580,7 +588,7 @@ useEffect(() => {
           { label: "Total Items", value: stats.totalItems || 0, icon: Archive, color: "from-blue-500 to-cyan-500" },
           { label: "Permanent Notes", value: stats.vault_items || 0, icon: Shield, color: "from-green-500 to-emerald-500" },
           { label: "Voice Wills", value: stats.total_wills || 0, icon: FileAudio, color: "from-purple-500 to-pink-500" },
-          { label: "Storage Used", value: formatFileSize(stats.total_storage_bytes || 0), icon: Archive, color: "from-orange-500 to-red-500" },
+          { label: "Storage Used", value: safeStorage(stats?.totalStorageBytes || 0), icon: Archive, color: "from-orange-500 to-red-500" },
         ].map((stat, index) => (
           <div 
             key={index}

@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Topbar from '@/components/dashboard/Topbar';
 import BottomNav from '@/components/mobile/BottomNav';
-import MobileMenuButton from '@/components/dashboard/MobileMenuButton';
 import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
@@ -171,14 +170,6 @@ export default function UsersDashboardLayout({ children }) {
           </div>
         </main>
       </div>
-
-      {/* Floating Mobile Menu Button */}
-      {isMobile && (
-        <MobileMenuButton
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
-      )}
 
       <BottomNav />
     </div>

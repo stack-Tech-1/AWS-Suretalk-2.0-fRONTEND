@@ -1,5 +1,7 @@
 // C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Topbar.js
 import { useState, useEffect } from "react";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Bell, 
@@ -33,6 +35,7 @@ export default function Topbar({
   loading = false 
 }) {
   const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -40,6 +43,8 @@ export default function Topbar({
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState('');
 
   // ✅ Use user from AuthContext if available, fallback to prop
   const currentUser = user || userData;
@@ -323,7 +328,7 @@ export default function Topbar({
           {/* Mobile menu button */}
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="hidden md:block lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
@@ -354,9 +359,49 @@ export default function Topbar({
         <div className="flex items-center gap-2">
           {/* Search button - mobile only */}
           {isMobile && (
-            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-              <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
+            <div className="flex items-center">
+              {showMobileSearch ? (
+                <div className="flex items-center gap-2 animate-fade-in">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="search"
+                      placeholder="Search..."
+                      value={mobileSearchQuery}
+                      onChange={(e) => setMobileSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && mobileSearchQuery.trim()) {
+                          router.push(`/usersDashboard/voice-notes?search=${encodeURIComponent(mobileSearchQuery)}`);
+                          setShowMobileSearch(false);
+                          setMobileSearchQuery('');
+                        }
+                        if (e.key === 'Escape') {
+                          setShowMobileSearch(false);
+                          setMobileSearchQuery('');
+                        }
+                      }}
+                      autoFocus
+                      className="pl-9 pr-3 py-2 w-48 rounded-xl border border-gray-300 dark:border-gray-600
+                               bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500
+                               focus:border-transparent transition-all text-sm"
+                    />
+                  </div>
+                  <button
+                    onClick={() => { setShowMobileSearch(false); setMobileSearchQuery(''); }}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowMobileSearch(true)}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+              )}
+            </div>
           )}
 
           {/* Dark mode toggle */}
@@ -373,12 +418,13 @@ export default function Topbar({
           </button>
 
           {/* Help */}
-          <button
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          <Link
+            href="/usersDashboard/helpandsupport"
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title="Help & Support"
           >
-            <HelpCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
+            <HelpCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </Link>
 
           {/* Notifications */}
           <div className="relative">
@@ -403,8 +449,7 @@ export default function Topbar({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowNotifications(false)}
                 />
-                <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl 
-                              border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-gray-800 dark:text-white">Notifications</h3>
@@ -529,8 +574,7 @@ export default function Topbar({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowUserMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl 
-                              border border-gray-200 dark:border-gray-700 z-50">
+                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     {isLoading ? (
                       <div className="space-y-2">
@@ -542,7 +586,7 @@ export default function Topbar({
                         <p className="font-medium text-gray-800 dark:text-white">
                           {currentUser?.full_name || 'User'}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-full">
                           {currentUser?.email || (type === "admin" ? "admin@suretalk.com" : "user@example.com")}
                         </p>
                       </>
