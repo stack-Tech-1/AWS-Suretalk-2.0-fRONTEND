@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { api } from '@/utils/api';
 import {
   Users, Search, Filter, Shield, AlertTriangle,
-  CheckCircle, XCircle, RefreshCw, ChevronLeft,
+  CheckCircle, XCircle, X, RefreshCw, ChevronLeft,
   ChevronRight, Eye, Edit, Ban, Zap, Mic,
   Calendar, HardDrive, Phone, Mail
 } from 'lucide-react';
@@ -50,6 +50,15 @@ export default function SuperAdminDashboard() {
   const [deadLetters, setDeadLetters] = useState([]);
   const [activeTab, setActiveTab] = useState('users');
   const [actionLoading, setActionLoading] = useState(null);
+  const [editModal, setEditModal] = useState(null);
+  const [editForm, setEditForm] = useState({
+    userId: '',
+    slotNumber: '',
+    contact: '',
+    voiceMessage: ''
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
 
   const fetchUsers = useCallback(async (page = 1) => {
     try {
@@ -145,6 +154,45 @@ export default function SuperAdminDashboard() {
       alert('Failed to retry: ' + err.message);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const openEditModal = (item) => {
+    const payload = item.payload || {};
+    setEditForm({
+      userId: payload.userId || '',
+      slotNumber: payload.slotNumber || '',
+      contact: payload.contact || '',
+      voiceMessage: payload.voiceMessage || ''
+    });
+    setEditModal(item);
+    setEditError('');
+  };
+
+  const handleEditRetry = async () => {
+    if (!editModal) return;
+    const slot = parseInt(editForm.slotNumber);
+    if (isNaN(slot) || slot < 1 || slot > 15) {
+      setEditError('Slot number must be between 1 and 15');
+      return;
+    }
+    if (!editForm.userId || !editForm.voiceMessage) {
+      setEditError('userId and voiceMessage are required');
+      return;
+    }
+    try {
+      setEditLoading(true);
+      setEditError('');
+      await api.request(`/super-admin/sync/${editModal.id}/edit-retry`, {
+        method: 'PUT',
+        body: JSON.stringify(editForm)
+      });
+      setEditModal(null);
+      fetchDeadLetters();
+    } catch (err) {
+      setEditError(err.message || 'Failed to update sync item');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -400,6 +448,13 @@ export default function SuperAdminDashboard() {
                     </pre>
                   </div>
                   <button
+                    onClick={() => openEditModal(item)}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+                  >
+                    <Edit className="w-3 h-3" />
+                    Edit
+                  </button>
+                  <button
                     onClick={() => handleRetrySync(item.id)}
                     disabled={actionLoading === item.id}
                     className="flex items-center gap-1 px-3 py-2 rounded-lg bg-brand-500 text-white text-sm hover:bg-brand-600 transition-colors disabled:opacity-40 flex-shrink-0"
@@ -433,6 +488,121 @@ export default function SuperAdminDashboard() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit & Retry modal */}
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setEditModal(null)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Edit & Retry Sync</h3>
+                <p className="text-sm text-gray-500 mt-0.5">Fix the payload then retry the sync</p>
+              </div>
+              <button
+                onClick={() => setEditModal(null)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="mb-4 p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                <span className="font-medium">Event:</span> {editModal.event_type}
+                <span className="ml-2 text-orange-500">• {editModal.attempts} failed attempts</span>
+              </p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">{editModal.error_message}</p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  User ID (phone number) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.userId}
+                  onChange={e => setEditForm(prev => ({ ...prev, userId: e.target.value }))}
+                  placeholder="+2348167721999"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Slot Number (1-15) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="15"
+                  value={editForm.slotNumber}
+                  onChange={e => setEditForm(prev => ({ ...prev, slotNumber: e.target.value }))}
+                  placeholder="e.g. 1"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">Which IVR keypad slot this recording maps to</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Contact Phone Number
+                </label>
+                <input
+                  type="text"
+                  value={editForm.contact}
+                  onChange={e => setEditForm(prev => ({ ...prev, contact: e.target.value }))}
+                  placeholder="+2348012345678 or leave empty"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">Leave empty if no contact attached</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Voice Message URL (S3 or recording) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editForm.voiceMessage}
+                  onChange={e => setEditForm(prev => ({ ...prev, voiceMessage: e.target.value }))}
+                  placeholder="https://suertalk-voice-notes.s3..."
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+            {editError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                <p className="text-sm text-red-600 dark:text-red-400">{editError}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setEditModal(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditRetry}
+                disabled={editLoading}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold hover:shadow-brand transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {editLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Save & Retry
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
