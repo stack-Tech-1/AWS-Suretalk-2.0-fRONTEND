@@ -629,19 +629,25 @@ export default function SuperAdminDashboard() {
                   <p className="text-xs text-gray-500 mb-1 capitalize">{key.replace(/_/g, ' ')}</p>
                   {typeof value === 'object' && value !== null ? (
                     <div className="space-y-1 mt-2">
-                      {Object.entries(value).map(([k, v]) => (
-                        <div key={k} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500 capitalize">{k.replace(/_/g, ' ')}</span>
-                          <span className={`font-medium ${
-                            v === 'ok' || v === true || v === 'healthy' ? 'text-green-600' :
-                            v === 'degraded' || v === 'warning' ? 'text-yellow-600' :
-                            v === 'error' || v === false || v === 'unhealthy' ? 'text-red-600' :
-                            'text-gray-900 dark:text-white'
-                          }`}>
-                            {String(v)}
-                          </span>
-                        </div>
-                      ))}
+                      {Object.entries(value).map(([k, v]) => {
+                        if (Array.isArray(v)) return null;
+                        const display = typeof v === 'object' && v !== null
+                          ? (v.total_users ?? JSON.stringify(v))
+                          : v;
+                        return (
+                          <div key={k} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-500 capitalize">{k.replace(/_/g, ' ')}</span>
+                            <span className={`font-medium ${
+                              display === 'ok' || display === true || display === 'healthy' ? 'text-green-600' :
+                              display === 'degraded' || display === 'warning' ? 'text-yellow-600' :
+                              display === 'error' || display === false || display === 'unhealthy' ? 'text-red-600' :
+                              'text-gray-900 dark:text-white'
+                            }`}>
+                              {String(display)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className={`text-lg font-bold stat-number ${

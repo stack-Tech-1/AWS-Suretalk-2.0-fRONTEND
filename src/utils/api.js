@@ -1068,22 +1068,29 @@ async retrySyncItem(id) {
 }
 
 async exportSuperAdminUsers() {
-  const response = await fetch(`${this.baseURL}/super-admin/users/export`, {
-    headers: this.getHeaders(),
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+  const response = await fetch(`${baseUrl}/super-admin/users/export`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
   });
+
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.message || 'Export failed');
+    throw new Error('Export failed');
   }
+
   const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
+  const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `users-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `suretalk-users-${new Date().toISOString().split('T')[0]}.csv`;
   document.body.appendChild(a);
   a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }
 
 
