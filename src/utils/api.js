@@ -1027,6 +1027,46 @@ async verifyEmail(token) {
   return this.request(`/auth/verify-email?token=${token}`);
 }
 
+// Super-admin endpoints
+async getSuperAdminUsers(params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return this.request(`/super-admin/users${query ? `?${query}` : ''}`);
+}
+
+async getSuperAdminUserFull(id) {
+  return this.request(`/super-admin/users/${id}/full`);
+}
+
+async getSuperAdminUserFootprint(id) {
+  return this.request(`/super-admin/users/${id}/footprint`);
+}
+
+async updateUserTier(id, tier, reason) {
+  return this.request(`/super-admin/users/${id}/tier`, {
+    method: 'PUT',
+    body: JSON.stringify({ tier, reason })
+  });
+}
+
+async suspendUser(id, suspend, reason) {
+  return this.request(`/super-admin/users/${id}/suspend`, {
+    method: 'PUT',
+    body: JSON.stringify({ suspend, reason })
+  });
+}
+
+async getSuperAdminOverview() {
+  return this.request('/super-admin/overview');
+}
+
+async getDeadLetters() {
+  return this.request('/super-admin/sync/dead-letters');
+}
+
+async retrySyncItem(id) {
+  return this.request(`/super-admin/sync/${id}/retry`, { method: 'POST' });
+}
+
 
 }
 export const api = new ApiClient();

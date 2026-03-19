@@ -34,6 +34,7 @@ export default function RecordVoiceNote() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [saveStage, setSaveStage] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
@@ -289,6 +290,21 @@ export default function RecordVoiceNote() {
 
   // ─── Form Submission ─────────────────────────────────────────────────────────
 
+  const createVoiceNoteWithRetry = async (noteData, maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Creating voice note record, attempt ${attempt}/${maxRetries}`);
+        const response = await api.createVoiceNote(noteData);
+        return response;
+      } catch (error) {
+        console.warn(`Attempt ${attempt} failed:`, error.message);
+        if (attempt === maxRetries) throw error;
+        // Wait before retry: 2s, 4s, 8s
+        await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     if (!audioBlob && !fileUpload) { setError('Please record or upload an audio file'); return; }
     if (!formData.title.trim()) { setError('Please enter a title for your voice note'); return; }
@@ -322,6 +338,7 @@ export default function RecordVoiceNote() {
       if (fileUpload) {
         fileToUpload = fileUpload; fileName = fileUpload.name; fileType = fileUpload.type;
       } else {
+        setSaveStage('Converting audio...');
         console.log('Converting WebM recording to MP3...');
         const mp3Blob = await convertToMp3(audioBlob);
         fileToUpload = mp3Blob;
@@ -329,6 +346,7 @@ export default function RecordVoiceNote() {
         fileType = 'audio/mpeg';
       }
 
+      setSaveStage('Uploading recording...');
       const uploadResponse = await api.getUploadUrl(fileName, fileType);
       const { uploadUrl, key, bucket } = uploadResponse.data;
 
@@ -348,10 +366,12 @@ export default function RecordVoiceNote() {
         ...(formData.newContact && formData.contactPending && { contactPending: true, pendingContactData: formData.newContact })
       };
 
-      const createResponse = await api.createVoiceNote(noteData);
+      setSaveStage('Saving note...');
+      const createResponse = await createVoiceNoteWithRetry(noteData);
       if (createResponse.success) {
         if (formData.isFavorite) await api.updateVoiceNote(createResponse.data.id, { isFavorite: true });
         analytics.recordEvent('voice_note_created', { noteId: createResponse.data.id, title: formData.title, duration: recordingDuration, size: fileToUpload.size, isPermanent: formData.isPermanent, method: fileUpload ? 'upload' : 'record' });
+        setSaveStage('Saved!');
         setSuccess(true);
         setTimeout(() => router.push(`/usersDashboard/voice-notes/${createResponse.data.id}`), 2000);
       } else {
@@ -363,6 +383,7 @@ export default function RecordVoiceNote() {
       analytics.recordEvent('voice_note_creation_failed', { error: err.message });
     } finally {
       setUploading(false);
+      setSaveStage('');
     }
   };
 
@@ -928,6 +949,12 @@ export default function RecordVoiceNote() {
                   <span>Save Recording</span>
                 )}
               </button>
+
+              {saveStage && (
+                <p className="text-sm text-center text-brand-600 dark:text-brand-400 mt-2 animate-pulse">
+                  {saveStage}
+                </p>
+              )}
 
               <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
                 {hasAudio

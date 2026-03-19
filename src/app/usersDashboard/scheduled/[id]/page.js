@@ -450,8 +450,14 @@ Message ID: ${message.id}`;
                             <h3 className="font-bold text-gray-800 dark:text-white">
                               {message.voice_note_title || "Voice Message"}
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                               Voice Note
+                              {message.metadata?.source === 'ivr' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                  <Phone className="w-3 h-3" />
+                                  Via IVR
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -489,13 +495,20 @@ Message ID: ${message.id}`;
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={handleGetDownloadUrl}
-                        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                      >
-                        <Download className="w-4 h-4" />
-                        Get Download Link
-                      </button>
+                      {message.voice_note_id ? (
+                        <button
+                          onClick={handleGetDownloadUrl}
+                          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                        >
+                          <Download className="w-4 h-4" />
+                          Get Download Link
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-400 dark:text-gray-500 flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          IVR Recording — no download available
+                        </span>
+                      )}
                     </div>
                   </div>
 

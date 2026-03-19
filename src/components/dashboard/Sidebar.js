@@ -343,6 +343,20 @@ export default function Sidebar({
         {menu.map((item, index) => (
           <NavItem key={index} item={item} stats={stats} />
         ))}
+
+        {/* Super Admin — distinct red/orange entry, admin sidebar only */}
+        {type === 'admin' && (
+          <Link href="/adminDashboard/super" onClick={onClose}>
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
+              bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-200/50 dark:border-red-800/50
+              text-red-600 dark:text-red-400 hover:from-red-500/20 hover:to-orange-500/20
+              ${collapsed ? 'justify-center px-3' : ''}`}
+            >
+              <Shield className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span className="font-medium flex-1">Super Admin</span>}
+            </div>
+          </Link>
+        )}
         
         {/* ✅ Upgrade Prompt for non-LEGACY_VAULT_PREMIUM users (using helper) */}
         {type !== "admin" && !(hasLegacyVault?.()) && !collapsed && (

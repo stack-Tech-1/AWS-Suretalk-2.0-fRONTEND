@@ -726,9 +726,17 @@ Status: ${message.delivery_status}`;
                   <div key={message.id} className="card card-hover press-effect p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                          {message.voice_note_title || 'Untitled Message'}
-                        </p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                            {message.voice_note_title || 'Untitled Message'}
+                          </p>
+                          {message.metadata?.source === 'ivr' && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex-shrink-0">
+                              <Phone className="w-3 h-3" />
+                              Via IVR
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-gray-500 mt-0.5">
                           {message.recipient_name || message.recipient_phone || message.recipient_email || 'No recipient'}
                         </p>
@@ -826,6 +834,12 @@ Status: ${message.delivery_status}`;
                                 <h4 className="font-medium text-gray-800 dark:text-white">
                                   {message.voice_note_title || 'Untitled Message'}
                                 </h4>
+                                {message.metadata?.source === 'ivr' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                    <Phone className="w-3 h-3" />
+                                    Via IVR
+                                  </span>
+                                )}
                                 {message.is_permanent && (
                                   <span className="text-xs px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
                                     <Shield className="w-3 h-3 inline mr-1" />
@@ -841,14 +855,16 @@ Status: ${message.delivery_status}`;
                                 <span className="text-xs text-gray-500">
                                   {formatRelativeTime(message.created_at)}
                                 </span>
-                                {message.voice_note_id && (
+                                {message.voice_note_id ? (
                                   <Link
                                     href={`/usersDashboard/voice-notes/${message.voice_note_id}`}
                                     className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
                                   >
                                     View Voice Note
                                   </Link>
-                                )}
+                                ) : message.metadata?.recordingSid ? (
+                                  <span className="text-xs text-gray-500">IVR Recording</span>
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -1020,7 +1036,7 @@ Status: ${message.delivery_status}`;
                                     Copy Info
                                   </button>
 
-                                  {message.voice_note_id && (
+                                  {message.voice_note_id ? (
                                     <Link
                                       href={`/usersDashboard/voice-notes/${message.voice_note_id}`}
                                       className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
@@ -1029,7 +1045,12 @@ Status: ${message.delivery_status}`;
                                       <Archive className="w-4 h-4" />
                                       View Voice Note
                                     </Link>
-                                  )}
+                                  ) : message.metadata?.recordingSid ? (
+                                    <div className="w-full px-4 py-3 flex items-center gap-3 text-gray-400 dark:text-gray-500">
+                                      <Phone className="w-4 h-4" />
+                                      IVR Recording
+                                    </div>
+                                  ) : null}
 
                                   {canCancel && (
                                     <button
