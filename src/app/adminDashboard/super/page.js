@@ -7,7 +7,7 @@ import {
   Users, Search, Filter, Shield, AlertTriangle,
   CheckCircle, XCircle, X, RefreshCw, ChevronLeft,
   ChevronRight, Eye, Edit, Ban, Zap, Mic,
-  Calendar, HardDrive, Phone, Mail
+  Calendar, HardDrive, Phone, Mail, Download
 } from 'lucide-react';
 
 const TIER_COLORS = {
@@ -59,6 +59,10 @@ export default function SuperAdminDashboard() {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
+  const [syncHealth, setSyncHealth] = useState(null);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [revenue, setRevenue] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const fetchUsers = useCallback(async (page = 1) => {
     try {
@@ -99,6 +103,44 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  const fetchSyncHealth = async () => {
+    try {
+      const response = await api.request('/super-admin/sync-health');
+      if (response.success) setSyncHealth(response.data);
+    } catch (err) {
+      console.error('Failed to fetch sync health:', err);
+    }
+  };
+
+  const fetchSystemHealth = async () => {
+    try {
+      const response = await api.request('/super-admin/system-health');
+      if (response.success) setSystemHealth(response.data);
+    } catch (err) {
+      console.error('Failed to fetch system health:', err);
+    }
+  };
+
+  const fetchRevenue = async () => {
+    try {
+      const response = await api.request('/super-admin/revenue');
+      if (response.success) setRevenue(response.data);
+    } catch (err) {
+      console.error('Failed to fetch revenue:', err);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      await api.exportSuperAdminUsers();
+    } catch (err) {
+      alert('Export failed: ' + err.message);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers(1);
     fetchOverview();
@@ -109,6 +151,12 @@ export default function SuperAdminDashboard() {
     const timeout = setTimeout(() => fetchUsers(1), 400);
     return () => clearTimeout(timeout);
   }, [search, tierFilter, statusFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'sync-monitor' && !syncHealth) fetchSyncHealth();
+    if (activeTab === 'system-health' && !systemHealth) fetchSystemHealth();
+    if (activeTab === 'revenue' && !revenue) fetchRevenue();
+  }, [activeTab]);
 
   const handleTierChange = async (userId, newTier) => {
     const reason = prompt(`Reason for changing tier to ${newTier}:`);
@@ -247,21 +295,33 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
-        {['users', 'dead-letters', 'activity'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${
-              activeTab === tab
-                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
-            }`}
-          >
-            {tab === 'dead-letters' ? `Dead Letters ${deadLetters.length > 0 ? `(${deadLetters.length})` : ''}` : tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
+      {(() => {
+        const MAIN_TABS = [
+          { id: 'users', label: 'Users' },
+          { id: 'dead-letters', label: `Dead Letters${deadLetters.length > 0 ? ` (${deadLetters.length})` : ''}` },
+          { id: 'activity', label: 'Activity' },
+          { id: 'sync-monitor', label: 'Sync Monitor' },
+          { id: 'system-health', label: 'System Health' },
+          { id: 'revenue', label: 'Revenue' },
+        ];
+        return (
+          <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+            {MAIN_TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Users tab */}
       {activeTab === 'users' && (
@@ -297,6 +357,18 @@ export default function SuperAdminDashboard() {
               <option value="active">Active</option>
               <option value="suspended">Suspended</option>
             </select>
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              {exportLoading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Export CSV
+            </button>
           </div>
 
           {/* User list */}
@@ -489,6 +561,189 @@ export default function SuperAdminDashboard() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Sync Monitor tab */}
+      {activeTab === 'sync-monitor' && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white">Sync Monitor</h3>
+          {!syncHealth ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+              <div className="card p-4">
+                <p className="text-xs text-gray-500 mb-1">Total Sync Events</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white stat-number">{syncHealth.total ?? '—'}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-xs text-gray-500 mb-1">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600 stat-number">{syncHealth.pending ?? '—'}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-xs text-gray-500 mb-1">Completed</p>
+                <p className="text-2xl font-bold text-green-600 stat-number">{syncHealth.completed ?? '—'}</p>
+              </div>
+              <div className="card p-4">
+                <p className="text-xs text-gray-500 mb-1">Failed / Dead</p>
+                <p className={`text-2xl font-bold stat-number ${(syncHealth.dead ?? 0) > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                  {syncHealth.dead ?? '—'}
+                </p>
+              </div>
+              {syncHealth.byEvent && (
+                <div className="card p-4 md:col-span-2">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">By Event Type</p>
+                  <div className="space-y-2">
+                    {Object.entries(syncHealth.byEvent).map(([event, counts]) => (
+                      <div key={event} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400 font-mono text-xs">{event}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-green-600">{counts.completed ?? 0} ok</span>
+                          <span className="text-yellow-600">{counts.pending ?? 0} pending</span>
+                          <span className="text-red-600">{counts.dead ?? 0} dead</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* System Health tab */}
+      {activeTab === 'system-health' && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white">System Health</h3>
+          {!systemHealth ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+              {Object.entries(systemHealth).map(([key, value]) => (
+                <div key={key} className="card p-4">
+                  <p className="text-xs text-gray-500 mb-1 capitalize">{key.replace(/_/g, ' ')}</p>
+                  {typeof value === 'object' && value !== null ? (
+                    <div className="space-y-1 mt-2">
+                      {Object.entries(value).map(([k, v]) => (
+                        <div key={k} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500 capitalize">{k.replace(/_/g, ' ')}</span>
+                          <span className={`font-medium ${
+                            v === 'ok' || v === true || v === 'healthy' ? 'text-green-600' :
+                            v === 'degraded' || v === 'warning' ? 'text-yellow-600' :
+                            v === 'error' || v === false || v === 'unhealthy' ? 'text-red-600' :
+                            'text-gray-900 dark:text-white'
+                          }`}>
+                            {String(v)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`text-lg font-bold stat-number ${
+                      value === 'ok' || value === true || value === 'healthy' ? 'text-green-600' :
+                      value === 'degraded' || value === 'warning' ? 'text-yellow-600' :
+                      value === 'error' || value === false || value === 'unhealthy' ? 'text-red-600' :
+                      'text-gray-900 dark:text-white'
+                    }`}>
+                      {String(value)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Revenue tab */}
+      {activeTab === 'revenue' && (
+        <div className="space-y-4">
+          <h3 className="font-semibold text-gray-900 dark:text-white">Revenue</h3>
+          {!revenue ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-500" />
+            </div>
+          ) : (
+            <div className="space-y-6 stagger-children">
+              {/* Summary */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="card p-4">
+                  <p className="text-xs text-gray-500 mb-1">MRR</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white stat-number">
+                    {revenue.mrr != null ? `$${Number(revenue.mrr).toLocaleString()}` : '—'}
+                  </p>
+                </div>
+                <div className="card p-4">
+                  <p className="text-xs text-gray-500 mb-1">ARR</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white stat-number">
+                    {revenue.arr != null ? `$${Number(revenue.arr).toLocaleString()}` : '—'}
+                  </p>
+                </div>
+                <div className="card p-4">
+                  <p className="text-xs text-gray-500 mb-1">Paying Users</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white stat-number">
+                    {revenue.paying_users ?? '—'}
+                  </p>
+                </div>
+                <div className="card p-4">
+                  <p className="text-xs text-gray-500 mb-1">Churn Rate</p>
+                  <p className={`text-2xl font-bold stat-number ${(revenue.churn_rate ?? 0) > 5 ? 'text-red-600' : 'text-green-600'}`}>
+                    {revenue.churn_rate != null ? `${revenue.churn_rate}%` : '—'}
+                  </p>
+                </div>
+              </div>
+
+              {/* By tier */}
+              {revenue.byTier && (
+                <div className="card p-4">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Revenue by Tier</p>
+                  <div className="space-y-3">
+                    {Object.entries(revenue.byTier).map(([tier, data]) => (
+                      <div key={tier} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${TIER_COLORS[tier] || TIER_COLORS.LITE}`}>
+                            {TIER_LABELS[tier] || tier}
+                          </span>
+                          <span className="text-sm text-gray-500">{data.count ?? 0} users</span>
+                        </div>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {data.mrr != null ? `$${Number(data.mrr).toLocaleString()}/mo` : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent transactions */}
+              {revenue.recentTransactions && revenue.recentTransactions.length > 0 && (
+                <div className="card p-4">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Recent Transactions</p>
+                  <div className="space-y-2">
+                    {revenue.recentTransactions.map((tx, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-gray-900 dark:text-white truncate">{tx.user_email || tx.user_id}</span>
+                          <span className="text-gray-400 text-xs flex-shrink-0">{tx.event}</span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {tx.amount != null ? `$${Math.abs(tx.amount).toFixed(2)}` : '—'}
+                          </span>
+                          <span className="text-gray-400 text-xs">{formatDate(tx.created_at)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

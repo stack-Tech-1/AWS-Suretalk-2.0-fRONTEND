@@ -280,15 +280,43 @@ export default function UserDetailPage() {
       {activeTab === 'vault' && (
         <div className="space-y-3">
           {vault.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">No vault items</div>
+            <div className="text-center py-12 text-gray-500">
+              <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No vault items</p>
+            </div>
           ) : vault.map(item => (
             <div key={item.id} className="card p-4">
-              <p className="font-medium text-gray-900 dark:text-white">{item.title}</p>
-              <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
-                <span>{formatBytes(item.file_size_bytes)}</span>
-                <span>Release: {item.release_condition}</span>
-                {item.release_date && <span>Date: {formatDate(item.release_date)}</span>}
-                <span>Added: {formatDate(item.created_at)}</span>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium text-gray-900 dark:text-white">{item.title}</p>
+                    {item.is_released && (
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                        Released
+                      </span>
+                    )}
+                  </div>
+                  {item.description && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{item.description}</p>
+                  )}
+                  <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                    <span>Release: {item.release_condition || 'manual'}</span>
+                    {item.release_date && <span>Date: {formatDate(item.release_date)}</span>}
+                    {item.released_at && <span>Released: {formatDate(item.released_at)}</span>}
+                    <span>Added: {formatDate(item.created_at)}</span>
+                    {item.beneficiaries?.length > 0 && (
+                      <span>{item.beneficiaries.length} beneficiar{item.beneficiaries.length === 1 ? 'y' : 'ies'}</span>
+                    )}
+                    {item.executors?.length > 0 && (
+                      <span>{item.executors.length} executor{item.executors.length === 1 ? '' : 's'}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ml-3 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
               </div>
             </div>
           ))}

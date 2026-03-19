@@ -1067,6 +1067,25 @@ async retrySyncItem(id) {
   return this.request(`/super-admin/sync/${id}/retry`, { method: 'POST' });
 }
 
+async exportSuperAdminUsers() {
+  const response = await fetch(`${this.baseURL}/super-admin/users/export`, {
+    headers: this.getHeaders(),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || 'Export failed');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `users-export-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 
 }
 export const api = new ApiClient();
