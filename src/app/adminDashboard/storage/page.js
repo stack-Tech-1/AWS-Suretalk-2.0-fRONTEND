@@ -18,6 +18,7 @@ import {
   CartesianGrid, Tooltip, Legend 
 } from 'recharts';
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 
 export default function StorageManagement() {
   const router = useRouter();
@@ -166,7 +167,7 @@ export default function StorageManagement() {
   // Handle adding new lifecycle rule
   const handleAddRule = async () => {
     if (!newRule.name || !newRule.description) {
-      alert("Please fill in all required fields");
+      toast.warning("Please fill in all required fields", 'Required');
       return;
     }
 
@@ -193,10 +194,10 @@ export default function StorageManagement() {
         status: 'active'
       });
 
-      alert("Lifecycle rule added successfully!");
+      toast.success("Lifecycle rule added successfully!", 'Rule Added');
     } catch (error) {
       console.error("Failed to add rule:", error);
-      alert("Failed to add rule");
+      toast.error("Failed to add rule");
     }
   };
 
@@ -220,11 +221,11 @@ export default function StorageManagement() {
       console.log("Uploading report:", file.name);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      alert("Report uploaded successfully!");
+      toast.success("Report uploaded successfully!", 'Uploaded');
       setShowUploadReportModal(false);
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Failed to upload report");
+      toast.error("Failed to upload report");
     }
   };
 
@@ -248,7 +249,7 @@ export default function StorageManagement() {
           : rule
       )
     );
-    alert(`Running rule ${id}...`);
+    toast.info(`Running rule ${id}...`, 'Rule Running');
   };
 
   // Delete rule
@@ -955,7 +956,7 @@ export default function StorageManagement() {
                     </button>
                     <button
                       onClick={() => {
-                        alert("Settings saved!");
+                        toast.success("Settings saved!", 'Saved');
                         setShowConfigureModal(false);
                       }}
                       className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 

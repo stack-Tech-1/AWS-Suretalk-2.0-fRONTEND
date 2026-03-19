@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { api } from "@/utils/api";
-import { toast } from "react-hot-toast";
+import { toast } from '@/components/ui/Toast';
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 

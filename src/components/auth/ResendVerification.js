@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api } from "../../utils/api";
+import { toast } from '@/components/ui/Toast';
 
 export default function ResendVerification({ email }) {
   const [loading, setLoading] = useState(false);
@@ -8,7 +9,7 @@ export default function ResendVerification({ email }) {
 
   const handleResend = async () => {
     if (!email) {
-      alert("Email is required");
+      toast.warning("Email is required", "Required");
       return;
     }
 
@@ -18,7 +19,7 @@ export default function ResendVerification({ email }) {
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch (error) {
-      alert("Failed to resend: " + error.message);
+      toast.error("Failed to resend: " + error.message);
     } finally {
       setLoading(false);
     }

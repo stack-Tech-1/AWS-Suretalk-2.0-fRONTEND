@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 
 export default function AdminSettings() {
   const router = useRouter();
@@ -126,13 +127,13 @@ export default function AdminSettings() {
 
       const response = await api.bulkUpdateSettings(updates);
       if (response.success) {
-        alert('Settings saved successfully!');
+        toast.success('Settings saved successfully!', 'Saved');
         setHasChanges(false);
         setOriginalSettings(settings);
       }
     } catch (error) {
       console.error("Failed to save settings:", error);
-      alert('Failed to save settings');
+      toast.error('Failed to save settings');
     } finally {
       setSaving(false);
     }
@@ -146,13 +147,13 @@ export default function AdminSettings() {
     try {
       const response = await api.resetSettings();
       if (response.success) {
-        alert('Settings reset to defaults!');
+        toast.success('Settings reset to defaults!', 'Reset');
         fetchSettings(); // Reload settings
         setHasChanges(false);
       }
     } catch (error) {
       console.error("Failed to reset settings:", error);
-      alert('Failed to reset settings');
+      toast.error('Failed to reset settings');
     }
   };
 
@@ -162,7 +163,7 @@ export default function AdminSettings() {
     }
 
     // You would implement this endpoint
-    alert("Database maintenance would run here");
+    toast.info("Database maintenance would run here", 'Not Implemented');
   };
 
   const handleRotateKeys = async () => {
@@ -171,12 +172,12 @@ export default function AdminSettings() {
     }
 
     // You would implement this endpoint
-    alert("Key rotation would run here");
+    toast.info("Key rotation would run here", 'Not Implemented');
   };
 
   const handleCDNConfig = async () => {
     // You would implement this endpoint
-    alert("CDN configuration would open here");
+    toast.info("CDN configuration would open here", 'Not Implemented');
   };
 
   if (loading) {

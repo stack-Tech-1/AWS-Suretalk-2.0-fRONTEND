@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import Layout from "../../../../components/dashboard/Layout";
 import { motion } from "framer-motion";
 import { api } from "../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import { 
   ArrowLeft, Users, Mail, Phone, Calendar, Shield,
@@ -130,7 +131,7 @@ const timeAgo = (date) => {
         router.push('/adminDashboard/users');
       } catch (err) {
         console.error("Failed to delete user:", err);
-        alert("Failed to delete user. Please try again.");
+        toast.error("Failed to delete user. Please try again.");
       }
     }
   };

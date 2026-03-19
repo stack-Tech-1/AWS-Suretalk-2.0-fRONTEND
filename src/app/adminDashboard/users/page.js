@@ -11,6 +11,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 
 export default function AdminUsers() {
@@ -212,19 +213,19 @@ export default function AdminUsers() {
   // Handle bulk actions
   const handleBulkAction = async (action, data) => {
     if (selectedUsers.length === 0) {
-      alert("Please select at least one user");
+      toast.warning("Please select at least one user", 'Required');
       return;
     }
 
     setBulkActionLoading(true);
     try {
       await api.bulkUpdateUsers(selectedUsers, action, data);
-      alert(`Bulk ${action} completed successfully!`);
+      toast.success(`Bulk ${action} completed successfully!`, 'Done');
       fetchUsersData(); // Refresh data
       setSelectedUsers([]);
     } catch (error) {
       console.error("Bulk action failed:", error);
-      alert(`Failed to perform bulk action: ${error.message}`);
+      toast.error(`Failed to perform bulk action: ${error.message}`);
     } finally {
       setBulkActionLoading(false);
       setShowBulkActions(false);
@@ -259,13 +260,13 @@ export default function AdminUsers() {
       } else {
         // For JSON, you might want to display or download
         console.log("JSON Export:", response);
-        alert(`Exported ${response.data?.length || 0} users as JSON`);
+        toast.success(`Exported ${response.data?.length || 0} users as JSON`, 'Exported');
       }
       
       setShowExportModal(false);
     } catch (error) {
       console.error("Export failed:", error);
-      alert("Failed to export users");
+      toast.error("Failed to export users");
     } finally {
       setExportLoading(false);
     }

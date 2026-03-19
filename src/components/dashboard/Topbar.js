@@ -24,7 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/utils/api";
-import { toast } from "react-hot-toast";
+import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function Topbar({ 

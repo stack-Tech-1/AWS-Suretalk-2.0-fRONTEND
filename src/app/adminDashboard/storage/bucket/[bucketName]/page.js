@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, LineChart, Line
@@ -183,7 +184,7 @@ export default function BucketDetailPage() {
               isPermanent: bucketName.includes('legacy-vault')
             });
   
-            alert("File uploaded successfully!");
+            toast.success("File uploaded successfully!", 'Uploaded');
             fetchBucketDetails();
             setShowUploadModal(false);
             setUploadFile(null);
@@ -205,7 +206,7 @@ export default function BucketDetailPage() {
       }
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Upload failed: " + error.message);
+      toast.error("Upload failed: " + error.message);
     } finally {
       setUploading(false);
       setUploadProgress(0);

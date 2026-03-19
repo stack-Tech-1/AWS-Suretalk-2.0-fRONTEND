@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "../../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   ArrowLeft, Save, Eye, Trash2, FileText, Tag, Globe,
@@ -117,23 +118,23 @@ export default function AdminKnowledgeBaseEditor() {
       setSaving(true);
       
       if (!article.title.trim() || !article.content.trim()) {
-        alert('Please fill in title and content');
+        toast.warning('Please fill in title and content', 'Required');
         return;
       }
 
       if (isNew) {
         await api.createArticle(article);
-        alert('Article created successfully!');
+        toast.success('Article created successfully!', 'Created');
       } else {
         await api.updateArticle(articleId, article);
-        alert('Article updated successfully!');
+        toast.success('Article updated successfully!', 'Updated');
       }
       
       router.push('/adminDashboard/helpandsupport');
 
     } catch (error) {
       console.error("Save article error:", error);
-      alert('Failed to save article. Please try again.');
+      toast.error('Failed to save article. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -146,11 +147,11 @@ export default function AdminKnowledgeBaseEditor() {
 
     try {
       await api.deleteArticle(articleId);
-      alert('Article deleted successfully!');
+      toast.success('Article deleted successfully!', 'Deleted');
       router.push('/adminDashboard/helpandsupport');
     } catch (error) {
       console.error("Delete article error:", error);
-      alert('Failed to delete article.');
+      toast.error('Failed to delete article.');
     }
   };
 
@@ -668,7 +669,7 @@ export default function AdminKnowledgeBaseEditor() {
                 onClick={() => {
                   const wordCount = article.content.split(/\s+/).length;
                   const charCount = article.content.length;
-                  alert(`Word Count: ${wordCount}\nCharacter Count: ${charCount}`);
+                  toast.info(`Word Count: ${wordCount} | Character Count: ${charCount}`, 'Stats');
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 
                          text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 
@@ -682,7 +683,7 @@ export default function AdminKnowledgeBaseEditor() {
                 onClick={() => {
                   const url = `${window.location.origin}/help/article/${articleId}`;
                   navigator.clipboard.writeText(url);
-                  alert('Article URL copied to clipboard!');
+                  toast.success('Article URL copied to clipboard!', 'Copied');
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 
                          text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/30 
@@ -696,7 +697,7 @@ export default function AdminKnowledgeBaseEditor() {
                 onClick={() => {
                   const markdown = `# ${article.title}\n\n${article.content}`;
                   navigator.clipboard.writeText(markdown);
-                  alert('Markdown copied to clipboard!');
+                  toast.success('Markdown copied to clipboard!', 'Copied');
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/20 
                          text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/30 

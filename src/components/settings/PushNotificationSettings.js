@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { pushManager } from '@/utils/pushManager';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { toast } from '@/components/ui/Toast';
 
 export default function PushNotificationSettings() {
   const analytics = useAnalytics();
@@ -94,7 +95,7 @@ export default function PushNotificationSettings() {
       }
     } catch (error) {
       console.error('Error toggling push notifications:', error);
-      alert(`Failed to ${enabled ? 'disable' : 'enable'} push notifications: ${error.message}`);
+      toast.error(`Failed to ${enabled ? 'disable' : 'enable'} push notifications: ${error.message}`);
     } finally {
       setLoading(false);
     }

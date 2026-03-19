@@ -10,6 +10,7 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 
 export default function VoiceWills() {
@@ -174,10 +175,10 @@ export default function VoiceWills() {
       // Refresh data
       fetchWillsData();
       
-      alert("Voice will released successfully!");
+      toast.success('Voice will released successfully!', 'Will Released');
     } catch (error) {
       console.error("Failed to release will:", error);
-      alert(`Failed to release will: ${error.message}`);
+      toast.error(`Failed to release will: ${error.message}`);
     } finally {
       setReleaseLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -204,7 +205,7 @@ export default function VoiceWills() {
       }
     } catch (error) {
       console.error("Failed to download will:", error);
-      alert(`Failed to download will: ${error.message}`);
+      toast.error(`Failed to download will: ${error.message}`);
     } finally {
       setDownloadLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -218,14 +219,14 @@ export default function VoiceWills() {
     
     // Note: You'll need to implement a delete endpoint in your backend
     // For now, just show a message
-    alert("Delete functionality requires backend implementation. Please add a DELETE endpoint at /admin/wills/:id");
+    toast.info('Delete functionality requires backend implementation', 'Not Implemented');
   };
 
   // Handle view details
   const handleViewDetails = (will) => {
     // You can implement a detailed view modal or page
     console.log("View details for will:", will);
-    alert(`Will Details:\nTitle: ${will.title}\nUser: ${will.user_name}\nStatus: ${will.is_released ? 'Released' : 'Pending'}\nBeneficiaries: ${will.beneficiaryNames?.join(', ') || 'None'}`);
+    toast.info(`Will: ${will.title} | User: ${will.user_name} | Status: ${will.is_released ? 'Released' : 'Pending'}`, 'Will Details');
   };
 
   // Handle play will (placeholder - could stream audio)
@@ -240,7 +241,7 @@ export default function VoiceWills() {
       }
     } catch (error) {
       console.error("Failed to play will:", error);
-      alert("Failed to load audio for playback");
+      toast.error('Failed to load audio for playback');
     }
   };
 

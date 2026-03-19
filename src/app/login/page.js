@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "../../utils/api";
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from '@/components/ui/Toast';
 
 function LoginInner() {
   const { login } = useAuth();
@@ -72,8 +73,8 @@ function LoginInner() {
               setTimeout(() => {
                 if (confirm('Would you like us to resend the verification email?')) {
                   api.resendVerification({ email: formData.email })
-                    .then(() => alert('Verification email resent!'))
-                    .catch(err => alert('Failed to resend: ' + err.message));
+                    .then(() => toast.success('Verification email resent! Please check your inbox.', 'Email Sent'))
+                    .catch(err => toast.error('Failed to resend: ' + err.message));
                 }
               }, 1000);
               

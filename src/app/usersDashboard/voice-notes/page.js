@@ -30,6 +30,7 @@ import {
 import { api } from '@/utils/api';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import Link from 'next/link';
+import { toast } from '@/components/ui/Toast';
 
 export default function VoiceNotes() {
   const [playingAudio, setPlayingAudio] = useState(null);
@@ -356,11 +357,11 @@ const handleBulkFavorite = async () => {
     setSelectedNotes([]);
     setBulkMode(false);
     
-    alert(`${selectedNotes.length} note(s) ${newFavoriteStatus ? 'added to' : 'removed from'} favorites`);
+    toast.success(`${selectedNotes.length} note(s) ${newFavoriteStatus ? 'added to' : 'removed from'} favorites`, 'Updated');
     
   } catch (error) {
     console.error('Bulk favorite error:', error);
-    alert('Failed to update favorites. Please try again.');
+    toast.error('Failed to update favorites. Please try again.');
   }
 };
 
@@ -401,11 +402,11 @@ const handleBulkDelete = async () => {
     setSelectedNotes([]);
     setBulkMode(false);
     
-    alert(`${selectedNotes.length} note(s) deleted successfully`);
+    toast.success(`${selectedNotes.length} note(s) deleted successfully`, 'Deleted');
     
   } catch (error) {
     console.error('Bulk delete error:', error);
-    alert('Failed to delete notes. Please try again.');
+    toast.error('Failed to delete notes. Please try again.');
   }
 };
 
@@ -474,7 +475,7 @@ const selectAllNotes = () => {
       }
 
       if (!url) {
-        alert('No audio available for this recording');
+        toast.error('No audio available for this recording');
         return;
       }
 
@@ -489,7 +490,7 @@ const selectAllNotes = () => {
       audio.onerror = () => {
         setPlayingAudio(null);
         audioRef.current = null;
-        alert('Failed to play audio. The file may not be supported by your browser.');
+        toast.error('Failed to play audio. The file may not be supported by your browser.');
       };
 
       await audio.play();
@@ -505,7 +506,7 @@ const selectAllNotes = () => {
       console.error('Failed to play audio:', error);
       setPlayingAudio(null);
       audioRef.current = null;
-      alert('Failed to play audio. Please try again.');
+      toast.error('Failed to play audio. Please try again.');
     }
   };
 
@@ -539,7 +540,7 @@ const selectAllNotes = () => {
 
     } catch (error) {
       console.error('Failed to update favorite:', error);
-      alert('Failed to update favorite status. Please try again.');
+      toast.error('Failed to update favorite status. Please try again.');
     }
   };
 
@@ -570,11 +571,11 @@ const selectAllNotes = () => {
         totalNotes: prev.totalNotes - 1
       }));
 
-      alert('Voice note deleted successfully.');
+      toast.success('Voice note deleted successfully.', 'Deleted');
 
     } catch (error) {
       console.error('Failed to delete note:', error);
-      alert('Failed to delete voice note. Please try again.');
+      toast.error('Failed to delete voice note. Please try again.');
     }
   };
 
@@ -604,7 +605,7 @@ const selectAllNotes = () => {
 
     } catch (error) {
       console.error('Failed to download note:', error);
-      alert('Failed to download voice note. Please try again.');
+      toast.error('Failed to download voice note. Please try again.');
     }
   };
 
@@ -1005,7 +1006,7 @@ const selectAllNotes = () => {
                 <button 
                   onClick={() => {
                     analytics.recordEvent('voice_note_share_click', { noteId: note.id });
-                    alert('Share functionality coming soon!');
+                    toast.info('Share functionality coming soon!', 'Coming Soon');
                   }}
                   className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   title="Share"

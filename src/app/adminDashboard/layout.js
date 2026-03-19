@@ -10,6 +10,7 @@ import MobileMenuButton from '@/components/dashboard/MobileMenuButton';
 import LoadingScreen from '@/components/dashboard/LoadingScreen';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { api } from '@/utils/api';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export default function AdminDashboardLayout({ children }) {
   const router = useRouter();
@@ -148,11 +149,12 @@ export default function AdminDashboardLayout({ children }) {
 
       {/* Floating Mobile Menu Button */}
       {isMobile && (
-        <MobileMenuButton 
+        <MobileMenuButton
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
       )}
+      <ToastProvider />
     </div>
   );
 }

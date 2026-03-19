@@ -17,6 +17,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { api } from "../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 
 export default function AdminScheduledMessages() {
   const router = useRouter();
@@ -183,11 +184,11 @@ export default function AdminScheduledMessages() {
   const handleStatusUpdate = async (id, newStatus) => {
     try {
       await api.updateScheduledMessageStatus(id, newStatus);
-      alert(`Message status updated to ${newStatus}`);
+      toast.success(`Message status updated to ${newStatus}`, 'Status Updated');
       fetchMessagesData(); // Refresh data
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert(`Failed to update status: ${error.message}`);
+      toast.error(`Failed to update status: ${error.message}`);
     }
   };
 
@@ -197,11 +198,11 @@ export default function AdminScheduledMessages() {
     
     try {
       await api.cancelScheduledMessage(id);
-      alert("Message cancelled successfully");
+      toast.success('Message cancelled successfully', 'Cancelled');
       fetchMessagesData(); // Refresh data
     } catch (error) {
       console.error("Failed to cancel message:", error);
-      alert(`Failed to cancel message: ${error.message}`);
+      toast.error(`Failed to cancel message: ${error.message}`);
     }
   };
 
@@ -232,13 +233,13 @@ export default function AdminScheduledMessages() {
       } else {
         // For JSON, you might want to display or download
         console.log("JSON Export:", response);
-        alert(`Exported ${response.data?.length || 0} messages as JSON`);
+        toast.success(`Exported ${response.data?.length || 0} messages as JSON`, 'Export Complete');
       }
       
       setShowExportModal(false);
     } catch (error) {
       console.error("Export failed:", error);
-      alert("Failed to export scheduled messages");
+      toast.error('Failed to export scheduled messages');
     } finally {
       setExportLoading(false);
     }

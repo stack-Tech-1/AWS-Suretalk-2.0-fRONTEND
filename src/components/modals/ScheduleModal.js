@@ -13,6 +13,7 @@ import {
 import ContactsSelector from '@/components/shared/ContactsSelector';
 import { api } from '@/utils/api';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { toast } from '@/components/ui/Toast';
 
 export default function ScheduleModal({ voiceNote, isOpen, onClose, onSuccess }) {
   const analytics = useAnalytics();
@@ -137,14 +138,14 @@ export default function ScheduleModal({ voiceNote, isOpen, onClose, onSuccess })
       const response = await api.sendTestMessage(testData);
       
       if (response.success) {
-        alert(`Test ${method} sent successfully!`);
+        toast.success(`Test ${method} sent successfully!`, 'Test Sent');
       } else {
         throw new Error(response.error || 'Test failed');
       }
 
     } catch (error) {
       console.error('Test send error:', error);
-      alert(`Failed to send test ${method}. Please check your configuration.`);
+      toast.error(`Failed to send test ${method}. Please check your configuration.`);
     }
   };
 

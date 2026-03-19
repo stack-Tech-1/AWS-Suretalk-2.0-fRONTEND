@@ -12,6 +12,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 import { format } from "date-fns";
 
 export default function SystemLogs() {
@@ -189,13 +190,13 @@ const fetchLogStats = async () => {
     try {
       const response = await api.clearOldLogs(30);
       if (response.success) {
-        alert(response.message);
+        toast.success(response.message, 'Logs Cleared');
         fetchLogs(); // Refresh logs
         fetchLogStats(); // Refresh stats
       }
     } catch (error) {
       console.error('Clear logs failed:', error);
-      alert('Failed to clear old logs');
+      toast.error('Failed to clear old logs');
     } finally {
       setProcessingAction(null);
     }
@@ -209,12 +210,12 @@ const fetchLogStats = async () => {
       // const response = await api.runLogAnalysis();
       // For now, simulate
       setTimeout(() => {
-        alert('Log analysis completed successfully!');
+        toast.success('Log analysis completed successfully!', 'Analysis Done');
         setProcessingAction(null);
       }, 2000);
     } catch (error) {
       console.error('Analysis failed:', error);
-      alert('Failed to run analysis');
+      toast.error('Failed to run analysis');
       setProcessingAction(null);
     }
   };
@@ -242,7 +243,7 @@ const fetchLogStats = async () => {
   // Export logs functionality
   const handleExportLogs = async () => {
     if (logs.length === 0) {
-      alert('No logs to export');
+      toast.warning('No logs to export', 'Empty');
       return;
     }  
     setExporting(true);
@@ -298,7 +299,7 @@ const fetchLogStats = async () => {
     } catch (error) {
       console.error('Export failed:', error);
       setExportError(error.message);
-      alert(`Export failed: ${error.message}`);
+      toast.error(`Export failed: ${error.message}`);
     } finally {
       setExporting(false);
     }

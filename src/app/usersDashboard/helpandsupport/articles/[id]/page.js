@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "../../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   ArrowLeft, ThumbsUp, ThumbsDown, BookOpen, Tag, Calendar,
@@ -160,7 +161,7 @@ Need more help? Contact our support team for assistance.`,
         break;
       case 'copy':
         navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
+        toast.success('Link copied to clipboard!', 'Copied');
         return;
     }
     

@@ -8,6 +8,7 @@ import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
 import { api } from "../../utils/api";
 import React from "react";
+import { toast } from '@/components/ui/Toast';
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -117,7 +118,7 @@ const handleSubmit = async (e) => {
     console.error("Signup failed:", error);
     
     // Show error to user
-    alert(`Signup failed: ${error.message}`);
+    toast.error(`Signup failed: ${error.message}`);
   } finally {
     setLoading(false);
   }
@@ -194,9 +195,9 @@ const handleSubmit = async (e) => {
               try {
                 setLoading(true);
                 await api.resendVerification({ email: formData.email });
-                alert('Verification email resent successfully!');
+                toast.success('Verification email resent successfully!', 'Email Sent');
               } catch (error) {
-                alert('Failed to resend: ' + error.message);
+                toast.error('Failed to resend: ' + error.message);
               } finally {
                 setLoading(false);
               }

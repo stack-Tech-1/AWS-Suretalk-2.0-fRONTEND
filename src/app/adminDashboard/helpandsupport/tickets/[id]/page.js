@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "../../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   ArrowLeft, MessageSquare, User, Tag, Calendar, Clock,
@@ -169,7 +170,7 @@ export default function AdminTicketDetail() {
 
     } catch (error) {
       console.error("Send response error:", error);
-      alert('Failed to send response. Please try again.');
+      toast.error('Failed to send response. Please try again.');
     }
   };
 
@@ -180,7 +181,7 @@ export default function AdminTicketDetail() {
       fetchTicketDetails();
     } catch (error) {
       console.error("Update status error:", error);
-      alert('Failed to update status.');
+      toast.error('Failed to update status.');
     }
   };
 
@@ -191,7 +192,7 @@ export default function AdminTicketDetail() {
       fetchTicketDetails();
     } catch (error) {
       console.error("Assign ticket error:", error);
-      alert('Failed to assign ticket.');
+      toast.error('Failed to assign ticket.');
     }
   };
 
@@ -202,7 +203,7 @@ export default function AdminTicketDetail() {
       fetchTicketDetails();
     } catch (error) {
       console.error("Save notes error:", error);
-      alert('Failed to save notes.');
+      toast.error('Failed to save notes.');
     }
   };
 

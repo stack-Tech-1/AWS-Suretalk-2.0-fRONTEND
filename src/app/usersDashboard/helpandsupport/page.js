@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   HelpCircle, MessageSquare, FileText, Search, Plus,
@@ -120,12 +121,12 @@ export default function UserHelpSupport() {
   const handleCreateTicket = async () => {
     try {
       if (!newTicketData.subject || !newTicketData.description) {
-        alert('Please fill in all required fields');
+        toast.warning('Please fill in all required fields', 'Required Fields');
         return;
       }
 
       await api.createSupportTicket(newTicketData);
-      alert('Support ticket created successfully! Our team will respond within 24 hours.');
+      toast.success('Support ticket created successfully! Our team will respond within 24 hours.', 'Ticket Created');
       
       setShowNewTicket(false);
       setNewTicketData({
@@ -140,7 +141,7 @@ export default function UserHelpSupport() {
       
     } catch (error) {
       console.error('Create ticket error:', error);
-      alert('Failed to create support ticket. Please try again.');
+      toast.error('Failed to create support ticket. Please try again.');
     }
   };
 

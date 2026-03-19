@@ -2,6 +2,7 @@
 import '../styles/globals.css';
 import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata = {
   title: 'SureTalk - Voice Legacy Platform',
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <AnalyticsProvider>
             {children}
+            <ToastProvider />
           </AnalyticsProvider>
         </AuthProvider>
       </body>

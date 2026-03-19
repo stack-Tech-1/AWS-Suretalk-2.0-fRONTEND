@@ -9,6 +9,7 @@ import {
   RefreshCw, ChevronDown, FileText
 } from 'lucide-react';
 import { api } from '../../../utils/api';
+import { toast } from '@/components/ui/Toast';
 
 export default function AdminRequests() {
   const [requests, setRequests] = useState([]);
@@ -104,12 +105,12 @@ const handleBulkApprove = async () => {
   try {
     const response = await api.bulkApproveRequests();
     if (response.success) {
-      alert(response.message);
+      toast.success(response.message, 'Approved');
       fetchRequests(); // Refresh data
     }
   } catch (error) {
     console.error('Bulk approve failed:', error);
-    alert('Failed to bulk approve requests');
+    toast.error('Failed to bulk approve requests');
   } finally {
     setProcessingBulkAction(false);
   }
@@ -142,7 +143,7 @@ const handleExportRequests = async () => {
     
   } catch (error) {
     console.error("Export failed:", error);
-    alert("Failed to export requests");
+    toast.error("Failed to export requests");
   } finally {
     setExporting(false); // Add this
   }

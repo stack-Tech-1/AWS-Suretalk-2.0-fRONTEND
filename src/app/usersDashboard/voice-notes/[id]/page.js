@@ -33,6 +33,7 @@ import {
   Bell
 } from "lucide-react";
 import { api } from '@/utils/api';
+import { toast } from '@/components/ui/Toast';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
 import Link from 'next/link';
 import AudioPlayer from '@/components/audio/AudioPlayer';
@@ -176,7 +177,7 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to update favorite:', error);
-      alert('Failed to update favorite status. Please try again.');
+      toast.error('Failed to update favorite status. Please try again.');
     }
   };
 
@@ -200,7 +201,7 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to delete note:', error);
-      alert('Failed to delete voice note. Please try again.');
+      toast.error('Failed to delete voice note. Please try again.');
     }
   };
 
@@ -224,7 +225,7 @@ export default function VoiceNoteDetail() {
 
   } catch (error) {
     console.error('Failed to download note:', error);
-    alert('Failed to download voice note. Please try again.');
+    toast.error('Failed to download voice note. Please try again.');
   }
 };
 
@@ -254,7 +255,7 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to update note:', error);
-      alert('Failed to update voice note. Please try again.');
+      toast.error('Failed to update voice note. Please try again.');
     }
   };
 
@@ -299,11 +300,11 @@ export default function VoiceNoteDetail() {
       // Record analytics
       analytics.recordEvent('voice_note_marked_permanent', { noteId: id });
 
-      alert('Voice note marked as permanent and moved to Legacy Vault.');
+      toast.success('Voice note marked as permanent and moved to Legacy Vault.', 'Moved to Vault');
 
     } catch (error) {
       console.error('Failed to mark as permanent:', error);
-      alert('Failed to mark as permanent. You may need to upgrade to Legacy Vault Premium.');
+      toast.error('Failed to mark as permanent. You may need to upgrade to Legacy Vault Premium.');
     }
   };
 

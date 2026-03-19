@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 import { Plus } from "lucide-react";
 
 export default function BucketConfigurePage() {
@@ -114,11 +115,11 @@ export default function BucketConfigurePage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      alert("Configuration saved successfully!");
+      toast.success("Configuration saved successfully!", 'Saved');
       router.push(`/adminDashboard/storage/bucket/${params.bucketName}`);
     } catch (error) {
       console.error("Failed to save configuration:", error);
-      alert("Failed to save configuration");
+      toast.error("Failed to save configuration");
     } finally {
       setSaving(false);
     }

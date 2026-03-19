@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { api } from '@/utils/api';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { toast } from '@/components/ui/Toast';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
@@ -372,6 +373,7 @@ export default function RecordVoiceNote() {
         if (formData.isFavorite) await api.updateVoiceNote(createResponse.data.id, { isFavorite: true });
         analytics.recordEvent('voice_note_created', { noteId: createResponse.data.id, title: formData.title, duration: recordingDuration, size: fileToUpload.size, isPermanent: formData.isPermanent, method: fileUpload ? 'upload' : 'record' });
         setSaveStage('Saved!');
+        toast.success('Your voice note has been saved successfully!', 'Recording Saved');
         setSuccess(true);
         setTimeout(() => router.push(`/usersDashboard/voice-notes/${createResponse.data.id}`), 2000);
       } else {

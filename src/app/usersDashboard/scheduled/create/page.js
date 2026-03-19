@@ -30,7 +30,7 @@ import {
 import { api } from "@/utils/api";
 import { format, addDays, parseISO, isBefore } from "date-fns";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
+import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function CreateScheduledMessage() {

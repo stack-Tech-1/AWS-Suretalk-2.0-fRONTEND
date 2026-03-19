@@ -29,6 +29,7 @@ import {
   BarChart
 } from "lucide-react";
 import { api } from "@/utils/api";
+import { toast } from '@/components/ui/Toast';
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import { Suspense } from "react";
@@ -180,7 +181,7 @@ function BillingPageInner() {
       }
     } catch (error) {
       console.error('❌ Upgrade error:', error);
-      alert(`Failed to upgrade: ${error.message}`);
+      toast.error(`Failed to upgrade: ${error.message}`);
     } finally {
       setProcessing(false);
     }
@@ -197,7 +198,7 @@ function BillingPageInner() {
       if (response.success) {
         const newPlan = tiers.find(p => p.id === newTier);
         setCurrentPlan(newPlan);
-        alert(`Successfully switched to ${newPlan.name} plan!`);
+        toast.success(`Successfully switched to ${newPlan.name} plan!`, 'Plan Updated');
         await fetchBillingData();
         window.location.reload();
       } else {
@@ -205,7 +206,7 @@ function BillingPageInner() {
       }
     } catch (error) {
       console.error('Plan change error:', error);
-      alert(`Failed to change plan: ${error.message}`);
+      toast.error(`Failed to change plan: ${error.message}`);
     } finally {
       setProcessing(false);
     }
@@ -229,7 +230,7 @@ function BillingPageInner() {
       }
     } catch (error) {
       console.error('Manage subscription error:', error);
-      alert(`Failed to manage subscription: ${error.message}`);
+      toast.error(`Failed to manage subscription: ${error.message}`);
     } finally {
       setProcessing(false);
     }

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "../../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   ArrowLeft, MessageSquare, User, Tag, Calendar, Clock,
@@ -111,7 +112,7 @@ export default function UserTicketDetail() {
 
     } catch (error) {
       console.error("Send response error:", error);
-      alert('Failed to send response. Please try again.');
+      toast.error('Failed to send response. Please try again.');
     }
   };
 
@@ -247,7 +248,7 @@ export default function UserTicketDetail() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(ticket.ticket_number);
-                      alert('Ticket number copied to clipboard!');
+                      toast.success('Ticket number copied to clipboard!', 'Copied');
                     }}
                     className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                     title="Copy ticket number"

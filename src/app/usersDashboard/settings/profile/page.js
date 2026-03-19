@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { api } from "@/utils/api";
 import Link from "next/link";
-import { toast } from "react-hot-toast";
+import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function ProfileSettings() {

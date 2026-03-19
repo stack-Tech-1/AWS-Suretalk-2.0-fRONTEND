@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/utils/api';
+import { toast } from '@/components/ui/Toast';
 import {
   Users, Search, Filter, Shield, AlertTriangle,
   CheckCircle, XCircle, X, RefreshCw, ChevronLeft,
@@ -135,7 +136,7 @@ export default function SuperAdminDashboard() {
       setExportLoading(true);
       await api.exportSuperAdminUsers();
     } catch (err) {
-      alert('Export failed: ' + err.message);
+      toast.error('Export failed: ' + err.message);
     } finally {
       setExportLoading(false);
     }
@@ -169,7 +170,7 @@ export default function SuperAdminDashboard() {
       });
       fetchUsers(pagination.page);
     } catch (err) {
-      alert('Failed to update tier: ' + err.message);
+      toast.error('Failed to update tier: ' + err.message);
     } finally {
       setActionLoading(null);
     }
@@ -187,7 +188,7 @@ export default function SuperAdminDashboard() {
       });
       fetchUsers(pagination.page);
     } catch (err) {
-      alert('Failed to update account: ' + err.message);
+      toast.error('Failed to update account: ' + err.message);
     } finally {
       setActionLoading(null);
     }
@@ -199,7 +200,7 @@ export default function SuperAdminDashboard() {
       await api.request(`/super-admin/sync/${syncId}/retry`, { method: 'POST' });
       fetchDeadLetters();
     } catch (err) {
-      alert('Failed to retry: ' + err.message);
+      toast.error('Failed to retry: ' + err.message);
     } finally {
       setActionLoading(null);
     }

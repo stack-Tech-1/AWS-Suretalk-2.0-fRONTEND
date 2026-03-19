@@ -13,6 +13,7 @@ import { api } from '@/utils/api';
 import { pushManager } from '@/utils/pushManager';
 import { useAnalyticsContext } from '@/contexts/AnalyticsContext';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { ToastProvider } from '@/components/ui/Toast';
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();
@@ -172,6 +173,7 @@ export default function UsersDashboardLayout({ children }) {
       </div>
 
       <BottomNav />
+      <ToastProvider />
     </div>
   );
 }

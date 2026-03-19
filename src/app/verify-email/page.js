@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check, X, AlertCircle, Mail, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../utils/api";
+import { toast } from '@/components/ui/Toast';
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -60,16 +61,16 @@ export default function VerifyEmailPage() {
 
   const handleResend = async () => {
     if (!email) {
-      alert("Please enter your email address to resend verification.");
+      toast.warning('Please enter your email address to resend verification.', 'Required');
       return;
     }
 
     try {
       setLoading(true);
       await api.resendVerification({ email });
-      alert("Verification email resent successfully! Please check your inbox.");
+      toast.success('Verification email resent! Please check your inbox.', 'Email Sent');
     } catch (error) {
-      alert("Failed to resend verification: " + error.message);
+      toast.error('Failed to resend verification: ' + error.message);
     } finally {
       setLoading(false);
     }

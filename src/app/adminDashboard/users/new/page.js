@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Layout from "../../../../components/dashboard/Layout";
 import { motion } from "framer-motion";
 import { api } from "../../../../utils/api";
+import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
 import {
   ArrowLeft, Save, User, Mail, Phone, Shield, CreditCard,
@@ -184,7 +185,7 @@ export default function CreateUser() {
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(tempPassword);
-                        alert("Password copied to clipboard!");
+                        toast.success("Password copied to clipboard!", 'Copied');
                       }}
                       className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
                     >

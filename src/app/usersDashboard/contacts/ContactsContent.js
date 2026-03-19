@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
+import { toast } from '@/components/ui/Toast';
 //import ContactsSelector from "@/components/shared/ContactsSelector";
 
 export default function Contacts() {
@@ -237,7 +238,7 @@ export default function Contacts() {
           isBeneficiary: response.data.is_beneficiary
         });
         
-        alert('Contact added successfully!');
+        toast.success('Contact added successfully!', 'Contact Added');
       } else {
         // Log the specific errors from backend
         if (response.errors) {
@@ -248,7 +249,7 @@ export default function Contacts() {
       }
     } catch (error) {
       console.error('Failed to create contact:', error);
-      alert(`Failed to add contact: ${error.message}`);
+      toast.error(`Failed to add contact: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -278,7 +279,7 @@ export default function Contacts() {
       }
     } catch (error) {
       console.error('Failed to update contact:', error);
-      alert(`Failed to update contact: ${error.message}`);
+      toast.error(`Failed to update contact: ${error.message}`);
       return false;
     }
   };
@@ -303,13 +304,13 @@ export default function Contacts() {
         setShowDeleteModal(false);
         setContactToDelete(null);
         
-        alert('Contact deleted successfully!');
+        toast.success('Contact deleted successfully!', 'Contact Deleted');
       } else {
         throw new Error(response.error);
       }
     } catch (error) {
       console.error('Failed to delete contact:', error);
-      alert(`Failed to delete contact: ${error.message}`);
+      toast.error(`Failed to delete contact: ${error.message}`);
     }
   };
 
@@ -320,7 +321,7 @@ export default function Contacts() {
     });
     
     if (success) {
-      alert(`Contact ${!contact.isBeneficiary ? 'added to' : 'removed from'} beneficiaries`);
+      toast.success(`Contact ${!contact.isBeneficiary ? 'added to' : 'removed from'} beneficiaries`, 'Updated');
     }
   };
 
@@ -331,7 +332,7 @@ export default function Contacts() {
     });
     
     if (success) {
-      alert(`Contact ${!contact.canReceiveMessages ? 'can now' : 'cannot'} receive messages`);
+      toast.success(`Contact ${!contact.canReceiveMessages ? 'can now' : 'cannot'} receive messages`, 'Updated');
     }
   };
 
@@ -391,11 +392,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      alert(`${selectedContacts.length} contact(s) deleted successfully`);
+      toast.success(`${selectedContacts.length} contact(s) deleted successfully`, 'Deleted');
 
     } catch (error) {
       console.error('Bulk delete error:', error);
-      alert('Failed to delete contacts. Please try again.');
+      toast.error('Failed to delete contacts. Please try again.');
     }
   };
 
@@ -426,11 +427,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      alert(`${selectedContacts.length} contact(s) ${newBeneficiaryStatus ? 'added to' : 'removed from'} beneficiaries`);
+      toast.success(`${selectedContacts.length} contact(s) ${newBeneficiaryStatus ? 'added to' : 'removed from'} beneficiaries`, 'Updated');
 
     } catch (error) {
       console.error('Bulk beneficiary update error:', error);
-      alert('Failed to update contacts. Please try again.');
+      toast.error('Failed to update contacts. Please try again.');
     }
   };
 
@@ -461,11 +462,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      alert(`${selectedContacts.length} contact(s) ${newMessageStatus ? 'can now' : 'cannot'} receive messages`);
+      toast.success(`${selectedContacts.length} contact(s) ${newMessageStatus ? 'can now' : 'cannot'} receive messages`, 'Updated');
 
     } catch (error) {
       console.error('Bulk message status update error:', error);
-      alert('Failed to update contacts. Please try again.');
+      toast.error('Failed to update contacts. Please try again.');
     }
   };
 

@@ -11,6 +11,7 @@ import {
   Plus
 } from 'lucide-react';
 import { api } from '@/utils/api';
+import { toast } from '@/components/ui/Toast';
 
 export default function ContactsSelector({
   selectedContacts = [],
@@ -75,7 +76,7 @@ export default function ContactsSelector({
       newSelection = selectedContacts.filter(c => c.id !== contact.id);
     } else {
       if (maxSelection && selectedContacts.length >= maxSelection) {
-        alert(`Maximum ${maxSelection} contacts can be selected`);
+        toast.warning(`Maximum ${maxSelection} contacts can be selected`, 'Limit Reached');
         return;
       }
       newSelection = [...selectedContacts, contact];
@@ -87,7 +88,7 @@ export default function ContactsSelector({
   // Handle adding new contact
   const handleAddContact = async () => {
     if (!newContact.name.trim() || (!newContact.email && !newContact.phone)) {
-      alert('Please provide at least a name and email or phone');
+      toast.warning('Please provide at least a name and email or phone', 'Required');
       return;
     }
 
@@ -106,7 +107,7 @@ export default function ContactsSelector({
       }
     } catch (error) {
       console.error('Failed to add contact:', error);
-      alert('Failed to add contact. Please try again.');
+      toast.error('Failed to add contact. Please try again.');
     }
   };
 
