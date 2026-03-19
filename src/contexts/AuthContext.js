@@ -90,14 +90,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await api.logout();
-    localStorage.clear();
-    setUser(null);
+    try {
+      await api.logout();
+    } catch (err) {
+      console.warn('Logout API call failed:', err.message);
+    } finally {
+      // Clear ALL auth state synchronously
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('isAdmin');
+      sessionStorage.clear();
 
-    // 🔄 allow auth check again after logout
-    hasCheckedUserRef.current = false;
+      setUser(null);
 
-    router.push('/login');
+      // 🔄 allow auth check again after logout
+      hasCheckedUserRef.current = false;
+
+      router.push('/login');
+    }
   };
 
   // 🎯 Helper methods for common checks

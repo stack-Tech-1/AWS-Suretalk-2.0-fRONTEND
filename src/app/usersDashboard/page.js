@@ -37,6 +37,7 @@ export default function DashboardHome() {
   const [storageData, setStorageData] = useState([]);
   const [activityData, setActivityData] = useState([]);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
+  const [billingLoading, setBillingLoading] = useState(false);
   const [quickStats, setQuickStats] = useState({
     voiceNotes: { value: "0", change: "+0%" },
     contacts: { value: "0/0", change: "+0" },
@@ -97,10 +98,6 @@ export default function DashboardHome() {
       const storageDistribution = calculateStorageDistribution(notesResponse.data.voiceNotes || notesResponse.data.notes || []);
       setStorageData(storageDistribution);
 
-      // 5. Fetch subscription info
-      const subscriptionResponse = await api.getSubscription();
-      setSubscriptionInfo(subscriptionResponse.data);
-
       setQuickStats({
         voiceNotes: {
           value: voiceNotesTotal.toString(),
@@ -134,6 +131,22 @@ export default function DashboardHome() {
       await loadFallbackData();
     } finally {
       setLoading(false);
+    }
+
+    // Load billing separately — never blocks dashboard render
+    loadBillingData();
+  };
+
+  const loadBillingData = async () => {
+    try {
+      setBillingLoading(true);
+      const billingRes = await api.getSubscription();
+      if (billingRes?.data) setSubscriptionInfo(billingRes.data);
+    } catch (err) {
+      console.warn('Billing data unavailable:', err.message);
+      // Don't set global error — leave billing section empty
+    } finally {
+      setBillingLoading(false);
     }
   };
 
@@ -441,16 +454,20 @@ export default function DashboardHome() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${
-              hasLegacyVault() // ✅ Use helper from context
-                ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200'
-            }`}>
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">
-                {subscriptionInfo?.currentTier?.replace(/_/g, ' ') || 'Basic Plan'}
-              </span>
-            </div>
+            {billingLoading ? (
+              <div className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse w-32 h-9" />
+            ) : (
+              <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${
+                hasLegacyVault() // ✅ Use helper from context
+                  ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
+                  : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200'
+              }`}>
+                <Shield className="w-5 h-5" />
+                <span className="font-medium">
+                  {subscriptionInfo?.currentTier?.replace(/_/g, ' ') || 'Basic Plan'}
+                </span>
+              </div>
+            )}
             <Link 
               href="/usersDashboard/notifications"
               className="px-4 py-2 border-2 border-brand-500 text-brand-600 dark:text-brand-400 
@@ -885,13 +902,18 @@ export default function DashboardHome() {
           </div>
 
           {/* Plan Upgrade Card */}
-          {subscriptionInfo?.currentTier !== 'LEGACY_VAULT_PREMIUM' && (
+          {billingLoading ? (
+            <div className="rounded-2xl p-6 animate-pulse bg-gray-200 dark:bg-gray-700">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mb-2" />
+              <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-1/3" />
+            </div>
+          ) : subscriptionInfo?.currentTier !== 'LEGACY_VAULT_PREMIUM' ? (
             <div className="bg-gradient-to-r from-brand-600 to-accent-500 rounded-2xl p-6">
               <div className="text-white mb-4">
                 <h3 className="text-lg font-bold mb-1">Upgrade to Legacy Vault</h3>
                 <p className="text-sm opacity-90">Get permanent storage & advanced features</p>
               </div>
-              
+
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-medium">Legacy Vault Premium</span>
@@ -912,10 +934,10 @@ export default function DashboardHome() {
                   </li>
                 </ul>
               </div>
-              
-              <Link 
+
+              <Link
                 href="/usersDashboard/billing"
-                className="w-full flex items-center justify-center gap-2 bg-white text-brand-600 
+                className="w-full flex items-center justify-center gap-2 bg-white text-brand-600
                          py-3 rounded-xl font-medium hover:bg-gray-100 transition-all"
                 onClick={() => analytics.recordEvent('cta_click', { cta: 'upgrade_from_dashboard' })}
               >
@@ -923,7 +945,7 @@ export default function DashboardHome() {
                 Upgrade Now
               </Link>
             </div>
-          )}
+          ) : null}
         </motion.div>
       </div>
     </div>   

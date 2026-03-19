@@ -22,6 +22,24 @@ function LoginInner() {
     rememberMe: false
   });
 
+  // Redirect already-authenticated users away from the login page
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    api.getProfile().then(response => {
+      if (response?.data?.is_admin) {
+        router.push('/adminDashboard');
+      } else {
+        router.push('/usersDashboard');
+      }
+    }).catch(() => {
+      // Token is invalid — clear it and stay on login
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    });
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
