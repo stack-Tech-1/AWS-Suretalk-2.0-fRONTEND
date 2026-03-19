@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { api } from '@/utils/api';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 const containerVariants = {
   hidden: {},
@@ -31,6 +33,7 @@ export default function RecordVoiceNote() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
@@ -67,6 +70,7 @@ export default function RecordVoiceNote() {
   const animationFrameRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const ffmpegRef = useRef(null);
 
   // ─── Waveform Drawing ────────────────────────────────────────────────────────
 
@@ -239,6 +243,39 @@ export default function RecordVoiceNote() {
     analytics.recordEvent('audio_file_selected', { fileName: file.name, fileSize: file.size, fileType: file.type });
   };
 
+  // ─── MP3 Conversion ───────────────────────────────────────────────────────────
+
+  const convertToMp3 = async (webmBlob) => {
+    try {
+      setConverting(true);
+
+      if (!ffmpegRef.current) {
+        const ffmpeg = new FFmpeg();
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        ffmpegRef.current = ffmpeg;
+      }
+
+      const ffmpeg = ffmpegRef.current;
+      await ffmpeg.writeFile('input.webm', await fetchFile(webmBlob));
+      await ffmpeg.exec(['-i', 'input.webm', '-vn', '-ar', '44100', '-ac', '2', '-b:a', '128k', 'output.mp3']);
+      const data = await ffmpeg.readFile('output.mp3');
+      const mp3Blob = new Blob([data.buffer], { type: 'audio/mpeg' });
+
+      console.log(`Converted: ${(webmBlob.size/1024).toFixed(1)}KB WebM → ${(mp3Blob.size/1024).toFixed(1)}KB MP3`);
+      return mp3Blob;
+
+    } catch (error) {
+      console.warn('MP3 conversion failed, using original WebM:', error);
+      return webmBlob;
+    } finally {
+      setConverting(false);
+    }
+  };
+
   // ─── Form Submission ─────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
@@ -274,7 +311,11 @@ export default function RecordVoiceNote() {
       if (fileUpload) {
         fileToUpload = fileUpload; fileName = fileUpload.name; fileType = fileUpload.type;
       } else {
-        fileToUpload = audioBlob; fileName = `recording_${Date.now()}.webm`; fileType = 'audio/webm';
+        console.log('Converting WebM recording to MP3...');
+        const mp3Blob = await convertToMp3(audioBlob);
+        fileToUpload = mp3Blob;
+        fileName = `recording_${Date.now()}.mp3`;
+        fileType = 'audio/mpeg';
       }
 
       const uploadResponse = await api.getUploadUrl(fileName, fileType);
@@ -859,13 +900,21 @@ export default function RecordVoiceNote() {
               {/* Save button */}
               <button
                 onClick={handleSubmit}
-                disabled={uploading || !hasAudio || !formData.title.trim()}
+                disabled={converting || uploading || !hasAudio || !formData.title.trim()}
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 brand-gradient text-white rounded-xl font-bold text-base shadow-lg shadow-brand-700/25 hover:shadow-brand-700/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
-                {uploading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Saving Voice Note…</>
+                {converting ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Converting to MP3...</span>
+                  </div>
+                ) : uploading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </div>
                 ) : (
-                  <><Save className="w-5 h-5" /> Save Voice Note</>
+                  <span>Save Recording</span>
                 )}
               </button>
 
