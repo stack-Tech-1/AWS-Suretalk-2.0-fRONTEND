@@ -496,7 +496,7 @@ export default function Contacts() {
   }
 
   return (
-    <div>
+    <div className="page-enter">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -533,9 +533,7 @@ export default function Contacts() {
             <button
               onClick={() => setShowAddModal(true)}
               disabled={stats.remainingContacts <= 0}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
-                       text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 
-                       disabled:cursor-not-allowed"
+              className="btn-primary brand-glow-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               title={stats.remainingContacts <= 0 ? `Contact limit reached (${stats.contactLimit} max)` : ''}
             >
               <UserPlus className="w-4 h-4" />
@@ -633,7 +631,7 @@ export default function Contacts() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="mb-8"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 stagger-children">
           {/* Search */}
           <div className="lg:col-span-2">
             <div className="relative">
@@ -657,12 +655,12 @@ export default function Contacts() {
           </div>
 
           {/* Contact Stats */}
-          <div className="glass rounded-xl p-4">
+          <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Contact Limit</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-gray-800 dark:text-white">
+                  <span className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                     {stats.totalContacts}/{stats.contactLimit}
                   </span>
                   <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -687,11 +685,11 @@ export default function Contacts() {
           </div>
 
           {/* Additional Stats */}
-          <div className="glass rounded-xl p-4">
+          <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Beneficiaries</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-white">
+                <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                   {stats.beneficiaries}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
@@ -721,7 +719,7 @@ export default function Contacts() {
         {contacts.map((contact) => (
           <div
             key={contact.id}
-            className={`glass rounded-2xl p-6 card-hover group relative ${
+            className={`card card-hover press-effect group relative p-6 ${
               selectedContacts.includes(contact.id) ? 'ring-2 ring-brand-500 ring-offset-2' : ''
             }`}
             onClick={(e) => {

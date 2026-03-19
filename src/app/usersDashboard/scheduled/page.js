@@ -723,7 +723,7 @@ Status: ${message.delivery_status}`;
                 const canEdit = message.delivery_status === 'scheduled';
                 const canTest = message.delivery_status === 'scheduled';
                 return (
-                  <div key={message.id} className="card p-4 press-effect">
+                  <div key={message.id} className="card card-hover press-effect p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
