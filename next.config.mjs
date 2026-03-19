@@ -8,14 +8,13 @@ const nextConfig = {
     unoptimized: true,     // Since Next.js Image optimization doesn't work in static export
   },
   
-  // Required for ffmpeg.wasm SharedArrayBuffer support
+  // COOP header — relaxed to allow OAuth/payment popups
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
         ],
       },
     ];
