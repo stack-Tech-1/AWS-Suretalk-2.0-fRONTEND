@@ -35,6 +35,7 @@ export default function DashboardHome() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [recentRecordings, setRecentRecordings] = useState([]);
   const [storageData, setStorageData] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState(null);
   const [activityData, setActivityData] = useState([]);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [billingLoading, setBillingLoading] = useState(false);
@@ -63,6 +64,8 @@ export default function DashboardHome() {
       // 1. Fetch analytics data
       const statsResponse = await api.getUserDashboardStats();
       const actualStats = statsResponse.data?.stats || {};
+      setDashboardStats(statsResponse.data);
+      console.log('Stats response:', statsResponse?.data);
 
       // Get actual counts from stats, not analytics
       const voiceNotesTotal = parseInt(actualStats.voice_notes_total) || 0;
@@ -409,27 +412,13 @@ export default function DashboardHome() {
     },
   ];
 
-  // Storage info from real data
-  const totalStorageBytes = recentRecordings.reduce((sum, rec) => {
-    const sizeMatch = rec.size.match(/([\d.]+)\s*(\w+)/);
-    if (!sizeMatch) return sum;
-    
-    const [, value, unit] = sizeMatch;
-    const multiplier = {
-      'Bytes': 1,
-      'KB': 1024,
-      'MB': 1024 * 1024,
-      'GB': 1024 * 1024 * 1024
-    }[unit] || 1;
-    
-    return sum + (parseFloat(value) * multiplier);
-  }, 0);
-  
+  // Use real storage data from stats API — not approximated from 4 recent notes
+  const storageUsedBytes = dashboardStats?.storage?.used_bytes || dashboardStats?.storageUsed || 0;
   const userName = user?.full_name?.split(' ')[0] || 'User';
   const storageLimitGB = user?.storage_limit_gb || 5;
   const storageLimitBytes = storageLimitGB * 1024 * 1024 * 1024;
-  const storageUsedPercentage = totalStorageBytes > 0 ? (totalStorageBytes / storageLimitBytes) * 100 : 0;
-  const storageUsedGB = totalStorageBytes / (1024 * 1024 * 1024);
+  const storageUsedPercentage = Math.min((storageUsedBytes / storageLimitBytes) * 100, 100);
+  const storageUsedGB = storageUsedBytes / (1024 * 1024 * 1024);
 
   
    return (

@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
 import { toast } from '@/components/ui/Toast';
@@ -27,6 +27,11 @@ export default function UserHelpSupport() {
     priority: 'medium'
   });
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   // Breadcrumb items
   const breadcrumbs = [
     { label: "Dashboard", href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
@@ -46,75 +51,62 @@ export default function UserHelpSupport() {
     fetchData();
   }, [activeTab]);
 
+  const getFallbackKnowledgeBase = () => [
+    {
+      id: "1",
+      title: "How to Record Your First Voice Note",
+      content: "Learn how to create and save your first voice note on SureTalk...",
+      category: "getting-started",
+      tags: ["recording", "beginner", "tutorial"],
+      views: 1245,
+      helpful_votes: 89,
+      not_helpful_votes: 3,
+      created_at: new Date(Date.now() - 86400000)
+    },
+    {
+      id: "2",
+      title: "Understanding Your Storage Limits",
+      content: "Learn about storage limits for each plan and how to manage your voice notes...",
+      category: "billing",
+      tags: ["storage", "limits", "plans"],
+      views: 876,
+      helpful_votes: 67,
+      not_helpful_votes: 2,
+      created_at: new Date(Date.now() - 172800000)
+    }
+  ];
+
   const fetchData = async () => {
     try {
-      setLoading(true);
-      
-      if (activeTab === 'my-tickets') {
-        const ticketsData = await api.getUserTickets();
-        setTickets(ticketsData.data.tickets || []);
-      } else if (activeTab === 'knowledge-base') {
-        const kbData = await api.getKnowledgeBase();
-        setKnowledgeBase(kbData.data.articles || []);
+      if (isMountedRef.current) setLoading(true);
+
+      if (activeTab === 'knowledge-base') {
+        try {
+          const kbData = await api.getKnowledgeBase();
+          if (kbData?.data?.articles) {
+            if (isMountedRef.current) setKnowledgeBase(kbData.data.articles);
+          } else {
+            if (isMountedRef.current) setKnowledgeBase(getFallbackKnowledgeBase());
+          }
+        } catch (apiErr) {
+          console.warn('Knowledge base API failed, using fallback:', apiErr.message);
+          if (isMountedRef.current) setKnowledgeBase(getFallbackKnowledgeBase());
+        }
+
+      } else if (activeTab === 'my-tickets') {
+        try {
+          const ticketsData = await api.getUserTickets();
+          if (isMountedRef.current) {
+            setTickets(ticketsData?.data?.tickets || ticketsData?.data || []);
+          }
+        } catch (apiErr) {
+          console.warn('Tickets API failed:', apiErr.message);
+          if (isMountedRef.current) setTickets([]);
+        }
       }
 
-    } catch (error) {
-      console.error("Fetch data error:", error);
-      
-      // Fallback data for development
-      if (process.env.NODE_ENV === 'development') {
-        setTickets([
-          {
-            id: "1",
-            ticket_number: "ST-2024-12345",
-            subject: "Can't upload voice note",
-            priority: "high",
-            status: "open",
-            category: "technical",
-            created_at: new Date(Date.now() - 7200000),
-            response_count: 2,
-            last_response: new Date(Date.now() - 3600000)
-          },
-          {
-            id: "2",
-            ticket_number: "ST-2024-12346",
-            subject: "Billing issue with subscription",
-            priority: "medium",
-            status: "in_progress",
-            category: "billing",
-            created_at: new Date(Date.now() - 86400000),
-            response_count: 5,
-            last_response: new Date(Date.now() - 43200000)
-          }
-        ]);
-        
-        setKnowledgeBase([
-          {
-            id: "1",
-            title: "How to Record Your First Voice Note",
-            content: "Learn how to create and save your first voice note on SureTalk...",
-            category: "getting-started",
-            tags: ["recording", "beginner", "tutorial"],
-            views: 1245,
-            helpful_votes: 89,
-            not_helpful_votes: 3,
-            created_at: new Date(Date.now() - 86400000)
-          },
-          {
-            id: "2",
-            title: "Understanding Your Storage Limits",
-            content: "Learn about storage limits for each plan and how to manage your voice notes...",
-            category: "billing",
-            tags: ["storage", "limits", "plans"],
-            views: 876,
-            helpful_votes: 67,
-            not_helpful_votes: 2,
-            created_at: new Date(Date.now() - 172800000)
-          }
-        ]);
-      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 

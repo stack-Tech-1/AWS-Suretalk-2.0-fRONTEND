@@ -282,7 +282,7 @@ export default function Topbar({
     { icon: <Globe className="w-4 h-4" />, label: "Logs", href: "/admin/logs" },
     { icon: <LogOut className="w-4 h-4" />, label: "Logout", href: "/" },
   ] : [
-    { icon: <User className="w-4 h-4" />, label: "Profile", href: "/usersDashboard/profile" },
+    { icon: <User className="w-4 h-4" />, label: "Profile", href: "/usersDashboard/settings/profile" },
     { icon: <Settings className="w-4 h-4" />, label: "Settings", href: "/usersDashboard/settings" },
     { icon: <CreditCard className="w-4 h-4" />, label: "Billing", href: "/usersDashboard/billing" },
     { icon: <Zap className="w-4 h-4" />, label: "Upgrade Plan", href: "/usersDashboard/upgrade" },

@@ -182,11 +182,6 @@ export default function LegacyVault() {
     }
   };
 
-  // ✅ Reset first render flag on mount
-useEffect(() => {
-  isFirstRenderRef.current = true;
-}, []);
-
 // ✅ Initial load - uses GLOBAL flag to prevent re-initialization
 useEffect(() => {
   console.log('🔵 INITIAL LOAD EFFECT - authLoading:', authLoading, 'hasInitializedGlobal:', hasInitializedGlobal);
@@ -215,7 +210,14 @@ useEffect(() => {
     setLoading(false);
     hasInitializedGlobal = true; // ✅ Set GLOBAL flag even without access
   }
-  
+
+  // Mark first render complete after debounce window so the
+  // search/filter effect cannot cancel the initial fetch
+  const timer = setTimeout(() => {
+    isFirstRenderRef.current = false;
+  }, 500);
+  return () => clearTimeout(timer);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [authLoading]);
 
@@ -226,7 +228,6 @@ useEffect(() => {
   // ✅ Skip on first render after mount
   if (isFirstRenderRef.current) {
     console.log('🟢 SEARCH EFFECT - SKIPPED (first render)');
-    isFirstRenderRef.current = false;
     return;
   }
   

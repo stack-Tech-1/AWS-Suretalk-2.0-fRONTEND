@@ -51,11 +51,18 @@ export default function NotificationsPage() {
     total: 0,
     hasMore: true
   });
+  const [notifStats, setNotifStats] = useState({
+    total: 0,
+    unread: 0,
+    voice_notes: 0,
+    messages: 0
+  });
 
   // Load notifications on component mount
   useEffect(() => {
     if (!authLoading) {
       loadNotifications();
+      loadStats();
     }
   }, [filter, typeFilter, authLoading]);
 
@@ -88,13 +95,14 @@ export default function NotificationsPage() {
   const loadStats = async () => {
     try {
       const response = await api.request('/notifications/stats');
-      if (response.success) {
-        return response.data;
+      console.log('Notification stats response:', response?.data);
+      if (response?.success && response?.data) {
+        setNotifStats(response.data);
       }
-    } catch (error) {
-      console.error('Failed to load stats:', error);
+    } catch (err) {
+      console.warn('Failed to load notification stats:', err.message);
+      // Non-fatal — cards will show 0
     }
-    return null;
   };
 
   const handleMarkAsRead = async (id) => {
@@ -328,7 +336,7 @@ export default function NotificationsPage() {
                   {stat.replace('_', ' ')}
                 </p>
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-white mt-1">
-                  {Math.floor(Math.random() * 100)}
+                  {notifStats[stat] ?? 0}
                 </h3>
               </div>
               <div className="p-3 rounded-full bg-gradient-to-br from-brand-500/10 to-accent-500/10">
