@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   X,
   RefreshCw,
@@ -85,41 +86,39 @@ export default function Settings() {
   const [showConfirmModal, setShowConfirmModal] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
-  // Load user settings
   useEffect(() => {
-    if (!authLoading) {
-      loadSettings();
-    }
-  }, [authLoading]);
-
-  const loadSettings = async () => {
-    try {
-      setLoading(true);
-      
-      // ✅ User data is already in AuthContext - no separate API call needed
-      
-      // Load user-specific settings from localStorage or API
-      const savedSettings = localStorage.getItem('userSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+    const loadSettings = async () => {
+      try {
+        // Load from backend first
+        const response = await api.request('/users/settings');
+        if (response?.success && response?.data?.settings) {
+          const saved = response.data.settings;
+          // Merge with defaults
+          if (saved.notifications) setSettings(prev => ({ ...prev, notifications: { ...prev.notifications, ...saved.notifications } }));
+          if (saved.privacy) setSettings(prev => ({ ...prev, privacy: { ...prev.privacy, ...saved.privacy } }));
+          if (saved.appearance) setSettings(prev => ({ ...prev, appearance: { ...prev.appearance, ...saved.appearance } }));
+        }
+      } catch (err) {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('userSettings');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.notifications) setSettings(prev => ({ ...prev, notifications: { ...prev.notifications, ...parsed.notifications } }));
+            if (parsed.privacy) setSettings(prev => ({ ...prev, privacy: { ...prev.privacy, ...parsed.privacy } }));
+            if (parsed.appearance) setSettings(prev => ({ ...prev, appearance: { ...prev.appearance, ...parsed.appearance } }));
+          } catch (e) {}
+        }
+      } finally {
+        setLoading(false);
       }
-      
-      // Load theme preference
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      setTheme(savedTheme);
-      setSettings(prev => ({
-        ...prev,
-        appearance: { ...prev.appearance, theme: savedTheme }
-      }));
-      
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-      toast.error('Failed to load user settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    loadSettings();
+  }, []);
 
   const loadSystemSettings = async () => {
     try {
@@ -153,32 +152,27 @@ export default function Settings() {
   const handleSaveAll = async () => {
     try {
       setSaving(true);
-      
-      // Save notification preferences
-      const notificationData = {
-        email_notifications: settings.notifications.email,
-        push_notifications: settings.notifications.push,
-        voice_alerts: settings.notifications.voice,
-        weekly_digest: settings.notifications.weeklyDigest
-      };
-      
-      // Save security settings
-      const securityData = {
-        two_factor_enabled: settings.security.twoFactor,
-        login_alerts: settings.security.loginAlerts,
-        session_timeout_minutes: settings.security.sessionTimeout
-      };
-      
-      // Call API to save settings
-      // await api.updateUserSettings({ notifications: notificationData, security: securityData });
-      
-      localStorage.setItem('userSettings', JSON.stringify(settings));
-      
-      toast.success('All settings saved successfully');
-      
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
+
+      // Save to backend
+      await api.request('/users/settings', {
+        method: 'PUT',
+        body: JSON.stringify({
+          notifications: settings.notifications,
+          privacy: settings.privacy,
+          appearance: settings.appearance
+        })
+      });
+
+      // Also save to localStorage as cache
+      localStorage.setItem('userSettings', JSON.stringify({
+        notifications: settings.notifications,
+        privacy: settings.privacy,
+        appearance: settings.appearance
+      }));
+
+      toast.success('Settings saved successfully', 'Settings');
+    } catch (err) {
+      toast.error('Failed to save settings. Please try again.', 'Error');
     } finally {
       setSaving(false);
     }
@@ -223,23 +217,27 @@ export default function Settings() {
   };
 
   const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      toast.error('Please type DELETE to confirm', 'Confirmation Required');
+      return;
+    }
+
     try {
-      setSaving(true);
-      setShowConfirmModal(null);
-      
-      // Note: This is a destructive action
-      toast.success('Account deletion request submitted. Check your email for confirmation.');
-      
-      // Use logout from AuthContext
-      setTimeout(() => {
-        logout();
-        router.push('/login');
-      }, 3000);
-      
-    } catch (error) {
-      console.error('Account deletion failed:', error);
-      toast.error('Failed to process account deletion');
-      setSaving(false);
+      setDeleting(true);
+      await api.request('/users/account', {
+        method: 'DELETE',
+        body: JSON.stringify({ confirmation: 'DELETE' })
+      });
+
+      toast.success('Your account has been deleted', 'Account Deleted');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      logout();
+      window.location.href = '/';
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete account', 'Error');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -931,8 +929,8 @@ export default function Settings() {
                 </button>
 
                 <button
-                  onClick={() => setShowConfirmModal('delete')}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-300 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-300
                            dark:border-gray-600 hover:border-red-500 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -950,7 +948,7 @@ export default function Settings() {
         </motion.div>
       </div>
 
-       {/* Confirmation Modals */}
+       {/* Export Confirmation Modal */}
        {showConfirmModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <motion.div
@@ -958,91 +956,91 @@ export default function Settings() {
             animate={{ scale: 1, opacity: 1 }}
             className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full"
           >
-            {showConfirmModal === 'export' ? (
-              <>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Download className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">Export Data</h3>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  This will export all your data including voice notes, contacts, and settings. 
-                  The download may take a few minutes.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowConfirmModal(null)}
-                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleExportData}
-                    disabled={exportLoading}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {exportLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Exporting...
-                      </>
-                    ) : (
-                      'Export Data'
-                    )}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <UserX className="w-6 h-6 text-red-500" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">Delete Account</h3>
-                </div>
-                <div className="space-y-4 mb-6">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    This action <span className="font-bold text-red-600 dark:text-red-400">cannot be undone</span>. 
-                    All your data including voice notes, contacts, and settings will be permanently deleted.
-                  </p>
-                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
-                      <div>
-                        <h4 className="font-medium text-red-800 dark:text-red-300">Warning</h4>
-                        <p className="text-sm text-red-700 dark:text-red-400 mt-1">
-                          This action is irreversible. You will lose access to all your voice messages and data.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowConfirmModal(null)}
-                    className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={saving}
-                    className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Delete Account'
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Download className="w-6 h-6 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Export Data</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              This will export all your data including voice notes, contacts, and settings.
+              The download may take a few minutes.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(null)}
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExportData}
+                disabled={exportLoading}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {exportLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  'Export Data'
+                )}
+              </button>
+            </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Account</h3>
+                <p className="text-sm text-red-600">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              This will permanently delete your account, cancel any active subscriptions,
+              and remove access to all your data. Your voice notes and vault items will be
+              retained for 30 days before permanent deletion.
+            </p>
+
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm:
+            </p>
+
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE here"
+              className="w-full px-3 py-2.5 rounded-xl border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETE' || deleting}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-40"
+              >
+                {deleting ? 'Deleting...' : 'Delete My Account'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
