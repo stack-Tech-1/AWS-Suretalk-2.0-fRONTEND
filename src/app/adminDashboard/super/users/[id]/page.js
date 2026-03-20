@@ -7,7 +7,7 @@ import {
   ArrowLeft, User, Mic, Shield, Calendar, Activity,
   CreditCard, Phone, Mail, MapPin, Clock, Download,
   Play, Star, Lock, AlertTriangle, CheckCircle,
-  BarChart2, TrendingUp, Zap
+  BarChart2, TrendingUp, Zap, RefreshCw
 } from 'lucide-react';
 
 const TIER_LABELS = {
@@ -44,6 +44,7 @@ export default function UserDetailPage() {
   const [footprintLoading, setFootprintLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [error, setError] = useState(null);
+  const [resyncing, setResyncing] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -99,6 +100,30 @@ export default function UserDetailPage() {
 
   const { user, voiceNotes, contacts, scheduled, vault } = userData;
 
+  const handleResync = async () => {
+    if (!confirm('Re-sync this user from the IVR system? This will update their subscription data from DynamoDB.')) return;
+
+    try {
+      setResyncing(true);
+      const response = await api.request(`/super-admin/users/${params.id}/resync`, {
+        method: 'POST'
+      });
+
+      if (response.success) {
+        const synced = response.data.syncedFields.join(', ');
+        alert(`✅ Re-sync successful!\n\nUpdated fields: ${synced}\n\nRefreshing user data...`);
+        const refreshed = await api.request(`/super-admin/users/${params.id}/full`);
+        if (refreshed.success) setUserData(refreshed.data);
+      } else {
+        alert('Re-sync failed: ' + response.error);
+      }
+    } catch (err) {
+      alert('Re-sync failed: ' + err.message);
+    } finally {
+      setResyncing(false);
+    }
+  };
+
   return (
     <div className="page-enter max-w-5xl mx-auto">
       {/* Back button */}
@@ -144,6 +169,17 @@ export default function UserDetailPage() {
               <p className="text-xs text-gray-500">Storage</p>
             </div>
           </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleResync}
+            disabled={resyncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-orange-300 dark:border-orange-700 text-orange-600 dark:text-orange-400 text-sm font-medium hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors disabled:opacity-40"
+            title="Re-sync subscription data from IVR/DynamoDB"
+          >
+            <RefreshCw className={`w-4 h-4 ${resyncing ? 'animate-spin' : ''}`} />
+            {resyncing ? 'Syncing...' : 'Re-sync from IVR'}
+          </button>
         </div>
       </div>
 
@@ -430,6 +466,17 @@ export default function UserDetailPage() {
               </div>
             ))}
           </dl>
+          {!user.stripe_customer_id && (
+            <div className="mt-4 p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+              <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">
+                No Stripe customer linked
+              </p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                This user subscribed via IVR. Click "Re-sync from IVR" above to pull their
+                Stripe customer ID from DynamoDB.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
