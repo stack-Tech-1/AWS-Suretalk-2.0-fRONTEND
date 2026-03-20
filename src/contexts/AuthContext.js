@@ -90,29 +90,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // 1. Clear user state FIRST — before any redirects
+    setUser(null);
+    hasCheckedUserRef.current = false;
+
+    // 2. Set logout flag for login page
     try {
-      await api.logout();
-    } catch (err) {
-      console.warn('Logout API call failed:', err.message);
-    } finally {
-      // Clear ALL auth state synchronously
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('isAdmin');
-
-      // Set logout flag BEFORE clearing sessionStorage
-      // Login page reads this to skip auto-redirect after logout
       sessionStorage.setItem('just_logged_out', 'true');
+    } catch (e) {}
 
-      setUser(null);
-
-      // 🔄 allow auth check again after logout
-      hasCheckedUserRef.current = false;
-
-      router.push('/login');
+    // 3. Clear all localStorage
+    try {
+      localStorage.clear();
+    } catch (e) {
+      ['token', 'refreshToken', 'user', 'adminToken',
+       'isAdmin', 'admin_session'].forEach(key => {
+        try { localStorage.removeItem(key); } catch (e2) {}
+      });
     }
+
+    // 4. Notify backend (fire and forget — don't await)
+    try { api.logout().catch(() => {}); } catch (e) {}
+
+    // 5. Wait one tick for React state to propagate, then hard redirect
+    await new Promise(resolve => setTimeout(resolve, 50));
+    window.location.href = '/login';
   };
 
   // 🎯 Helper methods for common checks
