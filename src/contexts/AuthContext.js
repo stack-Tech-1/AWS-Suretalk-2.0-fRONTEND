@@ -90,30 +90,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // 1. Clear user state FIRST — before any redirects
+    // 1. Capture token BEFORE clearing (needed to authenticate the backend call)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    // 2. Clear everything IMMEDIATELY — no waiting
+    try { api.removeToken(); } catch (e) {}
+    try { api.clearCache(); } catch (e) {}
+    try { localStorage.clear(); } catch (e) {
+      ['token', 'refreshToken', 'user', 'adminToken', 'isAdmin', 'admin_session']
+        .forEach(key => { try { localStorage.removeItem(key); } catch (e2) {} });
+    }
+    try { sessionStorage.setItem('just_logged_out', 'true'); } catch (e) {}
+
+    // 3. Clear React state
     setUser(null);
     hasCheckedUserRef.current = false;
 
-    // 2. Set logout flag for login page
-    try {
-      sessionStorage.setItem('just_logged_out', 'true');
-    } catch (e) {}
-
-    // 3. Clear all localStorage
-    try {
-      localStorage.clear();
-    } catch (e) {
-      ['token', 'refreshToken', 'user', 'adminToken',
-       'isAdmin', 'admin_session'].forEach(key => {
-        try { localStorage.removeItem(key); } catch (e2) {}
-      });
+    // 4. Notify backend fire-and-forget using the captured token
+    //    fetch() is used directly so we can pass the pre-captured token in the header.
+    //    This is intentionally not awaited — it does not block the redirect.
+    if (token) {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      fetch(`${apiBase}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      }).catch(() => {});
     }
 
-    // 4. Notify backend (fire and forget — don't await)
-    try { api.logout().catch(() => {}); } catch (e) {}
-
-    // 5. Wait one tick for React state to propagate, then hard redirect
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // 5. Hard redirect — token is already gone before this line
     window.location.href = '/login';
   };
 

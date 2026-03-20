@@ -85,7 +85,7 @@ function LoginInner() {
             }
 
             // Redirect to user dashboard
-            router.push('/usersDashboard');
+            window.location.href = '/usersDashboard';
 
           } catch (error) {
             console.error("Login error:", error);
