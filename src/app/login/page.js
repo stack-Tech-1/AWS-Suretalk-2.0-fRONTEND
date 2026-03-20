@@ -9,7 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '@/components/ui/Toast';
 
 function LoginInner() {
-  const { login } = useAuth();
+  useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activated = searchParams.get('activated');
@@ -24,6 +24,13 @@ function LoginInner() {
 
   // Redirect already-authenticated users away from the login page
   useEffect(() => {
+    // If user just logged out, clear the flag and stay on login page
+    const justLoggedOut = sessionStorage.getItem('just_logged_out');
+    if (justLoggedOut) {
+      sessionStorage.removeItem('just_logged_out');
+      return; // Stay on login page — don't auto-redirect
+    }
+
     const token = localStorage.getItem('token');
     if (!token) return;
 

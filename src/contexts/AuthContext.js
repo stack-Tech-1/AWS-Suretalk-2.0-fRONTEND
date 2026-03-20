@@ -101,7 +101,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('user');
       localStorage.removeItem('adminToken');
       localStorage.removeItem('isAdmin');
-      sessionStorage.clear();
+
+      // Set logout flag BEFORE clearing sessionStorage
+      // Login page reads this to skip auto-redirect after logout
+      sessionStorage.setItem('just_logged_out', 'true');
 
       setUser(null);
 
