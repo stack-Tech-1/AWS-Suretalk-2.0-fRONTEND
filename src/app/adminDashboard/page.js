@@ -157,8 +157,6 @@ export default function AdminHome() {
       color: "bg-green-500",
       href: "/adminDashboard/export",
       onClick: () => {
-        // Add export functionality
-        console.log('Export data');
       }
     },
     { 
@@ -484,8 +482,6 @@ export default function AdminHome() {
           
           <button 
             onClick={() => {
-              // Add system check functionality
-              console.log('Running system check...');
             }}
             className="w-full flex items-center justify-center gap-2 bg-white/20 backdrop-blur-sm 
                      text-white py-3 rounded-xl font-medium hover:bg-white/30 transition-all"

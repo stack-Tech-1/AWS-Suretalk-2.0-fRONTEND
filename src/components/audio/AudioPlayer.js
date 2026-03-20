@@ -27,11 +27,8 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
 
   // Initialize audio - ONE TIME ONLY
   useEffect(() => {
-    console.log('AudioPlayer useEffect running, isInitialized:', isInitializedRef.current);
-    
     // Prevent multiple initializations
     if (isInitializedRef.current) {
-      console.log('Audio already initialized, skipping...');
       return;
     }
 
@@ -45,9 +42,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
         
         // Get the URL
         const url = typeof audioUrl === 'function' ? await audioUrl() : audioUrl;
-        
-        console.log('AudioPlayer received URL:', url);
-        
+
         if (!url) {
           throw new Error('No audio URL provided');
         }
@@ -55,14 +50,12 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
         // Create a new Audio element
         audioElement = new Audio();
         
-        console.log('Setting audio src to:', url);
         audioElement.src = url;
         audioElement.preload = 'metadata';
         
         // Set up event listeners
         const handleLoadedMetadata = () => {
           if (!isMounted) return;
-          console.log('Audio loaded, duration:', audioElement.duration);
           setDuration(audioElement.duration);
           setIsLoading(false);
         };
@@ -127,7 +120,6 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
 
     // Cleanup
     return () => {
-      console.log('AudioPlayer cleanup');
       isMounted = false;
       if (audioRef.current) {
         audioRef.current.pause();

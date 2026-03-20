@@ -265,8 +265,6 @@ const fetchLogStats = async () => {
       const queryString = new URLSearchParams(params).toString();
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/admin/logs/export?${queryString}`;
       
-      console.log('Exporting from:', apiUrl);
-  
       const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -306,11 +304,10 @@ const fetchLogStats = async () => {
   };
 
   // Delete a log (if implemented in backend)
-  const handleDeleteLog = async (id) => {
+  const handleDeleteLog = async (_id) => {
     if (window.confirm("Are you sure you want to delete this log?")) {
       try {
         // Note: Your backend doesn't have delete endpoint for logs yet
-        console.log("Delete log:", id);
         // await api.deleteLog(id);
         fetchLogs(); // Refresh
       } catch (error) {
@@ -321,7 +318,6 @@ const fetchLogStats = async () => {
 
   // View log details
   const handleViewLogDetails = (log) => {
-    console.log("View log details:", log);
   };
 
   const getLevelIcon = (level) => {

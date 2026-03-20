@@ -102,7 +102,6 @@ export default function AdminSettings() {
     // Auto-save individual setting (optional - you can remove if you prefer bulk save)
     try {
       await api.updateSetting(category, key, value);
-      console.log(`Setting ${category}.${key} updated to`, value);
     } catch (error) {
       console.error("Failed to save setting:", error);
     }

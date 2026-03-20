@@ -85,9 +85,6 @@ export default function SecureAdminLogin() {
       clientIP: clientIP
     };
 
-    console.log('Sending login data:', loginData); // Debug log
-
-  
       const response = await api.request('/auth/admin-login', {
         method: 'POST',
         body: JSON.stringify(loginData)
@@ -226,14 +223,7 @@ export default function SecureAdminLogin() {
     
     // Clear temp token
     sessionStorage.removeItem('admin_temp_token');
-    
-    // Log successful login
-    console.log('Admin login successful:', {
-      user: response.data.user.email,
-      time: new Date().toISOString(),
-      ip: clientIP
-    });
-    
+
     // Redirect to admin dashboard
     router.replace('/adminDashboard');
   };

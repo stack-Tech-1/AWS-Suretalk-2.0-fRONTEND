@@ -123,10 +123,7 @@ export default function Settings() {
 
   const loadSystemSettings = async () => {
     try {
-      const settingsResponse = await api.getSettings();
-      if (settingsResponse.success) {
-        console.log('System settings loaded:', settingsResponse.data);
-      }
+      await api.getSettings();
     } catch (error) {
       console.error('Failed to load system settings:', error);
     }

@@ -74,12 +74,6 @@ export default function AdminRegister() {
         throw new Error("Invalid admin registration code");
       }
 
-      console.log('Submitting admin registration request:', {
-        ...formData,
-        password: '***', // Don't log actual password
-        confirmPassword: '***'
-      });
-
       // In production, this would call a backend endpoint like:
       await api.request('/auth/admin/request', {
         method: 'POST',

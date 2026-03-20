@@ -120,8 +120,7 @@ function BillingPageInner() {
       setError(null);
 
       const subscriptionResponse = await api.getSubscription();
-      console.log('Subscription response:', subscriptionResponse); // Add this for debugging
-      
+
       if (subscriptionResponse.success) {
         setSubscription(subscriptionResponse.data);
         

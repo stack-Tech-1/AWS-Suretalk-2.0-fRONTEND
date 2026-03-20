@@ -278,7 +278,6 @@ export default function RecordVoiceNote() {
       const data = await ffmpeg.readFile('output.mp3');
       const mp3Blob = new Blob([data.buffer], { type: 'audio/mpeg' });
 
-      console.log(`Converted: ${(webmBlob.size/1024).toFixed(1)}KB WebM → ${(mp3Blob.size/1024).toFixed(1)}KB MP3`);
       return mp3Blob;
 
     } catch (error) {
@@ -294,7 +293,6 @@ export default function RecordVoiceNote() {
   const createVoiceNoteWithRetry = async (noteData, maxRetries = 3) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Creating voice note record, attempt ${attempt}/${maxRetries}`);
         const response = await api.createVoiceNote(noteData);
         return response;
       } catch (error) {
@@ -340,7 +338,6 @@ export default function RecordVoiceNote() {
         fileToUpload = fileUpload; fileName = fileUpload.name; fileType = fileUpload.type;
       } else {
         setSaveStage('Converting audio...');
-        console.log('Converting WebM recording to MP3...');
         const mp3Blob = await convertToMp3(audioBlob);
         fileToUpload = mp3Blob;
         fileName = `recording_${Date.now()}.mp3`;

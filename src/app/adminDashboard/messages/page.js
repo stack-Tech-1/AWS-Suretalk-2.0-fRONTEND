@@ -231,8 +231,6 @@ export default function AdminScheduledMessages() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        // For JSON, you might want to display or download
-        console.log("JSON Export:", response);
         toast.success(`Exported ${response.data?.length || 0} messages as JSON`, 'Export Complete');
       }
       

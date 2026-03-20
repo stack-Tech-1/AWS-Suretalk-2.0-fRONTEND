@@ -104,12 +104,8 @@ const handleSubmit = async (e) => {
       subscriptionTier: selectedTier, 
     };
 
-    console.log("Sending signup data:", apiData);
-
     // Call the real API
-    const response = await api.register(apiData);
-    
-    console.log("Signup successful:", response);
+    await api.register(apiData);
 
      // Show verification message instead of auto-login
      setStep(2); 

@@ -91,7 +91,6 @@ export default function Topbar({
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('WebSocket connected for notifications');
     };
 
     ws.onmessage = (event) => {
@@ -106,14 +105,12 @@ export default function Topbar({
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected, reconnecting...');
       if (process.env.NEXT_PUBLIC_WS_URL) setTimeout(setupWebSocket, 3000);
     };
   };
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
       return;
     }
     
@@ -129,30 +126,25 @@ export default function Topbar({
 
   const subscribeToPushNotifications = async () => {
     if (window.location.pathname.includes('/adminDashboard')) {
-      console.log('Skipping push notifications for admin page');
       return;
     }
     
     try {
       if (!('serviceWorker' in navigator)) {
-        console.log('Service workers not supported');
         return;
       }
-      
+
       if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        console.log('Push notifications require HTTPS in production');
         return;
       }
-      
+
       const registration = await navigator.serviceWorker.ready;
-      
+
       if (!('pushManager' in registration)) {
-        console.log('Push notifications not supported');
         return;
       }
-      
+
       if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-        console.warn('VAPID public key not configured');
         return;
       }
       
@@ -169,14 +161,10 @@ export default function Topbar({
         })
       });
       
-      console.log('Push notification subscription successful');
-      
     } catch (error) {
-      if (error.name === 'AbortError' || 
-          error.name === 'NotAllowedError' || 
-          error.message.includes('push service')) {
-        console.log('Push notifications not available:', error.message);
-      } else {
+      if (error.name !== 'AbortError' &&
+          error.name !== 'NotAllowedError' &&
+          !error.message.includes('push service')) {
         console.error('Failed to subscribe to push notifications:', error);
       }
     }

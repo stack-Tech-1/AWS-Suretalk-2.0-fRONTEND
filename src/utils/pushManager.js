@@ -72,7 +72,6 @@ export class PushNotificationManager {
           scope: '/'
         });
   
-        console.log('Service Worker registered with scope:', this.registration.scope);
         return this.registration;
       } catch (error) {
         console.error('Service Worker registration failed:', error);
@@ -129,7 +128,6 @@ export class PushNotificationManager {
           applicationServerKey: applicationServerKey
         });
   
-        console.log('Push notification subscription successful:', this.subscription);
         return this.subscription;
       } catch (error) {
         console.error('Error subscribing to push notifications:', error);
@@ -158,7 +156,6 @@ export class PushNotificationManager {
         
         if (success) {
           this.subscription = null;
-          console.log('Unsubscribed from push notifications');
         }
         
         return success;
@@ -314,12 +311,10 @@ export class PushNotificationManager {
   showLocalNotification(title, options) {
     // Check if we're in browser
     if (typeof window === 'undefined' || typeof Notification === 'undefined') {
-      console.warn('Cannot show notification: not in browser');
       return;
     }
 
     if (!this.isGranted()) {
-      console.warn('Cannot show notification: permission not granted');
       return;
     }
 

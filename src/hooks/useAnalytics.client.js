@@ -60,11 +60,6 @@ export const useAnalytics = () => {
         'cta_click' // Add this
       ];
 
-      // Only warn in development
-      if (process.env.NODE_ENV === 'development' && !validEvents.includes(eventType)) {
-        console.warn(`Invalid event type: ${eventType}`);
-      }
-
       // Use the valid events only
       const safeEventType = validEvents.includes(eventType) ? eventType : 'page_view';
 

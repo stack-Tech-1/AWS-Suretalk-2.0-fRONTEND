@@ -202,12 +202,8 @@ class ApiClient {
     });
   }
 
-  // Add debugging to see what the API returns
 async getVoiceNoteDownloadUrl(id) {
-  console.log(`Fetching download URL for voice note: ${id}`);
-  const response = await this.request(`/voice-notes/${id}/download`);
-  console.log('Download URL response:', response);
-  return response;
+  return this.request(`/voice-notes/${id}/download`);
 }
 
   // Contacts endpoints
@@ -216,8 +212,7 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/contacts${query ? `?${query}` : ''}`);
   }
 
-  async createContact(data) {   
-    console.log('API Request Body:', JSON.stringify(data));  
+  async createContact(data) {
     return this.request('/contacts', {
       method: 'POST',
       body: JSON.stringify(data),

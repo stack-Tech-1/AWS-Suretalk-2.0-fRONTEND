@@ -15,7 +15,6 @@ class StorageWebSocket {
       this.socket = new WebSocket(`${wsUrl}/ws/storage`);
   
       this.socket.onopen = () => {
-        console.log('Storage WebSocket connected');
         this.reconnectAttempts = 0;
         this.emit('connected', { timestamp: new Date() });
       };
@@ -35,7 +34,6 @@ class StorageWebSocket {
       };
   
       this.socket.onclose = () => {
-        console.log('Storage WebSocket disconnected');
         this.emit('disconnected', { timestamp: new Date() });
         
         // Attempt reconnect
@@ -46,7 +44,6 @@ class StorageWebSocket {
       };
   
       this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
         this.emit('error', { error: error.message });
       };
     }

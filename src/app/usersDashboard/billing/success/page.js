@@ -27,22 +27,18 @@ export default function BillingSuccess() {
   useEffect(() => {
     const verifyPayment = async () => {
       if (!sessionId) {
-        console.log('No session ID found in URL');
         setError('No payment session found');
         setLoading(false);
         return;
       }
   
       try {
-        console.log('Verifying payment with session ID:', sessionId);
-        
         // Wait a bit for webhook to process
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         // First, check if the subscription was created in our database
         const subscriptionResponse = await api.getSubscription();
-        console.log('Current subscription:', subscriptionResponse.data);
-        
+
         if (subscriptionResponse.success) {
           // Check if subscription was upgraded
           const currentTier = subscriptionResponse.data?.currentTier;

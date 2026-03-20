@@ -217,8 +217,6 @@ export default function StorageManagement() {
       const formData = new FormData();
       formData.append('report', file);
       
-      // Simulate upload
-      console.log("Uploading report:", file.name);
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success("Report uploaded successfully!", 'Uploaded');

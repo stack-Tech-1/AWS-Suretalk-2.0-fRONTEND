@@ -224,8 +224,6 @@ export default function VoiceWills() {
 
   // Handle view details
   const handleViewDetails = (will) => {
-    // You can implement a detailed view modal or page
-    console.log("View details for will:", will);
     toast.info(`Will: ${will.title} | User: ${will.user_name} | Status: ${will.is_released ? 'Released' : 'Pending'}`, 'Will Details');
   };
 

@@ -124,24 +124,20 @@ export default function BucketDetailPage() {
   };
 
   // Download file
-  const handleDownloadFile = (key) => {
-    // Implement file download logic
-    console.log("Downloading:", key);
+  const handleDownloadFile = (_key) => {
     // await api.downloadFile(bucketName, key);
   };
 
   // Delete file
   const handleDeleteFile = (key) => {
     if (window.confirm(`Are you sure you want to delete ${key}?`)) {
-      console.log("Deleting:", key);
       // await api.deleteFile(bucketName, key);
       fetchBucketDetails();
     }
   };
 
   // View file details
-  const handleViewFile = (key) => {
-    console.log("Viewing:", key);
+  const handleViewFile = (_key) => {
     // Could open a modal with file details
   };
 
@@ -228,14 +224,12 @@ useEffect(() => {
   
     // Set up event listeners
     const handleConnected = () => {
-      console.log("WebSocket connected");
       setConnected(true);
       // Subscribe to bucket updates
       storageWebSocket.subscribeToStorage(bucketName);
     };
   
     const handleDisconnected = () => {
-      console.log("WebSocket disconnected");
       setConnected(false);
     };
   

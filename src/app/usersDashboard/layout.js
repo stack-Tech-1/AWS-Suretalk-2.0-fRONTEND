@@ -84,11 +84,9 @@ export default function UsersDashboardLayout({ children }) {
 
   const initializePushNotifications = async () => {
     try {
-      console.log('Initializing push notifications for user...');
       const result = await pushManager.initialize();
-      
+
       if (result.supported && result.subscribed) {
-        console.log('Push notifications initialized and subscribed');
         analytics.recordEvent('push_notifications_initialized', {
           userId: user?.id,
           subscribed: true

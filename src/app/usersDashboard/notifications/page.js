@@ -95,7 +95,6 @@ export default function NotificationsPage() {
   const loadStats = async () => {
     try {
       const response = await api.request('/notifications/stats');
-      console.log('Notification stats response:', response?.data);
       if (response?.success && response?.data) {
         setNotifStats(response.data);
       }

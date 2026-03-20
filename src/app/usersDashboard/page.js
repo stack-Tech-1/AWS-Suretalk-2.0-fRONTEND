@@ -65,7 +65,6 @@ export default function DashboardHome() {
       const statsResponse = await api.getUserDashboardStats();
       const actualStats = statsResponse.data?.stats || {};
       setDashboardStats(statsResponse.data);
-      console.log('Stats response:', statsResponse?.data);
 
       // Get actual counts from stats, not analytics
       const voiceNotesTotal = parseInt(actualStats.voice_notes_total) || 0;
@@ -283,8 +282,6 @@ export default function DashboardHome() {
       const audioUrl = downloadResponse.data.downloadUrl;
       
       setPlayingAudio(recording.id);
-      // Here you would implement actual audio playback
-      console.log('Playing audio:', audioUrl);
       
     } catch (error) {
       console.error('Failed to play audio:', error);

@@ -209,8 +209,6 @@ export default function Contacts() {
         notes: newContact.notes || undefined
       };
       
-      console.log('Sending contact data:', contactData); 
-      
       const response = await api.createContact(contactData);
       
       if (response.success) {
@@ -240,9 +238,7 @@ export default function Contacts() {
         
         toast.success('Contact added successfully!', 'Contact Added');
       } else {
-        // Log the specific errors from backend
         if (response.errors) {
-          console.error('Backend validation errors:', response.errors);
           throw new Error(response.errors.map(err => err.msg || err).join(', '));
         }
         throw new Error(response.error || 'Unknown error');

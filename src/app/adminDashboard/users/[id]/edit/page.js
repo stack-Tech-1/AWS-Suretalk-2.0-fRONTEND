@@ -427,8 +427,6 @@ export default function EditUser() {
                   type="button"
                   onClick={() => {
                     if (confirm('Are you sure you want to reset this user\'s password? An email will be sent with reset instructions.')) {
-                      // Add password reset logic
-                      console.log('Reset password for:', id);
                     }
                   }}
                   className="w-full px-4 py-3 text-left border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
@@ -440,8 +438,6 @@ export default function EditUser() {
                   type="button"
                   onClick={() => {
                     if (confirm('Are you sure you want to deactivate this account? The user will lose access immediately.')) {
-                      // Add deactivate logic
-                      console.log('Deactivate user:', id);
                     }
                   }}
                   className="w-full px-4 py-3 text-left border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

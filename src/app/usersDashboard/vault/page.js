@@ -89,11 +89,8 @@ export default function LegacyVault() {
 
   // ✅ Main fetch function
   const fetchVaultData = async (page = 1, forceRefresh = false) => {
-    console.log('📡 FETCH VAULT DATA - page:', page, 'forceRefresh:', forceRefresh, 'isFetching:', isFetching);
-    
     // Prevent concurrent fetches
     if (isFetching && !forceRefresh) {
-      console.log('📡 FETCH BLOCKED - already fetching');
       return;
     }
     
@@ -166,7 +163,6 @@ export default function LegacyVault() {
     } catch (error) {
       // Ignore abort errors
       if (error.name === 'AbortError') {
-        console.log('Fetch aborted');
         return;
       }
       
@@ -184,25 +180,20 @@ export default function LegacyVault() {
 
 // ✅ Initial load - uses GLOBAL flag to prevent re-initialization
 useEffect(() => {
-  console.log('🔵 INITIAL LOAD EFFECT - authLoading:', authLoading, 'hasInitializedGlobal:', hasInitializedGlobal);
-  
   // Wait for auth to finish loading
   if (authLoading) return;
-  
+
   // ✅ Check GLOBAL flag
   if (hasInitializedGlobal) {
-    console.log('🔵 SKIPPED - Already initialized globally');
     setLoading(false); // ✅ Stop loading if already initialized
     return;
   }
-  
+
   // Check if user has access
   const hasAccess = hasLegacyVault();
-  console.log('🔵 Has vault access:', hasAccess);
-  
+
   // Only fetch if user has Legacy Vault access
   if (hasAccess) {
-    console.log('🔵 INITIALIZING - Fetching vault data');
     hasInitializedGlobal = true; // ✅ Set GLOBAL flag
     fetchVaultData(1);
   } else {
@@ -223,41 +214,32 @@ useEffect(() => {
 
 // ✅ Debounced search/filter - ONLY runs when user actually changes search/filter
 useEffect(() => {
-  console.log('🟢 SEARCH EFFECT - isFirstRender:', isFirstRenderRef.current, 'searchQuery:', searchQuery, 'selectedFilter:', selectedFilter);
-  
   // ✅ Skip on first render after mount
   if (isFirstRenderRef.current) {
-    console.log('🟢 SEARCH EFFECT - SKIPPED (first render)');
     return;
   }
-  
+
   // Skip if not initialized yet
   if (!hasInitializedGlobal) {
-    console.log('🟢 SEARCH EFFECT - SKIPPED (not initialized)');
     return;
   }
-  
+
   // Don't search if auth is loading
   if (authLoading) {
-    console.log('🟢 SEARCH EFFECT - SKIPPED (auth loading)');
     return;
   }
-  
+
   // Check if user has access
   const hasAccess = hasLegacyVault();
   if (!hasAccess) {
-    console.log('🟢 SEARCH EFFECT - SKIPPED (no access)');
     return;
   }
-  
-  console.log('🟢 SEARCH EFFECT - SCHEDULING FETCH');
+
   const timeout = setTimeout(() => {
-    console.log('🟢 SEARCH EFFECT - EXECUTING FETCH');
     fetchVaultData(1, true);
   }, 400);
 
   return () => {
-    console.log('🟢 SEARCH EFFECT - CLEANUP');
     clearTimeout(timeout);
   };
   
@@ -830,7 +812,6 @@ useEffect(() => {
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
                         title="Share"
                         onClick={() => {
-                          console.log('Share item:', item.id);
                         }}
                       >
                         <Share2 className="w-4 h-4" />
