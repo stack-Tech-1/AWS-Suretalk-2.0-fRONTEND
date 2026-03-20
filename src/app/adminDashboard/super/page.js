@@ -63,7 +63,7 @@ export default function SuperAdminDashboard() {
   const [syncHealth, setSyncHealth] = useState(null);
   const [systemHealth, setSystemHealth] = useState(null);
   const [revenue, setRevenue] = useState(null);
-  const [exportLoading, setExportLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState('');
 
   const fetchUsers = useCallback(async (page = 1) => {
     try {
@@ -131,14 +131,42 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleExport = async () => {
+  const handleUsersExport = async () => {
     try {
-      setExportLoading(true);
+      setExportLoading('users');
       await api.exportSuperAdminUsers();
     } catch (err) {
       toast.error('Export failed: ' + err.message);
     } finally {
-      setExportLoading(false);
+      setExportLoading('');
+    }
+  };
+
+  const handleExport = async (type) => {
+    try {
+      setExportLoading(type);
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      let url, filename;
+      if (type === 'sync-logs') {
+        url = `${baseUrl}/super-admin/export/sync-logs`;
+        filename = `sync-logs-${new Date().toISOString().split('T')[0]}.csv`;
+      }
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      toast.error('Export failed: ' + err.message);
+    } finally {
+      setExportLoading('');
     }
   };
 
@@ -359,11 +387,11 @@ export default function SuperAdminDashboard() {
               <option value="suspended">Suspended</option>
             </select>
             <button
-              onClick={handleExport}
-              disabled={exportLoading}
+              onClick={handleUsersExport}
+              disabled={exportLoading === 'users'}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50 whitespace-nowrap"
             >
-              {exportLoading ? (
+              {exportLoading === 'users' ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Download className="w-4 h-4" />
@@ -545,7 +573,21 @@ export default function SuperAdminDashboard() {
       {/* Activity tab */}
       {activeTab === 'activity' && overview && (
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Recent System Activity</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900 dark:text-white">Recent System Activity</h3>
+            <button
+              onClick={() => handleExport('sync-logs')}
+              disabled={exportLoading === 'sync-logs'}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+            >
+              {exportLoading === 'sync-logs' ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4" />
+              )}
+              Export Sync Logs
+            </button>
+          </div>
           <div className="space-y-2">
             {overview.recentActivity.map((event, i) => (
               <div key={i} className="card p-3 flex items-center gap-3">

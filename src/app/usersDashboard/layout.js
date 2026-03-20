@@ -14,6 +14,7 @@ import { pushManager } from '@/utils/pushManager';
 import { useAnalyticsContext } from '@/contexts/AnalyticsContext';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { ToastProvider } from '@/components/ui/Toast';
+import ImpersonationBanner from '@/components/ui/ImpersonationBanner';
 
 export default function UsersDashboardLayout({ children }) {
   const router = useRouter();
@@ -65,6 +66,15 @@ export default function UsersDashboardLayout({ children }) {
     }
   };
 
+  useEffect(() => {
+    const isImpersonating = !!localStorage.getItem('impersonationData');
+    if (isImpersonating) {
+      document.body.classList.add('impersonation-active');
+    } else {
+      document.body.classList.remove('impersonation-active');
+    }
+  }, []);
+
   // Initialize push notifications when user is authenticated
   useEffect(() => {
     if (user && !pushInitiated) {
@@ -104,6 +114,7 @@ export default function UsersDashboardLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <ImpersonationBanner />
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (

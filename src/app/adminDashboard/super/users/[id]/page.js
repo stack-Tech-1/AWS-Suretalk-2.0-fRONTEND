@@ -7,7 +7,7 @@ import {
   ArrowLeft, User, Mic, Shield, Calendar, Activity,
   CreditCard, Phone, Mail, MapPin, Clock, Download,
   Play, Star, Lock, AlertTriangle, CheckCircle,
-  BarChart2, TrendingUp, Zap, RefreshCw
+  BarChart2, TrendingUp, Zap, RefreshCw, Eye
 } from 'lucide-react';
 
 const TIER_LABELS = {
@@ -45,6 +45,8 @@ export default function UserDetailPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [error, setError] = useState(null);
   const [resyncing, setResyncing] = useState(false);
+  const [impersonating, setImpersonating] = useState(false);
+  const [exportLoading, setExportLoading] = useState('');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -124,6 +126,62 @@ export default function UserDetailPage() {
     }
   };
 
+  const handleImpersonate = async () => {
+    if (!confirm(`Start impersonation session for ${userData.user.full_name}?\n\nYou will view the app as this user for 5 minutes. All actions will be logged.`)) return;
+    try {
+      setImpersonating(true);
+      const response = await api.request(`/super-admin/users/${params.id}/impersonate`, { method: 'POST' });
+      if (!response.success) throw new Error(response.error);
+      const currentToken = localStorage.getItem('token');
+      localStorage.setItem('adminReturnToken', currentToken);
+      localStorage.setItem('impersonationToken', response.data.token);
+      localStorage.setItem('impersonationData', JSON.stringify({
+        targetUser: response.data.targetUser,
+        expiresAt: response.data.expiresAt,
+        startedAt: new Date().toISOString()
+      }));
+      localStorage.setItem('token', response.data.token);
+      window.location.href = '/usersDashboard';
+    } catch (err) {
+      alert('Impersonation failed: ' + err.message);
+      setImpersonating(false);
+    }
+  };
+
+  const handleExport = async (type) => {
+    try {
+      setExportLoading(type);
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      let url, filename;
+      if (type === 'full') {
+        url = `${baseUrl}/super-admin/users/${params.id}/export/full`;
+        filename = `user-${params.id}-full.json`;
+      } else if (type === 'billing') {
+        url = `${baseUrl}/super-admin/users/${params.id}/export/billing`;
+        filename = `user-${params.id}-billing.csv`;
+      } else if (type === 'voice-notes') {
+        url = `${baseUrl}/super-admin/users/${params.id}/export/voice-notes`;
+        filename = `user-${params.id}-voice-notes.csv`;
+      }
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert('Export failed: ' + err.message);
+    } finally {
+      setExportLoading('');
+    }
+  };
+
   return (
     <div className="page-enter max-w-5xl mx-auto">
       {/* Back button */}
@@ -170,7 +228,16 @@ export default function UserDetailPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            onClick={handleImpersonate}
+            disabled={impersonating || userData.user.is_admin}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors disabled:opacity-40"
+            title={userData.user.is_admin ? 'Cannot impersonate admin accounts' : 'View dashboard as this user'}
+          >
+            {impersonating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            {impersonating ? 'Starting...' : 'Impersonate'}
+          </button>
           <button
             onClick={handleResync}
             disabled={resyncing}
@@ -226,6 +293,30 @@ export default function UserDetailPage() {
                 </div>
               ))}
             </dl>
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">Export Data</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { type: 'full', label: 'Full Data (JSON)' },
+                  { type: 'billing', label: 'Billing (CSV)' },
+                  { type: 'voice-notes', label: 'Voice Notes (CSV)' },
+                ].map(({ type, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => handleExport(type)}
+                    disabled={exportLoading === type}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  >
+                    {exportLoading === type ? (
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Download className="w-3 h-3" />
+                    )}
+                    {exportLoading === type ? 'Exporting...' : label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="card p-6">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Contacts ({contacts.length})</h3>
