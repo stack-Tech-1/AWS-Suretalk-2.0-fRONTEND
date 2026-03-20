@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { X, Home, MessageSquare, Users, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MobileMenu({ isOpen, onClose, type = "user" }) {
+  const { logout } = useAuth();
   const menuItems = type === "admin" 
     ? [
         { label: "Admin Home", href: "/admin", icon: <Home className="w-5 h-5" /> },
@@ -84,10 +86,7 @@ export default function MobileMenu({ isOpen, onClose, type = "user" }) {
 
           {/* Logout */}
           <div
-            onClick={() => {
-              console.log("Logout");
-              onClose();
-            }}
+            onClick={() => { onClose(); logout(); }}
             className="flex items-center px-3 py-3 rounded-lg hover:bg-red-50 
                      text-red-600 cursor-pointer"
           >

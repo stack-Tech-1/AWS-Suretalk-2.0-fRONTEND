@@ -34,7 +34,7 @@ export default function Topbar({
   userData = null, // Still passed for backwards compatibility
   loading = false 
 }) {
-  const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  const { user, loading: authLoading, logout } = useAuth(); // ✅ Use AuthContext
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -593,18 +593,30 @@ export default function Topbar({
                     )}
                   </div>
                   <div className="p-2">
-                    {userMenuItems.map((item, index) => (
-                      <a
-                        key={index}
-                        href={item.href}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 
-                                 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </a>
-                    ))}
+                    {userMenuItems.map((item, index) =>
+                      item.label === 'Logout' ? (
+                        <button
+                          key={index}
+                          onClick={() => { setShowUserMenu(false); logout(); }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600
+                                   hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </button>
+                      ) : (
+                        <a
+                          key={index}
+                          href={item.href}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300
+                                   hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </a>
+                      )
+                    )}
                   </div>
                   {type !== "admin" && (
                     <div className="p-3 border-t border-gray-200 dark:border-gray-700">

@@ -22,7 +22,7 @@ export default function Sidebar({
   loading = false
 }) {
   const router = useRouter();
-  const { user, hasLegacyVault, loading: authLoading } = useAuth(); // ✅ Use AuthContext
+  const { user, hasLegacyVault, loading: authLoading, logout } = useAuth(); // ✅ Use AuthContext
 
   // ✅ Use user from AuthContext if available, fallback to prop
   const currentUser = user || userData;
@@ -400,9 +400,9 @@ export default function Sidebar({
           </Link>
 
           {/* Logout */}
-          <button 
-            onClick={() => router.push("/")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 
+          <button
+            onClick={logout}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600
                         hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors
                         ${collapsed ? 'justify-center px-3' : ''}`}
           >
