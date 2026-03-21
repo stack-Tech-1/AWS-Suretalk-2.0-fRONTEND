@@ -8,7 +8,6 @@ import {
   Mail,
   Phone,
   Camera,
-  RefreshCw,
   Loader2,
   AlertCircle,
   CheckCircle,
@@ -26,8 +25,6 @@ export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -70,24 +67,22 @@ export default function ProfileSettings() {
     }
   };
 
-  const handleImageChange = async (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file', 'Invalid File');
+      toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB', 'File Too Large');
+      toast.error('Image must be less than 5MB');
       return;
     }
 
     try {
-      setUploadingImage(true);
+      setSaving(true);
 
       // Convert to base64
       const base64 = await new Promise((resolve, reject) => {
@@ -98,7 +93,7 @@ export default function ProfileSettings() {
       });
 
       // Show preview immediately
-      setPreviewImage(base64);
+      setFormData(prev => ({ ...prev, profileImageUrl: base64 }));
 
       // Upload to backend
       const response = await api.request('/users/profile-image', {
@@ -110,15 +105,23 @@ export default function ProfileSettings() {
       });
 
       if (response.success) {
-        // Refresh profile to get new image URL
+        // Update preview with the real S3 URL
+        setFormData(prev => ({
+          ...prev,
+          profileImageUrl: response.data.profileImageUrl
+        }));
         await refreshProfile();
-        toast.success('Profile photo updated successfully', 'Photo Updated');
+        toast.success('Profile photo updated successfully');
       }
     } catch (err) {
-      toast.error('Failed to upload profile photo', 'Upload Failed');
-      setPreviewImage(null);
+      toast.error('Failed to upload profile photo');
+      // Revert preview on failure
+      setFormData(prev => ({
+        ...prev,
+        profileImageUrl: user?.profile_image_url || ''
+      }));
     } finally {
-      setUploadingImage(false);
+      setSaving(false);
     }
   };
 
@@ -168,22 +171,34 @@ export default function ProfileSettings() {
         <div className="glass rounded-2xl p-6">
           <div className="flex flex-col items-center">
             <div className="relative mb-4">
-              <div className="relative">
-                <img
-                  src={previewImage || user?.profile_image_url || '/default-avatar.png'}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg"
-                />
-                {uploadingImage && (
-                  <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-white animate-spin" />
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
+                {formData.profileImageUrl ? (
+                  <img
+                    src={formData.profileImageUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
+                    <User className="w-16 h-16 text-white" />
                   </div>
                 )}
-                <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center cursor-pointer hover:bg-brand-600 transition-colors">
-                  <Camera className="w-4 h-4 text-white" />
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                </label>
+                {saving && (
+                  <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
               </div>
+              <label className="absolute bottom-2 right-2 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Camera className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={saving}
+                />
+              </label>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Click the camera icon to upload a new profile picture
