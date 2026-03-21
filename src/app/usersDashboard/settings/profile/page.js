@@ -1,7 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
@@ -10,7 +8,6 @@ import {
   Camera,
   Loader2,
   AlertCircle,
-  CheckCircle,
   Save
 } from "lucide-react";
 import { api } from "@/utils/api";
@@ -19,7 +16,6 @@ import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function ProfileSettings() {
-  const router = useRouter();
   const { user, loading: authLoading, refreshProfile } = useAuth(); // ✅ Use AuthContext
   
   const [loading, setLoading] = useState(true);
@@ -77,45 +73,59 @@ export default function ProfileSettings() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+      toast.error('Image must be smaller than 5MB');
       return;
     }
 
     try {
       setSaving(true);
 
-      // Convert to base64
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // Show local preview immediately
+      const localPreview = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, profileImageUrl: localPreview }));
 
-      // Show preview immediately
-      setFormData(prev => ({ ...prev, profileImageUrl: base64 }));
-
-      // Upload to backend
-      const response = await api.request('/users/profile-image', {
+      // Step 1 — Get presigned URL from backend
+      const presignResponse = await api.request('/users/profile-image', {
         method: 'POST',
-        body: JSON.stringify({
-          imageData: base64,
-          contentType: file.type
-        })
+        body: JSON.stringify({ contentType: file.type })
       });
 
-      if (response.success) {
-        // Update preview with the real S3 URL
+      if (!presignResponse.success) {
+        throw new Error(presignResponse.error || 'Failed to get upload URL');
+      }
+
+      const { presignedUrl, publicUrl } = presignResponse.data;
+
+      // Step 2 — Upload directly to S3 (bypasses AppRunner entirely)
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type
+        }
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image to storage');
+      }
+
+      // Step 3 — Confirm upload and save URL to database
+      const confirmResponse = await api.request('/users/profile-image/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ publicUrl })
+      });
+
+      if (confirmResponse.success) {
         setFormData(prev => ({
           ...prev,
-          profileImageUrl: response.data.profileImageUrl
+          profileImageUrl: confirmResponse.data.profileImageUrl
         }));
         await refreshProfile();
         toast.success('Profile photo updated successfully');
       }
+
     } catch (err) {
       toast.error('Failed to upload profile photo');
-      // Revert preview on failure
       setFormData(prev => ({
         ...prev,
         profileImageUrl: user?.profile_image_url || ''
