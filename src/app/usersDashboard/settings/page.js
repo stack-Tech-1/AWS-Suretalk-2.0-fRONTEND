@@ -94,7 +94,7 @@ export default function Settings() {
     const loadSettings = async () => {
       try {
         // Load from backend first
-        const response = await api.request('/users/settings');
+        const response = await api.request('/settings');
         if (response?.success && response?.data?.settings) {
           const saved = response.data.settings;
           // Merge with defaults
@@ -154,12 +154,14 @@ export default function Settings() {
       setSaving(true);
 
       // Save to backend
-      await api.request('/users/settings', {
+      await api.request('/settings', {
         method: 'PUT',
         body: JSON.stringify({
-          notifications: settings.notifications,
-          privacy: settings.privacy,
-          appearance: settings.appearance
+          settings: {
+            notifications: settings.notifications,
+            privacy: settings.privacy,
+            appearance: settings.appearance
+          }
         })
       });
 
