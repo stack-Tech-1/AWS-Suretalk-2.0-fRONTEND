@@ -918,7 +918,7 @@ async updateProfile(data) {
   });
 }
 
-async changePassword(currentPassword, newPassword) {
+async changePassword({ currentPassword, newPassword }) {
   return this.request('/auth/change-password', {
     method: 'POST',
     body: JSON.stringify({ currentPassword, newPassword }),
