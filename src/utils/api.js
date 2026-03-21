@@ -1,4 +1,4 @@
-
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\utils\api.js
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 class ApiClient {
