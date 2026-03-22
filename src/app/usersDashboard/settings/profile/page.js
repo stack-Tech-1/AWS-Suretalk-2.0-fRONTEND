@@ -21,12 +21,32 @@ export default function ProfileSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [profileImageDisplayUrl, setProfileImageDisplayUrl] = useState(null);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     profileImageUrl: ''
   });
   // ✅ Remove userProfile state - use AuthContext user instead
+
+  useEffect(() => {
+    const loadProfileImageUrl = async () => {
+      if (!user?.profile_image_url) {
+        setProfileImageDisplayUrl(null);
+        return;
+      }
+      try {
+        const response = await api.request('/users/profile-image-url');
+        if (response.success && response.data.presignedUrl) {
+          setProfileImageDisplayUrl(response.data.presignedUrl);
+        }
+      } catch (err) {
+        // Non-fatal — fall back to no image
+        setProfileImageDisplayUrl(null);
+      }
+    };
+    loadProfileImageUrl();
+  }, [user?.profile_image_url]);
 
   // Load user profile from AuthContext
   useEffect(() => {
@@ -116,6 +136,13 @@ export default function ProfileSettings() {
       if (confirmResponse.success) {
         const savedUrl = confirmResponse.data.profileImageUrl;
         setFormData(prev => ({ ...prev, profileImageUrl: savedUrl }));
+        // Get a fresh presigned URL for display
+        try {
+          const urlResponse = await api.request('/users/profile-image-url');
+          if (urlResponse.success && urlResponse.data.presignedUrl) {
+            setProfileImageDisplayUrl(urlResponse.data.presignedUrl);
+          }
+        } catch {}
         await refreshProfile();
         toast.success('Profile photo updated successfully');
       }
@@ -178,12 +205,12 @@ export default function ProfileSettings() {
           <div className="flex flex-col items-center">
             <div className="relative mb-4">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
-                {formData.profileImageUrl ? (
+                {profileImageDisplayUrl || formData.profileImageUrl?.startsWith('blob:') ? (
                   <img
-                    src={formData.profileImageUrl}
+                    src={profileImageDisplayUrl || formData.profileImageUrl}
                     alt="Profile"
                     className="w-full h-full object-cover"
-                    key={formData.profileImageUrl}
+                    key={profileImageDisplayUrl}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
