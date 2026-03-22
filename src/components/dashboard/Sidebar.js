@@ -22,7 +22,7 @@ export default function Sidebar({
   loading = false
 }) {
   const router = useRouter();
-  const { user, hasLegacyVault, loading: authLoading, logout } = useAuth(); // ✅ Use AuthContext
+  const { user, hasLegacyVault, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
 
   // ✅ Use user from AuthContext if available, fallback to prop
   const currentUser = user || userData;
@@ -298,10 +298,18 @@ export default function Sidebar({
             ) : (
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
-                    <span className="font-bold text-white text-sm">
-                      {currentUser?.full_name?.charAt(0) || 'U'}
-                    </span>
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
+                    {profileImageUrl ? (
+                      <img
+                        src={profileImageUrl}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="font-bold text-white text-sm">
+                        {currentUser?.full_name?.charAt(0) || 'U'}
+                      </span>
+                    )}
                   </div>
                   {/* Tier badge */}
                   {userTier && (

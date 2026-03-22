@@ -34,7 +34,7 @@ export default function Topbar({
   userData = null, // Still passed for backwards compatibility
   loading = false 
 }) {
-  const { user, loading: authLoading, logout } = useAuth(); // ✅ Use AuthContext
+  const { user, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -526,10 +526,18 @@ export default function Topbar({
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
-                <span className="font-bold text-white text-sm">
-                  {isLoading ? '' : (currentUser?.full_name?.charAt(0) || 'U')}
-                </span>
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-sm font-bold">
+                    {isLoading ? '' : (currentUser?.full_name?.charAt(0) || 'U')}
+                  </span>
+                )}
               </div>
               {!isMobile && (
                 <>

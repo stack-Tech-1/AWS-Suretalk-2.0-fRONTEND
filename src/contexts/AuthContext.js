@@ -11,6 +11,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const router = useRouter();
 
   // 🔐 AUTH INITIALIZATION GUARD
@@ -22,6 +23,21 @@ export const AuthProvider = ({ children }) => {
 
     checkUser();
   }, []);
+
+  const fetchProfileImageUrl = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await api.request('/users/profile-image-url');
+      if (response?.success && response?.data?.presignedUrl) {
+        setProfileImageUrl(response.data.presignedUrl);
+      } else {
+        setProfileImageUrl(null);
+      }
+    } catch {
+      setProfileImageUrl(null);
+    }
+  };
 
   const checkUser = async () => {
     try {
@@ -35,6 +51,9 @@ export const AuthProvider = ({ children }) => {
       const userData = response.data;
 
       setUser(userData);
+      if (userData.profile_image_url) {
+        fetchProfileImageUrl();
+      }
 
       const isAdmin = !!userData.is_admin;
       localStorage.setItem('isAdmin', String(isAdmin));
@@ -58,6 +77,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.getProfile();
       setUser(response.data);
+      if (response.data.profile_image_url) {
+        fetchProfileImageUrl();
+      }
       return response.data;
     } catch (err) {
       console.error('Failed to refresh profile:', err);
@@ -148,6 +170,8 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    profileImageUrl,
+    fetchProfileImageUrl,
     login,
     logout,
     refreshProfile,
