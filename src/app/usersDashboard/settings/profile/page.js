@@ -73,7 +73,7 @@ export default function ProfileSettings() {
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB');
+      toast.error('Image must be less than 5MB');
       return;
     }
 
@@ -96,30 +96,26 @@ export default function ProfileSettings() {
 
       const { presignedUrl, publicUrl } = presignResponse.data;
 
-      // Step 2 — Upload directly to S3 (bypasses AppRunner entirely)
+      // Step 2 — Upload directly to S3 (bypasses AppRunner)
       const uploadResponse = await fetch(presignedUrl, {
         method: 'PUT',
         body: file,
-        headers: {
-          'Content-Type': file.type
-        }
+        headers: { 'Content-Type': file.type }
       });
 
       if (!uploadResponse.ok) {
         throw new Error('Failed to upload image to storage');
       }
 
-      // Step 3 — Confirm upload and save URL to database
+      // Step 3 — Confirm and save URL to database
       const confirmResponse = await api.request('/users/profile-image/confirm', {
         method: 'POST',
         body: JSON.stringify({ publicUrl })
       });
 
       if (confirmResponse.success) {
-        setFormData(prev => ({
-          ...prev,
-          profileImageUrl: confirmResponse.data.profileImageUrl
-        }));
+        const savedUrl = confirmResponse.data.profileImageUrl;
+        setFormData(prev => ({ ...prev, profileImageUrl: savedUrl }));
         await refreshProfile();
         toast.success('Profile photo updated successfully');
       }
@@ -187,6 +183,7 @@ export default function ProfileSettings() {
                     src={formData.profileImageUrl}
                     alt="Profile"
                     className="w-full h-full object-cover"
+                    key={formData.profileImageUrl}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
