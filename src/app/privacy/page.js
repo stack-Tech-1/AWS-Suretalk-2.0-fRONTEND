@@ -103,11 +103,18 @@ export default function PrivacyPage() {
             </p>
             <div className="mt-4 p-4 bg-gray-50 rounded-xl">
               <p className="text-gray-700">
-                <strong>Email:</strong> privacy@suretalk.com<br />
+                <strong>Email:</strong> Contact@SureTalkNow.com<br />
                 <strong>Mail:</strong> Privacy Officer, SureTalk Inc.<br />
                 <strong>Response Time:</strong> We aim to respond within 48 hours
               </p>
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. SMS Data Handling</h2>
+            <p className="text-gray-600">
+            Phone numbers collected for SMS communications are used solely for account security purposes and are never shared with third parties for marketing.
+            </p>            
           </section>
 
           <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
