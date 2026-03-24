@@ -111,7 +111,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. SMS Data Handling</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. SMS Data Handling</h2>
             <p className="text-gray-600">
             Phone numbers collected for SMS communications are used solely for account security purposes and are never shared with third parties for marketing.
             </p>            

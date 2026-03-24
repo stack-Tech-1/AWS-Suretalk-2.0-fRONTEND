@@ -113,7 +113,14 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Contact Information</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. SMS Data Handling</h2>
+            <p className="text-gray-600">
+            Phone numbers collected for SMS communications are used solely for account security purposes and are never shared with third parties for marketing.
+            </p>            
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Contact Information</h2>
             <div className="p-4 bg-gray-50 rounded-xl">
               <p className="text-gray-700">
                 Questions about these Terms? Contact us at:<br />
@@ -121,7 +128,7 @@ export default function TermsPage() {
                 <strong>Mail:</strong> Legal Department, SureTalk Inc.
               </p>
             </div>
-          </section>
+          </section>          
         </div>
       </div>
     </SimplePageLayout>
