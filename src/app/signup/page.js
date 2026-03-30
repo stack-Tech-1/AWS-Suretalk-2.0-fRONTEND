@@ -339,16 +339,21 @@ const handleSubmit = async (e) => {
               icon={<Mail className="w-5 h-5 text-gray-400" />}
             />
 
-            <Input
-              label="Phone Number"
-              name="phone"
-              type="tel"
-              placeholder="+1 (555) 123-4567"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              icon={<Phone className="w-5 h-5 text-gray-400" />}
-            />
+            <div>
+              <Input
+                label="Phone Number"
+                name="phone"
+                type="tel"
+                placeholder="+1 (555) 123-4567"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                icon={<Phone className="w-5 h-5 text-gray-400" />}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                We’ll send a one-time verification code via SMS for account security.
+              </p>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <Input
@@ -386,15 +391,17 @@ const handleSubmit = async (e) => {
                 required
               />
               <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-                I agree to the SureTalk{" "}
-                <a href="/terms" className="text-brand-600 hover:underline">
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a href="/privacy" className="text-brand-600 hover:underline">
-                  Privacy Policy
-                </a>
-              </label>
+              I agree to the SureTalk{" "}
+              <a href="/terms" className="text-brand-600 hover:underline">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="/privacy" className="text-brand-600 hover:underline">
+                Privacy Policy
+              </a>
+              {" "}and consent to receive SMS messages for account verification and security purposes. 
+              Message frequency varies. Message & data rates may apply. Reply STOP to opt out. Reply HELP for help.
+            </label>
             </div>
 
             <div className="pt-4 border-t border-gray-200">
