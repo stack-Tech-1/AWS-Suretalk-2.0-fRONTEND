@@ -399,7 +399,7 @@ const handleSubmit = async (e) => {
               <a href="/privacy" className="text-brand-600 hover:underline">
                 Privacy Policy
               </a>
-              {" "}and consent to receive SMS messages for account verification and security purposes. 
+              {" "}and consent to receive SMS messages for account verification, notifications, and security purposes. 
               Message frequency varies. Message & data rates may apply. Reply STOP to opt out. Reply HELP for help.
             </label>
             </div>
