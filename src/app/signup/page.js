@@ -22,6 +22,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
+    smsConsent: false,
   });
 
   const tiers = [
@@ -379,6 +380,7 @@ const handleSubmit = async (e) => {
               />
             </div>
 
+            {/* Terms & Privacy (REQUIRED) */}
             <div className="flex items-start">
               <input
                 id="terms"
@@ -386,22 +388,35 @@ const handleSubmit = async (e) => {
                 type="checkbox"
                 checked={formData.agreeToTerms}
                 onChange={handleChange}
-                className="mt-1 rounded border-gray-300 text-brand-600 
-                         focus:ring-brand-500 focus:ring-offset-0"
+                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
                 required
               />
               <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-              I agree to the SureTalk{" "}
-              <a href="/terms" className="text-brand-600 hover:underline">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="/privacy" className="text-brand-600 hover:underline">
-                Privacy Policy
-              </a>
-              {" "}and consent to receive SMS messages for account verification, notifications, and security purposes. 
-              Message frequency varies. Message & data rates may apply. Reply STOP to opt out. Reply HELP for help.
-            </label>
+                I agree to the SureTalk{" "}
+                <a href="/terms" className="text-brand-600 hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" className="text-brand-600 hover:underline">
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+
+            {/* SMS Consent (OPTIONAL) */}
+            <div className="flex items-start mt-3">
+              <input
+                id="smsConsent"
+                name="smsConsent"
+                type="checkbox"
+                checked={formData.smsConsent}
+                onChange={handleChange}
+                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+              />
+              <label htmlFor="smsConsent" className="ml-2 text-sm text-gray-600">
+                I agree to receive SMS messages from SureTalk for account verification, notifications, and security purposes. 
+                Message frequency varies. Message & data rates may apply. Reply STOP to opt out. Reply HELP for help.
+              </label>
             </div>
 
             <div className="pt-4 border-t border-gray-200">
