@@ -234,7 +234,7 @@ function BillingPageInner() {
       if (error.message?.includes('NO_STRIPE_CUSTOMER') ||
           error.message?.includes('No billing account')) {
         toast.warning(
-          'Your subscription was set up by phone. To manage billing online, please contact support at support@suretalknow.com',
+          'Your subscription was set up by phone. To manage billing online, please contact support at contact@suretalknow.com',
           'Phone Subscription'
         );
       } else {

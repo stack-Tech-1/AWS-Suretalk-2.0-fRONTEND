@@ -636,7 +636,7 @@ export default function UserHelpSupport() {
               Contact Support
             </button>
             <button 
-              onClick={() => window.open('mailto:support@suretalk.com', '_blank')}
+              onClick={() => window.open('mailto:contact@suretalknow.com', '_blank')}
               className="px-6 py-3 bg-white text-brand-600 rounded-xl hover:bg-gray-100 
                        transition-all font-medium"
             >

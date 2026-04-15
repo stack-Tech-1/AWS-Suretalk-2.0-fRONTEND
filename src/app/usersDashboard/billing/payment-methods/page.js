@@ -59,7 +59,7 @@ export default function PaymentMethodsPage() {
     } catch (err) {
       if (err.message?.includes('No billing account')) {
         toast.warning(
-          'Your subscription was set up by phone. Contact support@suretalknow.com to manage payment methods.',
+          'Your subscription was set up by phone. Contact contact@suretalknow.com to manage payment methods.',
           'Phone Subscription'
         );
       } else {
@@ -109,7 +109,7 @@ export default function PaymentMethodsPage() {
             You subscribed via phone. To manage payment methods online, please contact support.
           </p>
           <a
-            href="mailto:support@suretalknow.com"
+            href="mailto:contact@suretalknow.com"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors"
           >
             Contact Support

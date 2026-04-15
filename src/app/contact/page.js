@@ -24,8 +24,8 @@ export default function ContactPage() {
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Email Support</h3>
             <p className="text-gray-600 mb-2">General Inquiries</p>
-            <a href="mailto:support@suretalk.com" className="text-brand-600 hover:text-brand-700 font-medium">
-              support@suretalk.com
+            <a href="mailto:contact@suretalknow.com" className="text-brand-600 hover:text-brand-700 font-medium">
+              contact@suretalknow.com
             </a>
           </div>
 
