@@ -11,18 +11,6 @@ import { api } from "@/utils/api";
 
 const STEP_LABELS = ['Phone', 'Verify', 'Profile'];
 
-// Helper to auto‑prepend +1 for US numbers
-const normalizePhoneNumber = (input) => {
-  const digits = input.replace(/\D/g, '');
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-  return input;
-};
-
 function StepIndicator({ step }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-6">
@@ -59,8 +47,11 @@ export default function ClaimAccount() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Step 1
-  const [phone, setPhone] = useState("");
+  // Step 1 – store only the 10-digit local number
+  const [phoneDigits, setPhoneDigits] = useState("");
+
+  // Derived full phone number with country code
+  const fullPhone = phoneDigits ? `+1${phoneDigits}` : "";
 
   // Step 2
   const [otp, setOtp] = useState("");
@@ -123,18 +114,17 @@ export default function ClaimAccount() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const normalizedPhone = normalizePhoneNumber(phone);
     try {
       const response = await api.request('/auth/check-phone', {
         method: 'POST',
-        body: JSON.stringify({ phone: normalizedPhone }),
+        body: JSON.stringify({ phone: fullPhone }),
       });
       if (!response.success || response.data?.isIvrUser === false) {
         setError("No IVR account found for this number. Please sign up instead.");
         return;
       }
       setStep(2);
-      sendOtp(normalizedPhone);
+      sendOtp(fullPhone);
     } catch (err) {
       setError(err.message || "No IVR account found for this number. Please sign up instead.");
     } finally {
@@ -172,12 +162,11 @@ export default function ClaimAccount() {
     }
 
     setLoading(true);
-    const normalizedPhone = normalizePhoneNumber(phone);
     try {
       await api.request('/auth/claim-account', {
         method: 'POST',
         body: JSON.stringify({
-          phone: normalizedPhone,
+          phone: fullPhone,
           otp,
           fullName: profileData.fullName,
           email: profileData.email,
@@ -281,20 +270,27 @@ export default function ClaimAccount() {
                   Phone Number
                 </label>
                 <div className="relative">
-                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+                  {/* Static +1 prefix */}
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-700 dark:text-gray-300 font-medium z-10 pointer-events-none">
+                    +1
+                  </span>
                   <input
                     type="tel"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    className={inputClass}
-                    placeholder="+1 (555) 000-0000"
+                    value={phoneDigits}
+                    onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPhoneDigits(digits);
+                    }}
+                    className={`${inputClass} pl-20`} // extra padding for icon + "+1"
+                    placeholder="(555) 000-0000"
                     required
                     disabled={loading}
                   />
                 </div>
               </div>
 
-              <button type="submit" disabled={loading || !phone} className={btnClass}>
+              <button type="submit" disabled={loading || phoneDigits.length !== 10} className={btnClass}>
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -322,7 +318,10 @@ export default function ClaimAccount() {
                   Verify Your Number
                 </h2>
                 <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-                  Enter the 6-digit code sent to <span className="font-medium text-gray-700 dark:text-gray-200">{phone}</span>
+                  Enter the 6-digit code sent to{' '}
+                  <span className="font-medium text-gray-700 dark:text-gray-200">
+                    {fullPhone}
+                  </span>
                 </p>
               </div>
 
@@ -345,7 +344,7 @@ export default function ClaimAccount() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => { setError(""); sendOtp(normalizePhoneNumber(phone)); }}
+                      onClick={() => { setError(""); sendOtp(fullPhone); }}
                       className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
                     >
                       Resend OTP
