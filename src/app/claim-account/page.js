@@ -11,6 +11,18 @@ import { api } from "@/utils/api";
 
 const STEP_LABELS = ['Phone', 'Verify', 'Profile'];
 
+// Helper to auto‑prepend +1 for US numbers
+const normalizePhoneNumber = (input) => {
+  const digits = input.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `+${digits}`;
+  }
+  return input;
+};
+
 function StepIndicator({ step }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-6">
@@ -94,11 +106,11 @@ export default function ClaimAccount() {
     }, 1000);
   };
 
-  const sendOtp = async () => {
+  const sendOtp = async (phoneNumber) => {
     try {
       await api.request('/auth/send-claim-otp', {
         method: 'POST',
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: phoneNumber }),
       });
       startOtpTimer();
     } catch (err) {
@@ -111,17 +123,18 @@ export default function ClaimAccount() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const normalizedPhone = normalizePhoneNumber(phone);
     try {
       const response = await api.request('/auth/check-phone', {
         method: 'POST',
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: normalizedPhone }),
       });
       if (!response.success || response.data?.isIvrUser === false) {
         setError("No IVR account found for this number. Please sign up instead.");
         return;
       }
       setStep(2);
-      sendOtp();
+      sendOtp(normalizedPhone);
     } catch (err) {
       setError(err.message || "No IVR account found for this number. Please sign up instead.");
     } finally {
@@ -159,11 +172,12 @@ export default function ClaimAccount() {
     }
 
     setLoading(true);
+    const normalizedPhone = normalizePhoneNumber(phone);
     try {
       await api.request('/auth/claim-account', {
         method: 'POST',
         body: JSON.stringify({
-          phone,
+          phone: normalizedPhone,
           otp,
           fullName: profileData.fullName,
           email: profileData.email,
@@ -331,7 +345,7 @@ export default function ClaimAccount() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => { setError(""); sendOtp(); }}
+                      onClick={() => { setError(""); sendOtp(normalizePhoneNumber(phone)); }}
                       className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
                     >
                       Resend OTP
