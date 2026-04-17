@@ -399,13 +399,15 @@ export default function DashboardHome() {
       icon: <Calendar className="w-5 h-5" />, 
       label: "Schedule Message", 
       color: "bg-purple-500",
-      href: "/usersDashboard/scheduled"
+      href: "/usersDashboard/scheduled",
+      availableFor: ['LEGACY_VAULT_PREMIUM'],
     },
     { 
       icon: <Shield className="w-5 h-5" />, 
       label: "Secure in Vault", 
       color: "bg-red-500",
-      href: "/usersDashboard/vault"
+      href: "/usersDashboard/vault",
+      availableFor: ['LEGACY_VAULT_PREMIUM'],
     },
   ];
 
