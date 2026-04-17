@@ -1,3 +1,4 @@
+// C:\Users\SMC\Documents\GitHub\AWS-Suretalk-APP\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\voice-notes\[id]\page.js
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
