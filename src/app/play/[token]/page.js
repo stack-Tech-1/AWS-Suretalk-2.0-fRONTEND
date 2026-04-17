@@ -18,7 +18,7 @@ export default function VoiceMessagePlayer() {
   useEffect(() => {
     const loadMessage = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://tbmvpkvtm2.eu-central-1.awsapprunner.com/api';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${API_URL}/play/public/${params.token}`);
         const data = await response.json();
 
