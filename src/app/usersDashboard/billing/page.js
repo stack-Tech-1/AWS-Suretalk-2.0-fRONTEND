@@ -154,16 +154,7 @@ function BillingPageInner() {
         return;
       }
 
-      // Ensure a Stripe customer exists before creating a checkout session
-      if (!subscription?.stripeCustomerId) {
-        const customerRes = await api.request('/billing/create-customer', {
-          method: 'POST',
-        });
-        if (!customerRes.success) {
-          throw new Error(customerRes.error || 'Failed to create billing customer');
-        }
-      }
-
+      // No pre-call needed — create-checkout auto-creates a Stripe customer if one doesn't exist
       const successUrl = `${window.location.origin}/usersDashboard/billing?success=true`;
       const cancelUrl  = `${window.location.origin}/usersDashboard/billing?cancelled=true`;
 
@@ -225,14 +216,19 @@ function BillingPageInner() {
       if (response.success) {
         window.location.href = response.data.url;
       } else {
-        throw new Error(response.error || 'Failed to create portal session');
+        const err = new Error(response.error || 'Failed to create portal session');
+        err.code = response.code;
+        throw err;
       }
     } catch (error) {
       console.error('Manage subscription error:', error);
 
-      // Check if it's a missing billing account (IVR subscribers)
-      if (error.message?.includes('NO_STRIPE_CUSTOMER') ||
-          error.message?.includes('No billing account')) {
+      if (error.code === 'FREE_PLAN') {
+        toast.info(
+          'You are on the free LITE plan. Use the upgrade options below to add a paid subscription.',
+          'Free Plan'
+        );
+      } else if (error.code === 'NO_STRIPE_CUSTOMER' || error.message?.includes('No billing account')) {
         toast.warning(
           'Your subscription was set up by phone. To manage billing online, please contact support at contact@suretalknow.com',
           'Phone Subscription'
