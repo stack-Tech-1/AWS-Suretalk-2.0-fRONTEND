@@ -1,6 +1,6 @@
 //C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\page.js
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Mic, Users, Shield, Calendar, Play, 
@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);
+  const audioRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const analytics = useAnalyticsContext();
@@ -265,26 +266,41 @@ export default function DashboardHome() {
 
   // Handle audio playback with analytics
   const handlePlayAudio = async (recording) => {
+    // Stop whatever is currently playing
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+
     if (playingAudio === recording.id) {
       setPlayingAudio(null);
       return;
     }
-    
+
     try {
-      // Record play event
       await analytics.recordVoiceNoteEvent('voice_note_played', recording.id, {
         duration: recording.duration,
         title: recording.title
       });
 
-      // Get download URL for this note
       const downloadResponse = await api.getVoiceNoteDownloadUrl(recording.id);
       const audioUrl = downloadResponse.data.downloadUrl;
-      
+
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.addEventListener('ended', () => setPlayingAudio(null));
+      audio.addEventListener('error', () => {
+        console.error('Audio playback error');
+        setPlayingAudio(null);
+      });
+
+      await audio.play();
       setPlayingAudio(recording.id);
-      
     } catch (error) {
       console.error('Failed to play audio:', error);
+      setPlayingAudio(null);
     }
   };
 
