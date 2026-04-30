@@ -411,12 +411,12 @@ export default function DashboardHome() {
       color: "bg-green-500",
       href: "/usersDashboard/contacts"
     },
-    { 
-      icon: <Calendar className="w-5 h-5" />, 
-      label: "Schedule Message", 
+    {
+      icon: <Calendar className="w-5 h-5" />,
+      label: "Schedule Message",
       color: "bg-purple-500",
       href: "/usersDashboard/scheduled",
-      availableFor: ['LEGACY_VAULT_PREMIUM'],
+      availableFor: ['ESSENTIAL', 'LEGACY_VAULT_PREMIUM'],
     },
     { 
       icon: <Shield className="w-5 h-5" />, 
@@ -825,7 +825,9 @@ export default function DashboardHome() {
           <div className="glass rounded-2xl p-6">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action, index) => (
+              {quickActions
+                .filter(action => !action.availableFor || action.availableFor.includes(user?.subscription_tier))
+                .map((action, index) => (
                 <Link
                   key={index}
                   href={action.href}
