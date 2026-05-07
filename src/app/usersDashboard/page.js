@@ -43,8 +43,8 @@ export default function DashboardHome() {
   const [quickStats, setQuickStats] = useState({
     voiceNotes: { value: "0", change: "+0%" },
     contacts: { value: "0/0", change: "+0" },
-    vaultItems: { value: "0", change: "Protected" },
-    scheduled: { value: "0", change: "Upcoming" }
+    vaultItems: { value: "0", change: "None yet" },
+    scheduled: { value: "0", change: "None yet" }
   });
 
   useEffect(() => {
@@ -112,11 +112,11 @@ export default function DashboardHome() {
         },
         vaultItems: {
           value: (parseInt(actualStats.wills_total) || 0).toString(),
-          change: "Protected"
+          change: (parseInt(actualStats.wills_total) || 0) === 0 ? "None yet" : "Protected"
         },
         scheduled: {
           value: scheduledTotal.toString(),
-          change: "Upcoming"
+          change: scheduledTotal === 0 ? "None yet" : `${scheduledTotal} pending`
         }
       });
 
@@ -436,6 +436,13 @@ export default function DashboardHome() {
   const storageUsedGB = storageUsedBytes / (1024 * 1024 * 1024);
 
   
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
    return (
     <div className="page-enter">
       {/* Welcome Section */}
@@ -443,17 +450,19 @@ export default function DashboardHome() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8"
+        className="mb-8 px-6 py-5 rounded-2xl bg-gradient-to-r from-brand-50 to-accent-50
+                   dark:from-brand-950/30 dark:to-accent-950/30
+                   border border-brand-100 dark:border-brand-900/30"
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Welcome back, <span className="gradient-text">{userName}!</span> {/* ✅ Updated */}
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+              {getGreeting()}, <span className="gradient-text">{userName}!</span>
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {analyticsData?.totals?.total_notes_played 
-                ? `You've listened to ${analyticsData.totals.total_notes_played} voice notes`
-                : `You have ${quickStats.scheduled.value} scheduled messages and ${recentRecordings.length} recent voice notes.`
+            <p className="text-gray-600 dark:text-gray-400 mt-1.5">
+              {parseInt(quickStats.voiceNotes.value) > 0
+                ? `You have ${quickStats.voiceNotes.value} voice ${parseInt(quickStats.voiceNotes.value) === 1 ? 'note' : 'notes'} — keep building your story.`
+                : `Welcome! Start by recording your first voice message.`
               }
             </p>
           </div>
@@ -510,7 +519,18 @@ export default function DashboardHome() {
                 {stat.change}
               </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-1 stat-number">{stat.value}</h3>
+            {stat.label === 'Voice Notes' && (
+              <div className="flex items-end gap-0.5 mt-3 mb-1 opacity-25">
+                {[3,6,9,5,8,4,7,9,4,6,3,8,5,7,4].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-0.5 rounded-full bg-blue-500"
+                    style={{ height: `${h * 2}px` }}
+                  />
+                ))}
+              </div>
+            )}
+            <h3 className="text-3xl font-bold text-gray-800 dark:text-white mb-1 stat-number">{stat.value}</h3>
             <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
           </div>
         ))}
@@ -603,7 +623,15 @@ export default function DashboardHome() {
                   </h3>
                   <p className="text-gray-500 dark:text-gray-500 text-center max-w-md mb-4">
                     Start recording and playing voice notes to see your weekly activity
-                  </p>                  
+                  </p>
+                  <Link
+                    href="/usersDashboard/voice-notes?record=new"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
+                               text-white rounded-xl hover:shadow-lg transition-all text-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Record Your First Note
+                  </Link>
                 </div>
               )}
             </div>
@@ -636,26 +664,39 @@ export default function DashboardHome() {
               <>
                 <div className="space-y-4 stagger-children">
                   {recentRecordings.map((recording) => (
-                    <div 
+                    <div
                       key={recording.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 
-                               hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${
+                        playingAudio === recording.id
+                          ? 'border-l-4 border-brand-500 border-t-brand-200 border-r-brand-200 border-b-brand-200 dark:border-l-brand-500 dark:border-t-brand-800 dark:border-r-brand-800 dark:border-b-brand-800 bg-brand-50/50 dark:bg-brand-950/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
                     >
                       <button
                         onClick={() => handlePlayAudio(recording)}
-                        className={`p-3 rounded-xl transition-all ${
-                          playingAudio === recording.id 
-                            ? 'bg-gradient-to-br from-brand-500 to-accent-500 text-white' 
-                            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-br hover:from-brand-500 hover:to-accent-500 hover:text-white'
+                        className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                          playingAudio === recording.id
+                            ? 'bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-lg shadow-brand-500/30 scale-95'
+                            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-br hover:from-brand-500 hover:to-accent-500 hover:text-white hover:shadow-md'
                         }`}
                       >
-                        {playingAudio === recording.id ? 
-                          <Headphones className="w-5 h-5" /> : 
-                          <Play className="w-5 h-5" />
+                        {playingAudio === recording.id
+                          ? <Headphones className="w-5 h-5" />
+                          : <Play className="w-5 h-5 ml-0.5" />
                         }
                       </button>
-                      
-                      <Link 
+
+                      <div className="flex-shrink-0 flex items-end gap-px opacity-20 group-hover:opacity-50 transition-opacity">
+                        {[4,7,5,9,3,8,6,9,4,7].map((h, i) => (
+                          <div
+                            key={i}
+                            className="w-px rounded-full bg-brand-500"
+                            style={{ height: `${h * 2.5}px` }}
+                          />
+                        ))}
+                      </div>
+
+                      <Link
                         href={`/usersDashboard/voice-notes/${recording.id}`}
                         className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
                         onClick={() => analytics.recordEvent('voice_note_click', { noteId: recording.id })}
@@ -726,11 +767,11 @@ export default function DashboardHome() {
               </>
             ) : (
               <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                  <Headphones className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-brand-500 to-accent-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-brand-500/20">
+                  <Mic className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                  No voice notes yet
+                  No recordings yet — your story starts here
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Start by recording your first voice note!
@@ -806,8 +847,13 @@ export default function DashboardHome() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 dark:text-gray-400">No storage data available</p>
+              <div className="text-center py-6">
+                <div className="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                  <Volume2 className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Start recording to see your storage usage here.
+                </p>
               </div>
             )}
 
@@ -903,7 +949,12 @@ export default function DashboardHome() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">No recent activity</p>
+              <div className="text-center py-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Nothing yet</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  Your activity will appear here as you record and listen.
+                </p>
+              </div>
             )}
           </div>
 
