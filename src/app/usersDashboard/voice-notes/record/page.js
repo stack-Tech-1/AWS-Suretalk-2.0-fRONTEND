@@ -73,6 +73,7 @@ export default function RecordVoiceNote() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const ffmpegRef = useRef(null);
+  const mimeTypeRef = useRef('audio/webm');
 
   // ─── Waveform Drawing ────────────────────────────────────────────────────────
 
@@ -148,7 +149,13 @@ export default function RecordVoiceNote() {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const mimeType =
+        MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+        MediaRecorder.isTypeSupported('audio/mp4')              ? 'audio/mp4'              :
+        MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')  ? 'audio/ogg;codecs=opus'  :
+        '';
+      mimeTypeRef.current = mimeType || 'audio/webm';
+      mediaRecorderRef.current = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       audioChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -156,7 +163,7 @@ export default function RecordVoiceNote() {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
         const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
         setAudioUrl(url);
