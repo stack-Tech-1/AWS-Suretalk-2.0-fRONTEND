@@ -55,8 +55,18 @@ export default function AdminDashboardLayout({ children }) {
         
         // Get dashboard stats
         try {
-          const dashboardResponse = await api.getAdminDashboardOverview();
-          setStats(dashboardResponse.data || {});
+          const dashboardResponse = await api.getAdminDashboardStats();
+          const raw = dashboardResponse.data || {};
+          setStats({
+            users:           raw.users || 0,
+            wills:           raw.wills || { total: 0, pending: 0 },
+            scheduled: {
+              total:     raw.scheduledMessages?.total     || 0,
+              scheduled: raw.scheduledMessages?.scheduled || 0,
+            },
+            pendingRequests: raw.pendingRequests || 0,
+            logs:            raw.systemLogs      || 0,
+          });
         } catch (statsError) {
           console.warn('Could not fetch stats:', statsError);
           // Continue without stats

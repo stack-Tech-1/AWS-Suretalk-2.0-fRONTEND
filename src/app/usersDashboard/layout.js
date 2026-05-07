@@ -58,7 +58,13 @@ export default function UsersDashboardLayout({ children }) {
     try {
       setLoading(true);
       const statsResponse = await api.getUserDashboardStats();
-      setStats(statsResponse.data || {});
+      const raw = statsResponse.data?.stats || {};
+      setStats({
+        voiceNotes: raw.voice_notes_total || 0,
+        contacts:   raw.contacts_total    || 0,
+        vault:      raw.wills_total       || 0,
+        scheduled:  raw.scheduled_messages_total || 0,
+      });
     } catch (error) {
       console.warn('Could not fetch user stats:', error);
     } finally {
