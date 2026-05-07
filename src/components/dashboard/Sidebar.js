@@ -72,9 +72,9 @@ export default function Sidebar({
     // ✅ Add Legacy Vault ONLY for LEGACY_VAULT_PREMIUM users (using helper from context)
     if (hasLegacyVault()) {
       baseMenu.splice(3, 0, { // Insert after Contacts, before Scheduled
-        icon: <Shield className="w-5 h-5" />, 
-        label: "Legacy Vault", 
-        href: "/usersDashboard/vault", 
+        icon: <Shield className="w-5 h-5" />,
+        label: "Voice Wills",
+        href: "/usersDashboard/vault",
         count: loading ? null : stats?.vault || 0,
         availableFor: ['LEGACY_VAULT_PREMIUM'],
         premium: true
@@ -200,7 +200,7 @@ export default function Sidebar({
         return (
           <span className="ml-auto px-1.5 py-0.5 text-xs bg-gradient-to-r from-brand-700 to-accent-600
                          text-white rounded-full">
-            LEGACY VAULT
+            PREMIUM
           </span>
         );
       }
@@ -377,10 +377,10 @@ export default function Sidebar({
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-800 dark:text-white">
-                  Unlock Legacy Vault
+                  Unlock Voice Wills
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Upgrade to Legacy Vault for permanent storage
+                  Upgrade to record &amp; store your legacy messages
                 </p>
                 <Link href="/usersDashboard/billing" className="mt-2 block">
                   <button className="w-full mt-2 px-3 py-1.5 text-xs bg-gradient-to-r from-brand-700 to-accent-600
