@@ -273,7 +273,7 @@ export default function Topbar({
     { icon: <User className="w-4 h-4" />, label: "Profile", href: "/usersDashboard/settings/profile" },
     { icon: <Settings className="w-4 h-4" />, label: "Settings", href: "/usersDashboard/settings" },
     { icon: <CreditCard className="w-4 h-4" />, label: "Billing", href: "/usersDashboard/billing" },
-    { icon: <Zap className="w-4 h-4" />, label: "Upgrade Plan", href: "/usersDashboard/upgrade" },
+    { icon: <Zap className="w-4 h-4" />, label: "Upgrade Plan", href: "/usersDashboard/billing" },
     { icon: <LogOut className="w-4 h-4" />, label: "Logout", href: "/" },
   ];
 
@@ -616,8 +616,10 @@ export default function Topbar({
                   </div>
                   {type !== "admin" && (
                     <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 
-                                       bg-gradient-to-r from-brand-600 to-accent-500 text-white 
+                      <button
+                        onClick={() => { router.push('/usersDashboard/billing'); setShowUserMenu(false); }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2
+                                       bg-gradient-to-r from-brand-600 to-accent-500 text-white
                                        rounded-lg hover:shadow-lg transition-all text-sm">
                         <Zap className="w-4 h-4" />
                         Upgrade Plan

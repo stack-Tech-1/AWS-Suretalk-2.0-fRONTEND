@@ -148,26 +148,38 @@ function BillingPageInner() {
       setProcessing(true);
       setSelectedPlan(plan);
 
-      // If it's the free plan, just change tier directly
-      if (plan.price === "$0") {
+      if (plan.price === 0 || plan.price === "$0") {
         await handlePlanChange(plan.id);
         return;
       }
 
-      // No pre-call needed — create-checkout auto-creates a Stripe customer if one doesn't exist
       const successUrl = `${window.location.origin}/usersDashboard/billing?success=true`;
       const cancelUrl  = `${window.location.origin}/usersDashboard/billing?cancelled=true`;
 
-      const checkoutResponse = await api.createCheckoutSession(
-        plan.stripePriceId,
-        successUrl,
-        cancelUrl
-      );
+      // Try Stripe Checkout first
+      try {
+        const checkoutResponse = await api.createCheckoutSession(
+          plan.stripePriceId,
+          successUrl,
+          cancelUrl
+        );
+        if (checkoutResponse.success) {
+          window.location.href = checkoutResponse.data.url;
+          return;
+        }
+      } catch {
+        // Fall through to portal
+      }
 
-      if (checkoutResponse.success) {
-        window.location.href = checkoutResponse.data.url;
+      // Fallback: Stripe Customer Portal (works for all users including IVR-registered)
+      const portalResponse = await api.request('/billing/create-portal-session', {
+        method: 'POST',
+        body: JSON.stringify({ returnUrl: `${window.location.origin}/usersDashboard/billing` }),
+      });
+      if (portalResponse.success) {
+        window.location.href = portalResponse.data.url;
       } else {
-        throw new Error(checkoutResponse.error || 'Failed to create checkout session');
+        throw new Error(portalResponse.error || 'Failed to open billing portal');
       }
     } catch (error) {
       console.error('❌ Upgrade error:', error);
