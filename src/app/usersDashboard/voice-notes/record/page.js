@@ -428,12 +428,14 @@ export default function RecordVoiceNote() {
     const fetchContactsAndSlots = async () => {
       setLoadingContacts(true);
       try {
-        const [contactsResp, slotsResp] = await Promise.all([
+        const [contactsResult, slotsResult] = await Promise.allSettled([
           api.getContacts({ page: 1, limit: 100 }),
           api.getIvrSlots()
         ]);
-        if (contactsResp.success) setContacts(contactsResp.data.contacts || []);
-        if (slotsResp.success) setIvrSlots(slotsResp.data);
+        if (contactsResult.status === 'fulfilled' && contactsResult.value?.success)
+          setContacts(contactsResult.value.data.contacts || []);
+        if (slotsResult.status === 'fulfilled' && slotsResult.value?.success)
+          setIvrSlots(slotsResult.value.data);
       } catch (e) { console.error('Failed to fetch contacts/slots', e); }
       finally { setLoadingContacts(false); }
     };
@@ -841,7 +843,7 @@ export default function RecordVoiceNote() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-gray-800 dark:text-white">IVR Slot</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">The number callers press to hear this message</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Your universal slot number to hear this message</p>
                 </div>
               </div>
 
