@@ -59,6 +59,10 @@ export default function RecordVoiceNote() {
   const [showNewContactForm, setShowNewContactForm] = useState(false);
   const [newContactData, setNewContactData] = useState({ name: '', phone: '', email: '', relationship: '' });
 
+  // IVR slot state
+  const [ivrSlots, setIvrSlots] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+
   // File upload state
   const [fileUpload, setFileUpload] = useState(null);
 
@@ -368,7 +372,8 @@ export default function RecordVoiceNote() {
         tags: formData.tags,
         isPermanent: formData.isPermanent,
         ...(resolvedContactId && { contactId: resolvedContactId }),
-        ...(formData.newContact && formData.contactPending && { contactPending: true, pendingContactData: formData.newContact })
+        ...(formData.newContact && formData.contactPending && { contactPending: true, pendingContactData: formData.newContact }),
+        ...(selectedSlot && { slotNumber: selectedSlot })
       };
 
       setSaveStage('Saving note...');
@@ -377,7 +382,13 @@ export default function RecordVoiceNote() {
         if (formData.isFavorite) await api.updateVoiceNote(createResponse.data.id, { isFavorite: true });
         analytics.recordEvent('voice_note_created', { noteId: createResponse.data.id, title: formData.title, duration: recordingDuration, size: fileToUpload.size, isPermanent: formData.isPermanent, method: fileUpload ? 'upload' : 'record' });
         setSaveStage('Saved!');
-        toast.success('Your voice note has been saved successfully!', 'Recording Saved');
+        const assignedSlot = createResponse.data?.ivr_slot_number;
+        toast.success(
+          assignedSlot
+            ? `Saved to IVR slot ${assignedSlot} — callers press ${assignedSlot} to hear this message`
+            : 'Your voice note has been saved successfully!',
+          'Recording Saved'
+        );
         setSuccess(true);
         setTimeout(() => router.push(`/usersDashboard/voice-notes/${createResponse.data.id}`), 2000);
       } else {
@@ -414,15 +425,19 @@ export default function RecordVoiceNote() {
   // ─── Effects ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const fetchContacts = async () => {
+    const fetchContactsAndSlots = async () => {
       setLoadingContacts(true);
       try {
-        const resp = await api.getContacts({ page: 1, limit: 100 });
-        if (resp.success) setContacts(resp.data.contacts || []);
-      } catch (e) { console.error('Failed to fetch contacts', e); }
+        const [contactsResp, slotsResp] = await Promise.all([
+          api.getContacts({ page: 1, limit: 100 }),
+          api.getIvrSlots()
+        ]);
+        if (contactsResp.success) setContacts(contactsResp.data.contacts || []);
+        if (slotsResp.success) setIvrSlots(slotsResp.data);
+      } catch (e) { console.error('Failed to fetch contacts/slots', e); }
       finally { setLoadingContacts(false); }
     };
-    fetchContacts();
+    fetchContactsAndSlots();
   }, []);
 
   useEffect(() => {
@@ -817,7 +832,82 @@ export default function RecordVoiceNote() {
             </div>
           </motion.div>
 
-          {/* Card 2: Note Details */}
+          {/* Card 2: IVR Slot Picker */}
+          <motion.div variants={itemVariants}>
+            <div className="glass-premium rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-brand-100 dark:bg-brand-900/30">
+                  <Phone className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">IVR Slot</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">The number callers press to hear this message</p>
+                </div>
+              </div>
+
+              {/* Auto-assign pill */}
+              <button
+                onClick={() => setSelectedSlot(null)}
+                className={`mb-3 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  selectedSlot === null
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-brand-400'
+                }`}
+              >
+                Auto-assign
+              </button>
+
+              {/* Slot grid */}
+              {ivrSlots ? (
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map(slot => {
+                    const takenEntry = ivrSlots.taken?.find(t => t.slot === slot);
+                    const isTaken = !!takenEntry;
+                    const isSelected = selectedSlot === slot;
+                    return (
+                      <button
+                        key={slot}
+                        disabled={isTaken}
+                        title={isTaken ? `Taken: "${takenEntry.title}"` : `Assign to slot ${slot}`}
+                        onClick={() => setSelectedSlot(isSelected ? null : slot)}
+                        className={`relative aspect-square rounded-xl text-sm font-bold transition-all ${
+                          isSelected
+                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30'
+                            : isTaken
+                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-brand-100 dark:hover:bg-brand-900/30 hover:text-brand-700'
+                        }`}
+                      >
+                        {slot}
+                        {isTaken && (
+                          <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-accent-500" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-4 gap-2 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading slots…</span>
+                </div>
+              )}
+
+              {selectedSlot && (
+                <p className="mt-3 text-xs text-center text-brand-600 dark:text-brand-400 font-medium">
+                  Slot {selectedSlot} selected — callers will press {selectedSlot}
+                </p>
+              )}
+              {ivrSlots && ivrSlots.taken?.length > 0 && (
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-accent-500 mr-1" />
+                  = slot already in use
+                </p>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Card 3: Note Details */}
           <motion.div variants={itemVariants}>
             <div className="glass-premium rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-5">
@@ -879,7 +969,7 @@ export default function RecordVoiceNote() {
             </div>
           </motion.div>
 
-          {/* Card 3: Save Options */}
+          {/* Card 4: Save Options */}
           <motion.div variants={itemVariants}>
             <div className="glass-premium rounded-2xl p-6">
               <div className="space-y-4 mb-5">

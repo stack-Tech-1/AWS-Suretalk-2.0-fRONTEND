@@ -366,9 +366,13 @@ async getAdminDashboardStats() {
   return this.request('/admin/dashboard/stats');
 }
 
-// User dashboard endpoints  
+// User dashboard endpoints
 async getUserDashboardStats() {
   return this.request('/users/stats');
+}
+
+async getIvrSlots() {
+  return this.request('/voice-notes/ivr-slots');
 }
 
 // Admin dashboard endpoints

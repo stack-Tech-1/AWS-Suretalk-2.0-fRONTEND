@@ -422,6 +422,16 @@ export default function VoiceNoteDetail() {
                 </div>
               </div>
 
+              {/* IVR Slot Badge */}
+              {note.ivr_slot_number && (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-xl w-fit">
+                  <Phone className="w-4 h-4 text-brand-600 dark:text-brand-400 flex-shrink-0" />
+                  <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
+                    IVR Slot {note.ivr_slot_number} — Callers press <strong>{note.ivr_slot_number}</strong> to hear this message
+                  </span>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <button
