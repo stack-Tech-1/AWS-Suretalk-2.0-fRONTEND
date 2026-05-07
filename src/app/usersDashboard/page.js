@@ -111,7 +111,7 @@ export default function DashboardHome() {
           change: `+${contactsTotal}`
         },
         vaultItems: {
-          value: (notesResponse.data.voiceNotes || notesResponse.data.notes || []).filter(n => n.is_permanent).length.toString(),
+          value: (parseInt(actualStats.wills_total) || 0).toString(),
           change: "Protected"
         },
         scheduled: {
