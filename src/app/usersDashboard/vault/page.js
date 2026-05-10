@@ -32,9 +32,6 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
-// ✅ MODULE-LEVEL FLAG - Persists across component remounts
-let hasInitializedGlobal = false;
-
 export default function LegacyVault() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
@@ -178,32 +175,19 @@ export default function LegacyVault() {
     }
   };
 
-// ✅ Initial load - uses GLOBAL flag to prevent re-initialization
+// Initial load — runs on every mount so soft navigation always fetches fresh data
 useEffect(() => {
-  // Wait for auth to finish loading
   if (authLoading) return;
 
-  // ✅ Check GLOBAL flag
-  if (hasInitializedGlobal) {
-    setLoading(false); // ✅ Stop loading if already initialized
-    return;
-  }
-
-  // Check if user has access
   const hasAccess = hasLegacyVault();
-
-  // Only fetch if user has Legacy Vault access
   if (hasAccess) {
-    hasInitializedGlobal = true; // ✅ Set GLOBAL flag
     fetchVaultData(1);
   } else {
-    // User doesn't have access, stop loading
     setLoading(false);
-    hasInitializedGlobal = true; // ✅ Set GLOBAL flag even without access
   }
 
   // Mark first render complete after debounce window so the
-  // search/filter effect cannot cancel the initial fetch
+  // search/filter effect cannot fire during the initial fetch
   const timer = setTimeout(() => {
     isFirstRenderRef.current = false;
   }, 500);
@@ -212,37 +196,20 @@ useEffect(() => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [authLoading]);
 
-// ✅ Debounced search/filter - ONLY runs when user actually changes search/filter
+// Debounced search/filter — only runs when user changes search/filter after initial load
 useEffect(() => {
-  // ✅ Skip on first render after mount
-  if (isFirstRenderRef.current) {
-    return;
-  }
+  if (isFirstRenderRef.current) return;
+  if (authLoading) return;
 
-  // Skip if not initialized yet
-  if (!hasInitializedGlobal) {
-    return;
-  }
-
-  // Don't search if auth is loading
-  if (authLoading) {
-    return;
-  }
-
-  // Check if user has access
   const hasAccess = hasLegacyVault();
-  if (!hasAccess) {
-    return;
-  }
+  if (!hasAccess) return;
 
   const timeout = setTimeout(() => {
     fetchVaultData(1, true);
   }, 400);
 
-  return () => {
-    clearTimeout(timeout);
-  };
-  
+  return () => clearTimeout(timeout);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [searchQuery, selectedFilter]);
 
