@@ -157,7 +157,8 @@ export default function VoiceNotes() {
                 lastPlayed: note.last_played,
                 s3Key: note.s3_key,
                 s3Bucket: note.s3_bucket,
-                isPermanent: note.is_permanent || false
+                isPermanent: note.is_permanent || false,
+                slotNumber: note.ivr_slot_number || null
               };
             } catch (formatError) {
               console.error('Error formatting note:', formatError);
@@ -906,7 +907,12 @@ const selectAllNotes = () => {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Link 
+                  {note.slotNumber && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 flex-shrink-0">
+                      Slot {note.slotNumber}
+                    </span>
+                  )}
+                  <Link
                     href={`/usersDashboard/voice-notes/${note.id}`}
                     className="font-bold text-gray-800 dark:text-white truncate hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                     onClick={() => analytics.recordEvent('voice_note_click', { noteId: note.id })}
