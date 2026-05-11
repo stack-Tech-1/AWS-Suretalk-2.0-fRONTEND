@@ -334,7 +334,7 @@ export default function VoiceWills() {
           </div>
           <div className="flex gap-3">
             <Link
-              href="/usersDashboard/voice-notes?record=new&type=will"
+              href="/usersDashboard/vault/wills/create"
               className="btn-primary brand-glow-hover flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function VoiceWills() {
             </p>
             {!searchQuery && (
               <Link
-                href="/usersDashboard/voice-notes?record=new&type=will"
+                href="/usersDashboard/vault/wills/create"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600
                          text-white rounded-xl hover:shadow-lg transition-all"
               >
