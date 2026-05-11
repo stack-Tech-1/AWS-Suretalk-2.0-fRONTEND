@@ -862,7 +862,7 @@ export default function RecordVoiceNote() {
               {/* Slot grid */}
               {ivrSlots ? (
                 <div className="grid grid-cols-5 gap-2">
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map(slot => {
+                  {Array.from({ length: ivrSlots.totalSlots || 9 }, (_, i) => i + 1).map(slot => {
                     const takenEntry = ivrSlots.taken?.find(t => t.slot === slot);
                     const isTaken = !!takenEntry;
                     const isSelected = selectedSlot === slot;
@@ -904,6 +904,11 @@ export default function RecordVoiceNote() {
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-accent-500 mr-1" />
                   = slot already in use
+                </p>
+              )}
+              {ivrSlots && (
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
+                  {ivrSlots.totalSlots} slot{ivrSlots.totalSlots !== 1 ? 's' : ''} available on your plan
                 </p>
               )}
             </div>
