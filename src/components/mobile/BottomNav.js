@@ -7,7 +7,7 @@ const navItems = [
   { href: '/usersDashboard', icon: Home, label: 'Home', exact: true },
   { href: '/usersDashboard/voice-notes', icon: Mic, label: 'Notes' },
   { href: '/usersDashboard/contacts', icon: Users, label: 'Contacts' },
-  { href: '/usersDashboard/vault', icon: Shield, label: 'Vault' },
+  { href: '/usersDashboard/vault', icon: Shield, label: 'Wills' },
   { href: '/usersDashboard/scheduled', icon: Calendar, label: 'Schedule' },
 ];
 
