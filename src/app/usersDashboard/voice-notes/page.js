@@ -580,6 +580,22 @@ const selectAllNotes = () => {
     }
   };
 
+  // Handle converting a voice note into a voice will
+  const handleConvertToWill = async (note) => {
+    if (!confirm(`Move "${note.title}" to Voice Wills? It will no longer appear in Voice Notes.`)) {
+      return;
+    }
+    try {
+      const res = await api.convertNoteToWill(note.id);
+      if (res.success) {
+        setVoiceNotes(prevNotes => prevNotes.filter(n => n.id !== note.id));
+        toast.success('Recording moved to Voice Wills.', 'Converted');
+      }
+    } catch (error) {
+      toast.error('Failed to convert recording. Make sure you have a Legacy Vault Premium plan.');
+    }
+  };
+
   // Handle download
   const handleDownload = async (note) => {
     try {
@@ -1020,7 +1036,15 @@ const selectAllNotes = () => {
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
-                <button 
+                <button
+                  onClick={() => handleConvertToWill(note)}
+                  className="p-3 md:p-2 hover:bg-purple-100 dark:hover:bg-purple-900/20 text-purple-500 rounded-lg transition-colors text-xs font-medium"
+                  title="Move to Voice Wills"
+                  disabled={loading}
+                >
+                  Move to Wills
+                </button>
+                <button
                   onClick={() => handleDeleteNote(note)}
                   className="p-3 md:p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
                   title="Delete"

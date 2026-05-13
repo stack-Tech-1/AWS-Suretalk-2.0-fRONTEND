@@ -257,6 +257,10 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/vault/wills/${id}`, { method: 'DELETE' });
   }
 
+  async convertNoteToWill(id) {
+    return this.request(`/voice-notes/${id}/convert-to-will`, { method: 'POST' });
+  }
+
   // Scheduled messages endpoints
   async getScheduledMessage(id) {
     return this.request(`/scheduled/${id}`);
