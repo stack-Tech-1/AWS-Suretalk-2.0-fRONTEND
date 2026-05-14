@@ -1058,6 +1058,13 @@ async suspendUser(id, suspend, reason) {
   });
 }
 
+async hardDeleteUser(id) {
+  return this.request(`/super-admin/users/${id}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ confirm: 'DELETE_USER' }),
+  });
+}
+
 async getSuperAdminOverview() {
   return this.request('/super-admin/overview');
 }

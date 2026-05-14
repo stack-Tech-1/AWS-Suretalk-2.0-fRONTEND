@@ -7,7 +7,7 @@ import {
   ArrowLeft, User, Mic, Shield, Calendar, Activity,
   CreditCard, Phone, Mail, MapPin, Clock, Download,
   Play, Star, Lock, AlertTriangle, CheckCircle,
-  BarChart2, TrendingUp, Zap, RefreshCw, Eye
+  BarChart2, TrendingUp, Zap, RefreshCw, Eye, Trash2, X
 } from 'lucide-react';
 
 const TIER_LABELS = {
@@ -47,6 +47,9 @@ export default function UserDetailPage() {
   const [resyncing, setResyncing] = useState(false);
   const [impersonating, setImpersonating] = useState(false);
   const [exportLoading, setExportLoading] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -182,6 +185,21 @@ export default function UserDetailPage() {
     }
   };
 
+  const handleHardDelete = async () => {
+    if (deleteConfirmEmail !== user.email) {
+      alert('Email does not match. Please type the exact email address.');
+      return;
+    }
+    try {
+      setDeleteLoading(true);
+      await api.hardDeleteUser(params.id);
+      router.push('/adminDashboard/super');
+    } catch (err) {
+      alert('Failed to delete user: ' + err.message);
+      setDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="page-enter max-w-5xl mx-auto">
       {/* Back button */}
@@ -228,7 +246,7 @@ export default function UserDetailPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-4 flex justify-end gap-2 flex-wrap">
           <button
             onClick={handleImpersonate}
             disabled={impersonating || userData.user.is_admin}
@@ -247,6 +265,15 @@ export default function UserDetailPage() {
             <RefreshCw className={`w-4 h-4 ${resyncing ? 'animate-spin' : ''}`} />
             {resyncing ? 'Syncing...' : 'Re-sync from IVR'}
           </button>
+          {!user.is_super_admin && (
+            <button
+              onClick={() => { setDeleteModalOpen(true); setDeleteConfirmEmail(''); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete User
+            </button>
+          )}
         </div>
       </div>
 
@@ -568,6 +595,80 @@ export default function UserDetailPage() {
               </p>
             </div>
           )}
+        </div>
+      )}
+      {/* Hard delete confirmation modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setDeleteModalOpen(false)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete User Permanently</h3>
+                  <p className="text-xs text-gray-500">This cannot be undone</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 mb-4">
+              <p className="text-sm text-red-700 dark:text-red-300">
+                This will permanently wipe <span className="font-semibold">{user.full_name || 'this user'}</span> and all their data — voice notes, wills, contacts, scheduled messages, and all S3 files. There is no recovery.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Type <span className="font-mono text-red-600">{user.email}</span> to confirm
+              </label>
+              <input
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={e => setDeleteConfirmEmail(e.target.value)}
+                placeholder="Enter user's email"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleHardDelete}
+                disabled={deleteLoading || deleteConfirmEmail !== user.email}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleteLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Forever
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

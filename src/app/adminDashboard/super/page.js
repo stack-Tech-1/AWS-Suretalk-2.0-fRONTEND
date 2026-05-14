@@ -8,7 +8,7 @@ import {
   Users, Search, Filter, Shield, AlertTriangle,
   CheckCircle, XCircle, X, RefreshCw, ChevronLeft,
   ChevronRight, Eye, Edit, Ban, Zap, Mic,
-  Calendar, HardDrive, Phone, Mail, Download
+  Calendar, HardDrive, Phone, Mail, Download, Trash2
 } from 'lucide-react';
 
 const TIER_COLORS = {
@@ -64,6 +64,8 @@ export default function SuperAdminDashboard() {
   const [systemHealth, setSystemHealth] = useState(null);
   const [revenue, setRevenue] = useState(null);
   const [exportLoading, setExportLoading] = useState('');
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
 
   const fetchUsers = useCallback(async (page = 1) => {
     try {
@@ -217,6 +219,26 @@ export default function SuperAdminDashboard() {
       fetchUsers(pagination.page);
     } catch (err) {
       toast.error('Failed to update account: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    if (!deleteModal) return;
+    if (deleteConfirmEmail !== deleteModal.email) {
+      toast.error('Email does not match. Please type the exact email address.');
+      return;
+    }
+    try {
+      setActionLoading(deleteModal.id);
+      await api.hardDeleteUser(deleteModal.id);
+      setUsers(prev => prev.filter(u => u.id !== deleteModal.id));
+      setDeleteModal(null);
+      setDeleteConfirmEmail('');
+      toast.success('User permanently deleted.');
+    } catch (err) {
+      toast.error('Failed to delete user: ' + err.message);
     } finally {
       setActionLoading(null);
     }
@@ -481,6 +503,15 @@ export default function SuperAdminDashboard() {
                         title={user.is_suspended ? 'Reactivate account' : 'Suspend account'}
                       >
                         {user.is_suspended ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                      </button>
+
+                      <button
+                        onClick={() => { setDeleteModal(user); setDeleteConfirmEmail(''); }}
+                        disabled={actionLoading === user.id || user.is_super_admin}
+                        className="p-2 rounded-lg transition-colors hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 disabled:opacity-40"
+                        title="Permanently delete user"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -793,6 +824,81 @@ export default function SuperAdminDashboard() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Hard delete confirmation modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setDeleteModal(null)}
+          />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete User Permanently</h3>
+                  <p className="text-xs text-gray-500">This cannot be undone</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 mb-4">
+              <p className="text-sm text-red-700 dark:text-red-300">
+                This will permanently wipe <span className="font-semibold">{deleteModal.full_name || 'this user'}</span> and all their data — voice notes, wills, contacts, scheduled messages, and all S3 files. There is no recovery.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Type <span className="font-mono text-red-600">{deleteModal.email}</span> to confirm
+              </label>
+              <input
+                type="email"
+                value={deleteConfirmEmail}
+                onChange={e => setDeleteConfirmEmail(e.target.value)}
+                placeholder="Enter user's email"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleHardDelete}
+                disabled={actionLoading === deleteModal.id || deleteConfirmEmail !== deleteModal.email}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading === deleteModal.id ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Forever
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
