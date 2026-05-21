@@ -381,7 +381,7 @@ export default function DashboardHome() {
     },
     { 
       icon: <Shield className="w-5 h-5" />, 
-      label: "Vault Items", 
+      label: "Wills",
       value: quickStats.vaultItems.value, 
       change: quickStats.vaultItems.change, 
       color: "from-purple-500 to-pink-500",

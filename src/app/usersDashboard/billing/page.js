@@ -513,6 +513,7 @@ function BillingPageInner() {
           {tiers.map((plan, index) => {
             const isCurrentPlan = currentPlan?.id === plan.id;
             const isHighlighted = plan.highlighted;
+            const currentPlanIndex = currentPlan ? tiers.findIndex(t => t.id === currentPlan.id) : -1;
             
             return (
               <motion.div
@@ -579,8 +580,8 @@ function BillingPageInner() {
                       <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     ) : isCurrentPlan ? (
                       'Current Plan'
-                    ) : currentPlan && plan.price === "$0" ? (
-                      'Downgrade to Free'
+                    ) : currentPlan && index < currentPlanIndex ? (
+                      plan.price === "$0" ? 'Downgrade to Free' : `Downgrade to ${plan.name}`
                     ) : (
                       `Upgrade to ${plan.name}`
                     )}
