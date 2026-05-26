@@ -37,7 +37,6 @@ export default function Topbar({
   const { user, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
-  const userTier = currentUser?.subscription_tier;
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -50,6 +49,7 @@ export default function Topbar({
   // ✅ Use user from AuthContext if available, fallback to prop
   const currentUser = user || userData;
   const isLoading = authLoading || loading;
+  const userTier = currentUser?.subscription_tier;
 
   useEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
