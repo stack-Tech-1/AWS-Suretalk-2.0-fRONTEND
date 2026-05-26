@@ -18,12 +18,15 @@ import {
   Lock,
   Cloud,
   Zap,
-  Globe
+  Globe,
+  Sparkles,
+  Star
 } from "lucide-react";
 import { Dialog } from '@headlessui/react';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import Button from "../components/common/Button";
+import Waveform from "../components/audio/Waveform";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -139,8 +142,8 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Navigation - ENHANCED */}
+    <div className="min-h-screen">
+      {/* Navigation */}
       <nav className="sticky top-0 z-50 glass border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -149,11 +152,11 @@ export default function Home() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
                   <MessageSquare className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
+                <span className="text-xl font-display font-bold gradient-text tracking-tight">SureTalk</span>
               </Link>
             </div>
-            
-            {/* Desktop Navigation - ENHANCED */}
+
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
                 Features
@@ -173,9 +176,9 @@ export default function Home() {
               >
                 Sign In
               </Link>
-              <Link 
+              <Link
                 href="/signup"
-                className="btn-primary px-6 py-2.5"
+                className="btn-primary rounded-full px-6 py-2.5"
               >
                 Get Started Free
               </Link>
@@ -296,103 +299,188 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
+        {/* Background waveform decoration */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] dark:opacity-[0.06]">
+            <Waveform barCount={32} height={220} isActive={true} />
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 text-center">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/25 text-brand-700 dark:text-brand-300 text-sm font-medium mb-8"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Now with Voice Wills &amp; Permanent Storage
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
+            <h1 className="font-display font-bold text-gray-900 dark:text-white mb-6 leading-[1.05]"
+                style={{ fontSize: 'clamp(2.8rem, 7vw, 5.5rem)' }}>
               Your Voice,<br />
-              <span className="bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
+              <span className="gradient-text-animated">
                 Preserved Forever
               </span>
             </h1>
-            
-            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-10">
-              Secure voice messaging platform with legacy features, scheduled delivery, 
-              and permanent storage for your most important memories.
+
+            <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+              Secure voice messaging with legacy features, scheduled delivery,
+              and permanent AWS storage for your most important memories.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link href="/signup">
-                <Button size="xl" className="px-8 btn-primary">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
+                <motion.span
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="btn-primary btn-pill inline-flex items-center gap-2"
+                >
+                  Start Free — No Card Needed
+                  <ArrowRight className="w-5 h-5" />
+                </motion.span>
               </Link>
-              <Button variant="outline" size="xl" className="px-8">
-                <Play className="mr-2 w-5 h-5" />
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="btn-secondary rounded-full px-8 py-3 text-base flex items-center justify-center gap-2"
+              >
+                <Play className="w-4 h-4" />
                 Watch Demo
-              </Button>
+              </motion.button>
+            </div>
+
+            {/* Social proof strip */}
+            <div className="flex flex-wrap items-center justify-center gap-6 mb-16 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-1.5">
+                <div className="flex -space-x-2">
+                  {['#6366f1','#7c3aed','#0ea5e9','#10b981'].map((c, i) => (
+                    <div key={i} className="w-7 h-7 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center text-white text-xs font-bold"
+                         style={{ background: c }}>
+                      {String.fromCharCode(65 + i)}
+                    </div>
+                  ))}
+                </div>
+                <span>Join <strong className="text-gray-700 dark:text-gray-200">2,400+</strong> users</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
+                <span className="ml-1"><strong className="text-gray-700 dark:text-gray-200">4.9</strong> rating</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-green-500" />
+                <span>256-bit encrypted</span>
+              </div>
             </div>
           </motion.div>
 
-          {/* Hero Image/Illustration */}
+          {/* Hero App Mockup */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="relative max-w-4xl mx-auto"
+            style={{ perspective: '1200px' }}
           >
-            <div className="glass rounded-2xl overflow-hidden shadow-2xl border border-white/20">
-              {/* Mock dashboard */}
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-4">
-                <div className="flex items-center space-x-2 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <div className="flex-1 text-center text-gray-300 font-medium">
-                    SureTalk Dashboard
-                  </div>
+            <motion.div
+              style={{ rotateX: 4, rotateY: -2 }}
+              className="rounded-2xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.18)] dark:shadow-[0_40px_80px_rgba(0,0,0,0.5)] border border-white/30 dark:border-white/10"
+            >
+              {/* Browser chrome */}
+              <div className="bg-[#1a1f2e] px-4 pt-3 pb-2 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500/90" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/90" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/90" />
                 </div>
-                
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-gray-700/50 rounded-xl p-4">
-                      <div className="text-2xl font-bold text-white mb-1">12</div>
-                      <div className="text-gray-400 text-sm">Voice Notes</div>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-xl p-4">
-                      <div className="text-2xl font-bold text-white mb-1">5</div>
-                      <div className="text-gray-400 text-sm">Contacts</div>
-                    </div>
-                    <div className="bg-gray-700/50 rounded-xl p-4">
-                      <div className="text-2xl font-bold text-white mb-1">2.1GB</div>
-                      <div className="text-gray-400 text-sm">Storage Used</div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="flex items-center justify-between bg-gray-700/30 rounded-xl p-3 backdrop-blur-sm">
-                        <div className="flex items-center">
-                          <Headphones className="w-5 h-5 text-gray-400 mr-3" />
-                          <div>
-                            <div className="text-white font-medium">Voice Note #{i}</div>
-                            <div className="text-gray-400 text-sm">Recorded 2 days ago</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button className="p-2 hover:bg-gray-600/50 rounded-lg transition-colors">
-                            <Play className="w-4 h-4 text-green-400" />
-                          </button>
-                          <button className="p-2 hover:bg-gray-600/50 rounded-lg transition-colors">
-                            <Phone className="w-4 h-4 text-blue-400" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="flex-1 mx-3 h-6 rounded-md bg-white/10 flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">app.suretalk.com/dashboard</span>
                 </div>
               </div>
-            </div>
+
+              {/* Dashboard content */}
+              <div className="bg-[#0d1117] p-5">
+                {/* Stat row */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  {[
+                    { label: 'Voice Notes', value: '24', color: '#5B4CF5' },
+                    { label: 'Contacts', value: '9', color: '#0EA5E9' },
+                    { label: 'Storage', value: '2.4 GB', color: '#7c3aed' },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="text-2xl font-display font-bold text-white mb-0.5">{s.value}</div>
+                      <div className="text-xs" style={{ color: s.color }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Voice notes list */}
+                <div className="space-y-2.5">
+                  {[
+                    { title: 'Message to Sarah', duration: '1:24', date: 'Today' },
+                    { title: 'Family update — July', duration: '3:07', date: 'Yesterday' },
+                    { title: 'Voice Will — 2024', duration: '12:41', date: 'Permanent' },
+                  ].map((note, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-xl p-3"
+                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                             style={{ background: i === 2 ? 'rgba(124,58,237,0.2)' : 'rgba(14,165,233,0.15)' }}>
+                          {i === 2 ? (
+                            <Shield className="w-4 h-4 text-purple-400" />
+                          ) : (
+                            <Mic className="w-4 h-4 text-audio-400" style={{ color: '#38bdf8' }} />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-white text-sm font-medium">{note.title}</div>
+                          <div className="text-gray-500 text-xs">{note.date} · {note.duration}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {/* Mini waveform */}
+                        <div className="flex items-center gap-[2px] h-5">
+                          {[3,6,4,8,5,7,3,9,6,4].map((h, j) => (
+                            <div key={j} className="w-[2px] rounded-full bg-current opacity-40"
+                                 style={{ height: `${h * 2}px`, color: i === 2 ? '#a78bfa' : '#38bdf8' }} />
+                          ))}
+                        </div>
+                        <button className="w-7 h-7 rounded-full flex items-center justify-center"
+                                style={{ background: i === 2 ? 'rgba(124,58,237,0.25)' : 'rgba(14,165,233,0.2)' }}>
+                          <Play className="w-3 h-3 ml-0.5" style={{ color: i === 2 ? '#a78bfa' : '#38bdf8' }} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Floating badge */}
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-4 -right-4 px-3 py-2 rounded-xl text-sm font-semibold text-white shadow-lg hidden md:flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #5B4CF5, #7c3aed)' }}
+            >
+              <Shield className="w-4 h-4" />
+              End-to-end encrypted
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Trust Indicators Section */}
-      <section className="py-12 bg-gradient-to-r from-brand-50 to-accent-50">
+      <section className="py-12 bg-gradient-to-r from-brand-50/60 to-accent-50/60 dark:from-brand-500/5 dark:to-accent-500/5 border-y border-brand-100/50 dark:border-brand-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {trustIndicators.map((item, index) => (

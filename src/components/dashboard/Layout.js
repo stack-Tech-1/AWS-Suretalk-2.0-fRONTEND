@@ -7,7 +7,12 @@ import { useDashboardData } from "../../hooks/useDashboardData";
 export default function Layout({ children, type = "user" }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('suretalk-sidebar-collapsed') === 'true';
+    }
+    return false;
+  });
 
   const { userData, statsData, sidebarStats, loading, isAdmin } = useDashboardData();
 
@@ -18,11 +23,19 @@ export default function Layout({ children, type = "user" }) {
         setSidebarCollapsed(false);
       }
     };
-    
+
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  const handleToggleCollapse = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('suretalk-sidebar-collapsed', String(next));
+      return next;
+    });
+  };
 
   // Calculate main content width based on sidebar state
   const getMainWidth = () => {
@@ -39,7 +52,7 @@ export default function Layout({ children, type = "user" }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
@@ -68,14 +81,14 @@ export default function Layout({ children, type = "user" }) {
           damping: 30,
           width: { duration: 0.3 }
         }}
-        className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-900 shadow-2xl
+        className={`fixed inset-y-0 left-0 z-50 glass border-r border-white/20 dark:border-white/5
           ${isMobile ? 'w-64 top-16 bottom-0' : ''}`}
       >
-        <Sidebar 
-          type={isAdmin ? "admin" : "user"} 
+        <Sidebar
+          type={isAdmin ? "admin" : "user"}
           isOpen={sidebarOpen}
           collapsed={sidebarCollapsed}
-          onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onCollapse={handleToggleCollapse}
           onClose={() => setSidebarOpen(false)}
           userData={userData}
           stats={sidebarStats}

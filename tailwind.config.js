@@ -51,11 +51,25 @@ module.exports = {
           light: '#ffffff',
           muted: '#f8fafc',
           border: '#e2e8f0',
-        }
+        },
+        audio: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
+          950: '#082f49',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        grotesk: ['Space Grotesk', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'display-2xl': ['4.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
@@ -80,6 +94,10 @@ module.exports = {
         'gradient-shift': 'gradientShift 4s ease infinite',
         'enter': 'enter 0.4s ease-out',
         'spin-slow': 'spin 3s linear infinite',
+        'pulse-ring': 'pulseRing 1.5s ease-out infinite',
+        'waveform': 'waveform 1.2s ease-in-out infinite alternate',
+        'waveform-slow': 'waveform 1.8s ease-in-out infinite alternate',
+        'aurora': 'aurora 8s ease-in-out infinite alternate',
       },
       keyframes: {
         fadeIn: {
@@ -135,6 +153,20 @@ module.exports = {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        pulseRing: {
+          '0%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(14, 165, 233, 0.6)' },
+          '70%': { transform: 'scale(1)', boxShadow: '0 0 0 14px rgba(14, 165, 233, 0)' },
+          '100%': { transform: 'scale(0.95)', boxShadow: '0 0 0 0 rgba(14, 165, 233, 0)' },
+        },
+        waveform: {
+          '0%': { transform: 'scaleY(0.25)' },
+          '100%': { transform: 'scaleY(1)' },
+        },
+        aurora: {
+          '0%': { backgroundPosition: '0% 50%', transform: 'scale(1)' },
+          '50%': { backgroundPosition: '100% 50%', transform: 'scale(1.05)' },
+          '100%': { backgroundPosition: '0% 50%', transform: 'scale(1)' },
+        },
       },
       boxShadow: {
         'xs': '0 1px 2px rgba(0, 0, 0, 0.05)',
@@ -146,6 +178,10 @@ module.exports = {
         'brand-lg': '0 8px 32px rgba(99, 102, 241, 0.4)',
         'inner-brand': 'inset 0 1px 0 rgba(99, 102, 241, 0.15)',
         'dark-card': '0 4px 16px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2)',
+        'audio': '0 4px 20px rgba(14, 165, 233, 0.35)',
+        'audio-lg': '0 8px 32px rgba(14, 165, 233, 0.4)',
+        'glow-brand': '0 0 0 1px rgba(99,102,241,0.15), 0 8px 32px rgba(99,102,241,0.12)',
+        'glow-audio': '0 0 0 1px rgba(14,165,233,0.15), 0 8px 32px rgba(14,165,233,0.12)',
       },
       backdropBlur: {
         xs: '2px',

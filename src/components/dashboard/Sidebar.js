@@ -209,15 +209,15 @@ export default function Sidebar({
     
     return (
       <Link href={item.href}>
-        <div 
+        <div
           className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer
-            ${isActive 
-              ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-lg' 
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:pl-5'
+            ${isActive
+              ? 'nav-active font-semibold'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white hover:pl-5'
             }`}
           onClick={onClose}
         >
-          <div className={`${isActive ? 'text-white' : 'text-gray-500 group-hover:text-brand-500'}`}>
+          <div className={`flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-brand-500'}`}>
             {item.icon}
           </div>
           {!collapsed && (
@@ -235,7 +235,7 @@ export default function Sidebar({
   return (
     <div className={`h-full flex flex-col ${collapsed ? 'items-center' : ''}`}>
       {/* Header */}
-      <div className={`p-6 border-b border-gray-200 dark:border-gray-800 ${collapsed ? 'px-4' : ''}`}>
+      <div className={`p-6 border-b border-white/20 dark:border-white/5 ${collapsed ? 'px-4' : ''}`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
           {!collapsed ? (
             <div className="flex items-center gap-3">
@@ -245,10 +245,10 @@ export default function Sidebar({
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h2 className="font-bold text-lg bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
+                <h2 className="font-display font-bold text-lg gradient-text tracking-tight">
                   SureTalk
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   {type === "admin" ? "Admin Console" : "User Dashboard"}
                 </p>
               </div>
@@ -292,7 +292,7 @@ export default function Sidebar({
         
         {/* User info - only when not collapsed */}
         {!collapsed && (
-          <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20">
+          <div className="mt-6 p-4 rounded-xl bg-gray-50/80 dark:bg-white/5 border border-gray-100 dark:border-white/5">
             {loadingTier ? (
               <UserProfileSkeleton />
             ) : (
@@ -328,16 +328,17 @@ export default function Sidebar({
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-800 dark:text-white">
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm">
                     {currentUser?.full_name || 'User'}
                   </p>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {userTier?.replace(/_/g, ' ') || 'Loading...'}
-                    </p>
-                    {userTier === 'LEGACY_VAULT_PREMIUM' && (
-                      <Crown className="w-3 h-3 text-yellow-500" />
-                    )}
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
+                      userTier === 'LEGACY_VAULT_PREMIUM' ? 'tier-pro' :
+                      userTier === 'ESSENTIAL' ? 'tier-essential' : 'tier-lite'
+                    }`}>
+                      {userTier === 'LEGACY_VAULT_PREMIUM' ? 'Pro' :
+                       userTier === 'ESSENTIAL' ? 'Essential' : 'Lite'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -368,23 +369,20 @@ export default function Sidebar({
         
         {/* ✅ Upgrade Prompt for non-LEGACY_VAULT_PREMIUM users (using helper) */}
         {type !== "admin" && !(hasLegacyVault?.()) && !collapsed && (
-          <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-brand-50 to-accent-50
-                         dark:from-brand-900/20 dark:to-accent-900/20 border border-brand-200
-                         dark:border-brand-800">
+          <div className="mt-4 p-4 rounded-xl card-glow bg-white/60 dark:bg-white/5">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-brand-700 to-accent-600">
+              <div className="p-2 rounded-lg brand-gradient flex-shrink-0">
                 <Crown className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-white">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-800 dark:text-white leading-tight">
                   Unlock Voice Wills
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Upgrade to record &amp; store your legacy messages
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-snug">
+                  Preserve your voice legacy forever
                 </p>
-                <Link href="/usersDashboard/billing" className="mt-2 block">
-                  <button className="w-full mt-2 px-3 py-1.5 text-xs bg-gradient-to-r from-brand-700 to-accent-600
-                                   text-white rounded-lg hover:shadow-sm transition-all">
+                <Link href="/usersDashboard/billing" className="mt-2.5 block">
+                  <button className="btn-primary w-full text-xs py-1.5 px-3 rounded-lg">
                     Upgrade Now
                   </button>
                 </Link>
@@ -395,7 +393,7 @@ export default function Sidebar({
       </nav>
 
       {/* Footer */}
-      <div className={`p-4 border-t border-gray-200 dark:border-gray-800 ${collapsed ? 'px-2' : ''}`}>
+      <div className={`p-4 border-t border-white/20 dark:border-white/5 ${collapsed ? 'px-2' : ''}`}>
         <div className="space-y-3">
           {/* Help */}
           <Link href={type === "admin" ? "/adminDashboard/helpandsupport" : "/usersDashboard/helpandsupport"}>
@@ -420,8 +418,8 @@ export default function Sidebar({
           
           {/* Version info - only when not collapsed */}
           {!collapsed && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            <div className="pt-4 border-t border-white/20 dark:border-white/5">
+              <p className="text-xs text-center text-gray-400 dark:text-gray-500">
                 v2.0.0 • {type === "admin" ? "Admin" : "User"} Mode
               </p>
             </div>

@@ -542,10 +542,14 @@ export default function RecordVoiceNote() {
               )}
             </div>
 
-            {/* Large circular button + ping ring */}
+            {/* Large circular button + pulse rings */}
             <div className="relative flex items-center justify-center my-2">
+              {/* Outer pulse rings when recording */}
               {recording && (
-                <span className="absolute w-52 h-52 rounded-full border-4 border-accent-500/30 animate-ping" />
+                <>
+                  <span className="absolute w-56 h-56 rounded-full border-2 border-audio-400/20 animate-ping" style={{ animationDuration: '1.5s' }} />
+                  <span className="absolute w-52 h-52 rounded-full border-2 border-audio-400/30 animate-ping" style={{ animationDuration: '2s' }} />
+                </>
               )}
               <motion.button
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -560,9 +564,19 @@ export default function RecordVoiceNote() {
                 disabled={uploading}
                 className={`relative w-44 h-44 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2
                   ${btnState === 'recording'
-                    ? 'bg-gradient-to-br from-accent-600 to-accent-500 focus:ring-accent-400 shadow-accent-500/40'
-                    : 'bg-gradient-to-br from-brand-700 to-brand-500 focus:ring-brand-400 shadow-brand-700/40'
+                    ? 'focus:ring-audio-400 shadow-audio-500/40'
+                    : 'focus:ring-brand-400 shadow-brand-700/40'
                   }`}
+                style={{
+                  background: btnState === 'recording'
+                    ? 'linear-gradient(135deg, #0EA5E9, #0284C7)'
+                    : btnState === 'idle'
+                    ? 'linear-gradient(135deg, #5B4CF5, #7c3aed)'
+                    : 'linear-gradient(135deg, #5B4CF5, #7c3aed)',
+                  boxShadow: btnState === 'recording'
+                    ? '0 0 40px rgba(14,165,233,0.5), 0 8px 32px rgba(14,165,233,0.3)'
+                    : '0 8px 32px rgba(91,76,245,0.4)'
+                }}
               >
                 {btnState === 'recording' && <Square className="w-16 h-16 text-white" />}
                 {btnState === 'idle' && <Mic className="w-16 h-16 text-white" />}
@@ -583,9 +597,9 @@ export default function RecordVoiceNote() {
 
             {/* Timer */}
             <div className="text-center">
-              <div className={`text-5xl font-black font-mono tracking-tight tabular-nums transition-colors ${
-                recording ? 'text-accent-500' : 'text-brand-700 dark:text-brand-400'
-              }`}>
+              <div className={`text-5xl font-display font-black tracking-tight tabular-nums transition-colors ${
+                recording ? 'text-audio-500' : 'text-brand-700 dark:text-brand-400'
+              }`} style={recording ? { color: '#0ea5e9' } : {}}>
                 {formatTime(recording ? recordingTime : recordingDuration)}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.2em]">

@@ -450,90 +450,120 @@ export default function DashboardHome() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8 px-6 py-5 rounded-2xl bg-gradient-to-r from-brand-50 to-accent-50
-                   dark:from-brand-950/30 dark:to-accent-950/30
-                   border border-brand-100 dark:border-brand-900/30"
+        className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-              {getGreeting()}, <span className="gradient-text">{userName}!</span>
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1.5">
-              {parseInt(quickStats.voiceNotes.value) > 0
-                ? `You have ${quickStats.voiceNotes.value} voice ${parseInt(quickStats.voiceNotes.value) === 1 ? 'note' : 'notes'} — keep building your story.`
-                : `Welcome! Start by recording your first voice message.`
-              }
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            {billingLoading ? (
-              <div className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse w-32 h-9" />
-            ) : (
-              <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${
-                hasLegacyVault() // ✅ Use helper from context
-                  ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                  : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200'
-              }`}>
-                <Shield className="w-5 h-5" />
-                <span className="font-medium">
-                  {subscriptionInfo?.currentTier?.replace(/_/g, ' ') || 'Basic Plan'}
-                </span>
-              </div>
-            )}
-            <Link 
-              href="/usersDashboard/notifications"
-              className="px-4 py-2 border-2 border-brand-500 text-brand-600 dark:text-brand-400 
-                         rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
-              onClick={() => analytics.recordEvent('page_view', { page: 'notifications' })}
-            >
-              <Bell className="w-5 h-5" />
-            </Link>
-          </div>
+        <div>
+          <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white tracking-tight">
+            {getGreeting()}, <span className="gradient-text">{userName}</span>
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {parseInt(quickStats.voiceNotes.value) > 0
+              ? `You have ${quickStats.voiceNotes.value} voice ${parseInt(quickStats.voiceNotes.value) === 1 ? 'note' : 'notes'} — keep building your story.`
+              : `Welcome! Start by recording your first voice message.`
+            }
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/usersDashboard/voice-notes?record=new"
+            className="btn-audio flex items-center gap-2 text-sm py-2 px-4 rounded-xl"
+          >
+            <Mic className="w-4 h-4" />
+            New Recording
+          </Link>
+          <Link
+            href="/usersDashboard/notifications"
+            className="p-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-500 dark:text-gray-400"
+            onClick={() => analytics.recordEvent('page_view', { page: 'notifications' })}
+          >
+            <Bell className="w-5 h-5" />
+          </Link>
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
+      {/* Stats Bento Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stagger-children"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
-        {stats.map((stat, index) => (
-          <div 
-            key={index}
-            className="card card-hover p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} bg-opacity-10`}>
-                <div className={`bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}>
-                  {stat.icon}
-                </div>
-              </div>
-              <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                stat.trend === 'up' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' :
-                stat.trend === 'secure' ? 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' :
-                'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
-              }`}>
-                {stat.change}
-              </span>
+        {/* Featured card — Voice Notes (col-span-2) */}
+        <div className="col-span-2 card card-audio card-hover p-6 relative overflow-hidden">
+          {/* Waveform decoration */}
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
+            <div className="flex items-end gap-[3px] h-16 pr-4 pb-2">
+              {[3,6,9,5,8,4,7,9,4,6,3,8,5,7,4,6,8,3,7,5].map((h, i) => (
+                <div key={i} className="w-[3px] rounded-full bg-audio-500" style={{ height: `${h * 3}px` }} />
+              ))}
             </div>
-            {stat.label === 'Voice Notes' && (
-              <div className="flex items-end gap-0.5 mt-3 mb-1 opacity-25">
-                {[3,6,9,5,8,4,7,9,4,6,3,8,5,7,4].map((h, i) => (
-                  <div
-                    key={i}
-                    className="w-0.5 rounded-full bg-blue-500"
-                    style={{ height: `${h * 2}px` }}
-                  />
-                ))}
-              </div>
-            )}
-            <h3 className="text-3xl font-bold text-gray-800 dark:text-white mb-1 stat-number">{stat.value}</h3>
-            <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
           </div>
-        ))}
+          <div className="flex items-start justify-between mb-4 relative z-10">
+            <div className="p-3 rounded-xl bg-audio-500/10">
+              <Mic className="w-5 h-5 text-audio-500" style={{ color: '#0ea5e9' }} />
+            </div>
+            <span className="text-xs font-medium px-2 py-1 rounded-full text-audio-600 bg-audio-50 dark:bg-audio-500/10 dark:text-audio-400">
+              {quickStats.voiceNotes.change}
+            </span>
+          </div>
+          <h3 className="text-4xl font-display font-bold text-gray-900 dark:text-white stat-number mb-1 relative z-10">
+            {quickStats.voiceNotes.value}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm relative z-10">Voice Notes</p>
+        </div>
+
+        {/* Contacts */}
+        <div className="card card-hover p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2.5 rounded-xl bg-green-500/10">
+              <Users className="w-4 h-4 text-green-500" />
+            </div>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full text-green-600 bg-green-50 dark:bg-green-500/10 dark:text-green-400">
+              {quickStats.contacts.change}
+            </span>
+          </div>
+          <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
+            {quickStats.contacts.value}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Contacts</p>
+        </div>
+
+        {/* Scheduled */}
+        <div className="card card-hover p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2.5 rounded-xl bg-orange-500/10">
+              <Calendar className="w-4 h-4 text-orange-500" />
+            </div>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full text-orange-600 bg-orange-50 dark:bg-orange-500/10 dark:text-orange-400">
+              {quickStats.scheduled.change}
+            </span>
+          </div>
+          <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
+            {quickStats.scheduled.value}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Scheduled</p>
+        </div>
+
+        {/* Wills — full width on mobile, normal on desktop */}
+        {hasLegacyVault() && (
+          <div className="col-span-2 lg:col-span-4 card card-glow p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl brand-gradient">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-brand-600 dark:text-brand-400 uppercase tracking-wide">Legacy Vault</span>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number">
+                  {quickStats.vaultItems.value}
+                </h3>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Voice Wills protected</span>
+              </div>
+            </div>
+            <Link href="/usersDashboard/vault" className="ml-auto btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
+              Manage <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

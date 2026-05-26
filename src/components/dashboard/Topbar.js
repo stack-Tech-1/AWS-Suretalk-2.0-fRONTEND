@@ -37,6 +37,7 @@ export default function Topbar({
   const { user, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
+  const userTier = currentUser?.subscription_tier;
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -51,19 +52,16 @@ export default function Topbar({
   const isLoading = authLoading || loading;
 
   useEffect(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'));
+
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
-    // Load notifications
+
     loadNotifications();
-    
-    // Set up WebSocket for real-time updates
     setupWebSocket();
-    
-    // Request push notification permission
     requestNotificationPermission();
-    
+
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
@@ -278,12 +276,21 @@ export default function Topbar({
   ];
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
+    const next = !darkMode;
+    setDarkMode(next);
+    if (next) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('suretalk-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('suretalk-theme', 'light');
     }
+  };
+
+  const getAvatarRingClass = (tier) => {
+    if (tier === 'LEGACY_VAULT_PREMIUM') return 'avatar-ring-pro';
+    if (tier === 'ESSENTIAL') return 'avatar-ring-essential';
+    return 'avatar-ring-lite';
   };
 
   const getTopbarWidth = () => {
@@ -308,7 +315,7 @@ export default function Topbar({
   };
 
   return (
-    <header className={`fixed top-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 z-50
+    <header className={`fixed top-0 h-16 glass border-b border-white/20 dark:border-white/5 z-50
       ${getTopbarWidth()}`}>
       <div className="h-full px-4 md:px-6 flex items-center justify-between">
         {/* Left section */}
@@ -323,7 +330,7 @@ export default function Topbar({
 
           {/* Page title */}
           <div className="hidden md:block">
-            <h1 className="text-xl font-semibold text-gray-800 dark:text-white">
+            <h1 className="text-xl font-display font-semibold text-gray-900 dark:text-white tracking-tight">
               {type === "admin" ? "Admin Dashboard" : "User Dashboard"}
             </h1>
           </div>
@@ -331,13 +338,15 @@ export default function Topbar({
           {/* Search bar - hidden on mobile */}
           {!isMobile && (
             <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="search"
                 placeholder="Search..."
-                className="pl-10 pr-4 py-2 w-64 rounded-xl border border-gray-300 dark:border-gray-600 
-                         bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
-                         focus:border-transparent transition-all text-sm"
+                className="pl-9 pr-4 py-2 w-60 rounded-xl border border-gray-200 dark:border-white/10
+                         bg-gray-50/80 dark:bg-white/5 backdrop-blur-sm
+                         focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-400/50
+                         transition-all text-sm text-gray-700 dark:text-gray-200
+                         placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
           )}
@@ -423,8 +432,8 @@ export default function Topbar({
             >
               <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs 
-                               rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-[10px] font-bold
+                               rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -437,7 +446,7 @@ export default function Topbar({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowNotifications(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] card card-elevated rounded-2xl z-50 overflow-hidden">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-gray-800 dark:text-white">Notifications</h3>
@@ -524,9 +533,9 @@ export default function Topbar({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100/80 dark:hover:bg-white/5 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
+              <div className={`w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0 ${getAvatarRingClass(userTier)}`}>
                 {profileImageUrl ? (
                   <img
                     src={profileImageUrl}
@@ -570,7 +579,7 @@ export default function Topbar({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowUserMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1rem)] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50">
+                <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-1rem)] card card-elevated rounded-xl z-50">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     {isLoading ? (
                       <div className="space-y-2">

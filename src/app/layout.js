@@ -9,10 +9,24 @@ export const metadata = {
   description: 'Secure voice messaging and legacy planning',
 };
 
+const themeScript = `
+  try {
+    const stored = localStorage.getItem('suretalk-theme');
+    if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch {}
+`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body>
         <AuthProvider>
           <AnalyticsProvider>
             {children}
