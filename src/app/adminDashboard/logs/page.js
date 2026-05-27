@@ -140,29 +140,23 @@ const fetchLogStats = async () => {
       const response = await api.getAdminLogs(params);
       
       if (response.success) {
+        const paginationData = response.data.pagination || { page: 1, limit: 100, total: 0, totalPages: 1 };
         setLogs(response.data.logs || []);
-        setPagination(response.data.pagination || {
-          page: 1,
-          limit: 100,
-          total: 0,
-          totalPages: 1
-        });
-        
-        // Calculate stats from response
-        calculateStats(response.data.logs || []);
+        setPagination(paginationData);
+        calculateStats(response.data.logs || [], paginationData.total || 0);
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
-      // Optionally show error toast
+      toast.error('Failed to load system logs', 'Error');
     } finally {
       setLoading(false);
     }
   }, [searchQuery, selectedFilter, selectedTimeframe, pagination.page, getDateRange]);
 
   // Calculate statistics from logs
-  const calculateStats = (logData) => {
+  const calculateStats = (logData, totalCount = 0) => {
     const stats = {
-      total: logData.length,
+      total: totalCount,
       error: logData.filter(log => log.level === 'error').length,
       warning: logData.filter(log => log.level === 'warn').length,
       info: logData.filter(log => log.level === 'info').length,

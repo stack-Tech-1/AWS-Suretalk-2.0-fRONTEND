@@ -64,8 +64,8 @@ export default function AdminRegister() {
         throw new Error("Passwords do not match");
       }
 
-      if (formData.password.length < 10) {
-        throw new Error("Password must be at least 10 characters");
+      if (formData.password.length < 12) {
+        throw new Error("Password must be at least 12 characters");
       }
 
       // Validate admin code (in production, this would be more secure)

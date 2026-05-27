@@ -152,8 +152,9 @@ class ApiClient {
   }
   
     // Add these methods to the ApiClient class:
-    async getPendingRequests() {
-        return this.request('/admin/pending-requests');
+    async getPendingRequests(status = 'all') {
+        const q = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '';
+        return this.request(`/admin/pending-requests${q}`);
     }
     
     

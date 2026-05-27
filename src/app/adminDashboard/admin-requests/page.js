@@ -60,7 +60,7 @@ export default function AdminRequests() {
             setLoading(true);
 
             const [requestsResponse, statsResponse] = await Promise.all([
-              api.getPendingRequests(),
+              api.getPendingRequests('all'),
               api.getAdminRequestStats()
             ]);
 
@@ -173,8 +173,11 @@ const handleExportRequests = () => {
       setProcessing(prev => ({ ...prev, [id]: 'approving' }));
       await api.approveAdminRequest(id);
       await fetchRequests();
+      setSelectedRequest(null);
+      toast.success('Request approved successfully', 'Approved');
     } catch (error) {
       console.error('Error approving request:', error);
+      toast.error('Failed to approve request. Please try again.', 'Error');
     } finally {
       setProcessing(prev => ({ ...prev, [id]: false }));
     }
@@ -185,8 +188,11 @@ const handleExportRequests = () => {
       setProcessing(prev => ({ ...prev, [id]: 'rejecting' }));
       await api.rejectAdminRequest(id);
       await fetchRequests();
+      setSelectedRequest(null);
+      toast.success('Request rejected', 'Rejected');
     } catch (error) {
       console.error('Error rejecting request:', error);
+      toast.error('Failed to reject request. Please try again.', 'Error');
     } finally {
       setProcessing(prev => ({ ...prev, [id]: false }));
     }
@@ -654,7 +660,7 @@ const handleExportRequests = () => {
               </button>
               
               <button 
-                onClick={() => router.push('/adminDashboard/settings/approval-workflow')}
+                onClick={() => router.push('/adminDashboard/settings')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-300 
                           dark:border-gray-600 hover:border-brand-500 transition-colors group"
               >
@@ -695,7 +701,7 @@ const handleExportRequests = () => {
               <CheckCircle className="w-8 h-8 text-green-500" />
             </div>
             <button 
-              onClick={() => router.push('/adminDashboard/audit-trail')}
+              onClick={() => router.push('/adminDashboard/logs')}
               className="w-full px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
                       text-white rounded-xl hover:shadow-lg transition-all"
             >
