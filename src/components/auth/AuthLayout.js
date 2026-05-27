@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import Image from 'next/image';
 import Head from "next/head";
 import Link from "next/link";
 import { MessageSquare } from "lucide-react";
@@ -34,11 +35,14 @@ export default function AuthLayout({
         <nav className="relative z-10 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-            <img 
-                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
-                    alt="SureTalk Logo" 
-                    className="w-10 h-10 object-contain"
-                  />
+            <Image
+              unoptimized
+              src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
+              alt="SureTalk Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
               <span className="text-xl font-bold text-gray-800">SureTalk</span>
             </Link>
             

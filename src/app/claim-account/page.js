@@ -5,6 +5,7 @@ import {
   Smartphone, Mail, Lock, User, Eye, EyeOff,
   AlertCircle, CheckCircle, ArrowLeft
 } from "lucide-react";
+import Image from 'next/image';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
@@ -204,10 +205,13 @@ export default function ClaimAccount() {
         {/* Logo/Brand Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <img
+            <Image
+              unoptimized
               src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
               alt="SureTalk Logo"
-              className="w-10 h-10 object-contain"
+              width={40}
+              height={40}
+              className="object-contain"
             />
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
               SureTalk

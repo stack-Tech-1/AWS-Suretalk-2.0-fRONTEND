@@ -1,5 +1,6 @@
 // C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Topbar.js
 import { useState, useEffect } from "react";
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -537,9 +538,12 @@ export default function Topbar({
             >
               <div className={`w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0 ${getAvatarRingClass(userTier)}`}>
                 {profileImageUrl ? (
-                  <img
+                  <Image
+                    unoptimized
                     src={profileImageUrl}
                     alt="Profile"
+                    width={32}
+                    height={32}
                     className="w-full h-full object-cover"
                   />
                 ) : (

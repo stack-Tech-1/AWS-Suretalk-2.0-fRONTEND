@@ -11,6 +11,7 @@ import {
   Save
 } from "lucide-react";
 import { api } from "@/utils/api";
+import Image from 'next/image';
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
@@ -206,9 +207,12 @@ export default function ProfileSettings() {
             <div className="relative mb-4">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
                 {profileImageDisplayUrl || formData.profileImageUrl?.startsWith('blob:') ? (
-                  <img
+                  <Image
+                    unoptimized
                     src={profileImageDisplayUrl || formData.profileImageUrl}
                     alt="Profile"
+                    width={128}
+                    height={128}
                     className="w-full h-full object-cover"
                     key={profileImageDisplayUrl}
                   />

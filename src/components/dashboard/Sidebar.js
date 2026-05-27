@@ -1,4 +1,5 @@
 //C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Sidebar.js
+import Image from 'next/image';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -239,10 +240,13 @@ export default function Sidebar({
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
           {!collapsed ? (
             <div className="flex items-center gap-3">
-              <img 
-                src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
-                alt="SureTalk Logo" 
-                className="w-10 h-10 object-contain"
+              <Image
+                unoptimized
+                src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
+                alt="SureTalk Logo"
+                width={40}
+                height={40}
+                className="object-contain"
               />
               <div>
                 <h2 className="font-display font-bold text-lg gradient-text tracking-tight">
@@ -300,9 +304,12 @@ export default function Sidebar({
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
                     {profileImageUrl ? (
-                      <img
+                      <Image
+                        unoptimized
                         src={profileImageUrl}
                         alt="Profile"
+                        width={40}
+                        height={40}
                         className="w-full h-full object-cover"
                       />
                     ) : (

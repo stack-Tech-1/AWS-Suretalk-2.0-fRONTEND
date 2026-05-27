@@ -6,6 +6,7 @@ import {
   Lock, Mail, Shield, Eye, EyeOff, AlertCircle, Key, 
   Clock, Globe, Cpu, Fingerprint, QrCode, Smartphone, Users
 } from "lucide-react";
+import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
 
@@ -274,11 +275,14 @@ export default function SecureAdminLogin() {
         <div className="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800/50 to-gray-900/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-            <img 
-                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
-                    alt="SureTalk Logo" 
-                    className="w-10 h-10 object-contain"
-                  />
+            <Image
+              unoptimized
+              src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
+              alt="SureTalk Logo"
+              width={40}
+              height={40}
+              className="object-contain"
+            />
               <div>
                 <h1 className="text-xl font-bold text-white">SureTalk Admin</h1>
                 <p className="text-sm text-gray-400">Secure Gateway v2.0</p>

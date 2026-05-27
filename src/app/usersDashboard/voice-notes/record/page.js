@@ -10,8 +10,6 @@ import {
 import { api } from '@/utils/api';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
 import { toast } from '@/components/ui/Toast';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 const containerVariants = {
   hidden: {},
@@ -262,7 +260,10 @@ export default function RecordVoiceNote() {
     try {
       setConverting(true);
 
+      const { fetchFile, toBlobURL } = await import('@ffmpeg/util');
+
       if (!ffmpegRef.current) {
+        const { FFmpeg } = await import('@ffmpeg/ffmpeg');
         const ffmpeg = new FFmpeg();
         try {
           const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';

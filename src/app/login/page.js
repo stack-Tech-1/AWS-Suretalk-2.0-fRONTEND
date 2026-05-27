@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Lock, Mail, Smartphone, Eye, EyeOff, AlertCircle, Shield, CheckCircle } from "lucide-react";
+import Image from 'next/image';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "../../utils/api";
@@ -132,11 +133,14 @@ function LoginInner() {
         {/* Logo/Brand Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-          <img 
-                    src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp" 
-                    alt="SureTalk Logo" 
-                    className="w-10 h-10 object-contain"
-                  />
+          <Image
+            unoptimized
+            src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
+            alt="SureTalk Logo"
+            width={40}
+            height={40}
+            className="object-contain"
+          />
             <h1 className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
               SureTalk
             </h1>
