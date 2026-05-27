@@ -27,6 +27,8 @@ import {
   CalendarDays,
   CalendarClock,
   PhoneCall,
+  PhoneMissed,
+  PhoneOff,
   MailCheck,
   Download,
   Share2,
@@ -290,6 +292,19 @@ export default function ScheduledMessages() {
           label: isUpcoming ? 'Upcoming' : 'Scheduled'
         };
       case 'delivered':
+        if (message.call_status) {
+          switch (message.call_status) {
+            case 'completed':
+              return { icon: PhoneCall, color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', label: 'Answered' };
+            case 'no-answer':
+              return { icon: PhoneMissed, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400', label: 'No Answer' };
+            case 'busy':
+              return { icon: Phone, color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400', label: 'Busy' };
+            case 'failed':
+            case 'canceled':
+              return { icon: PhoneOff, color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', label: 'Call Failed' };
+          }
+        }
         return {
           icon: CheckCircle,
           color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
@@ -923,11 +938,28 @@ Status: ${message.delivery_status}`;
                             {statusInfo.label}
                           </div>
                           {message.delivery_status === 'delivered' && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {message.twilio_call_sid
-                                ? 'Call delivered · SMS sent'
-                                : 'Email sent'}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              {message.call_status === 'completed' && message.call_duration && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {message.call_duration}s
+                                </span>
+                              )}
+                              {message.sms_status && (
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                                  message.sms_status === 'delivered'   ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                                  message.sms_status === 'undelivered' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' :
+                                  message.sms_status === 'failed'      ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                                  'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                                }`}>
+                                  SMS {message.sms_status}
+                                </span>
+                              )}
+                              {!message.call_status && !message.sms_status && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {message.twilio_call_sid ? 'Call delivered · SMS sent' : 'Email sent'}
+                                </p>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="py-4 px-6">
