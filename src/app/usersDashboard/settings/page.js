@@ -145,8 +145,6 @@ export default function Settings() {
       localStorage.setItem('theme', value);
       document.documentElement.classList.toggle('dark', value === 'dark');
     }
-    
-    toast.success('Setting updated');
   };
 
   const handleSaveAll = async () => {
@@ -245,11 +243,9 @@ export default function Settings() {
 
   const handleRemoveDevice = async (deviceId) => {
     try {
-      // await api.revokeDevice(deviceId);
-      
+      await api.request(`/devices/${deviceId}`, { method: 'DELETE' });
       setConnectedDevices(prev => prev.filter(device => device.id !== deviceId));
       toast.success('Device removed successfully');
-      
     } catch (error) {
       console.error('Failed to remove device:', error);
       toast.error('Failed to remove device');
@@ -268,29 +264,19 @@ export default function Settings() {
     router.push('/usersDashboard/billing');
   };
 
-  // Mock connected devices
   useEffect(() => {
-    if (!authLoading) {
-      const devices = [
-        { 
-          id: '1', 
-          name: "Chrome on Windows", 
-          type: "browser",
-          location: "New York, US", 
-          lastActive: new Date().toISOString(),
-          current: true
-        },
-        { 
-          id: '2', 
-          name: "Safari on iPhone", 
-          type: "mobile",
-          location: "Home", 
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          current: false
-        },
-      ];
-      setConnectedDevices(devices);
-    }
+    if (authLoading) return;
+    const loadDevices = async () => {
+      try {
+        const res = await api.request('/devices');
+        if (res?.success && res?.data?.devices) {
+          setConnectedDevices(res.data.devices);
+        }
+      } catch (err) {
+        console.error('Failed to load devices:', err);
+      }
+    };
+    loadDevices();
   }, [authLoading]);
 
   // ✅ Show loading while auth loads

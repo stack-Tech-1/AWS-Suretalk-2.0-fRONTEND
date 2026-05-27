@@ -104,9 +104,8 @@ export default function DataExport() {
         <div>
           <p className="text-sm font-medium text-gray-900 dark:text-white">About your data</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Your data export is provided as a JSON file. Audio recordings are not included
-            but remain accessible in your account. Exports are available at any time and
-            contain data from the last 90 days of activity.
+            Your data export is provided as an Excel spreadsheet (.xlsx). Audio recordings are not included
+            but remain accessible in your account. Exports are available at any time.
           </p>
         </div>
       </div>
