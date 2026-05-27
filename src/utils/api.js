@@ -360,7 +360,8 @@ async getVoiceNoteDownloadUrl(id) {
   }
 
   async getAdminWills(params = {}) {
-    const query = new URLSearchParams(params).toString();
+    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
+    const query = new URLSearchParams(clean).toString();
     return this.request(`/admin/wills${query ? `?${query}` : ''}`);
   }
 
@@ -501,7 +502,8 @@ async exportScheduledMessages(format = 'csv', filters = {}) {
 
 // Add to your ApiClient class in utils/api.js
 async getAdminLogs(params = {}) {
-  const query = new URLSearchParams(params).toString();
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
+  const query = new URLSearchParams(clean).toString();
   return this.request(`/admin/logs${query ? `?${query}` : ''}`);
 }
 
