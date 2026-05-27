@@ -88,8 +88,11 @@ export default function Contacts() {
         params.search = search;
       }
 
-      // Fetch contacts with pagination
-      const response = await api.getContacts(params);
+      // Fetch contacts and stats in parallel — was sequential (stats called after contacts resolved)
+      const [response, statsResponse] = await Promise.all([
+        api.getContacts(params),
+        api.getContactStats()
+      ]);
       
       if (response.success) {
         const contactsData = response.data.contacts || [];
@@ -145,8 +148,17 @@ export default function Contacts() {
           totalPages: paginationData.totalPages || 1
         });
         
-        // Fetch contact statistics
-        fetchContactStats();
+        // Process stats that were fetched in parallel above
+        if (statsResponse?.success) {
+          setStats({
+            totalContacts: statsResponse.data.total_contacts || 0,
+            contactLimit: statsResponse.data.contact_limit || 9,
+            beneficiaries: statsResponse.data.beneficiaries || 0,
+            canReceiveMessages: statsResponse.data.can_receive_messages || 0,
+            remainingContacts: statsResponse.data.remaining_contacts || 0,
+            tier: statsResponse.data.tier || 'ESSENTIAL'
+          });
+        }
 
         // Record analytics
         analytics.recordEvent('page_view', {

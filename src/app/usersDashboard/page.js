@@ -54,35 +54,33 @@ export default function DashboardHome() {
   const fetchDashboardData = async () => {
     // ✅ Wait for auth to load
     if (authLoading) return;
-    
+
     try {
       setLoading(true);
       setError(null);
 
-      // ✅ User data comes from AuthContext - no separate API call needed
-      // user is already available from useAuth()
+      // Fire all three independent requests in parallel — was sequential (waterfall)
+      const [statsResponse, analyticsResponse, notesResponse] = await Promise.all([
+        api.getUserDashboardStats(),
+        api.getActivityAnalytics('week'),
+        api.getVoiceNotes({ page: 1, limit: 4 })
+      ]);
 
-      // 1. Fetch analytics data
-      const statsResponse = await api.getUserDashboardStats();
+      // Process stats
       const actualStats = statsResponse.data?.stats || {};
       setDashboardStats(statsResponse.data);
 
-      // Get actual counts from stats, not analytics
       const voiceNotesTotal = parseInt(actualStats.voice_notes_total) || 0;
       const contactsTotal = parseInt(actualStats.contacts_total) || 0;
       const scheduledTotal = parseInt(actualStats.scheduled_messages_total) || 0;
 
-      // 2. Fetch analytics data for charts only
-      const analyticsResponse = await api.getActivityAnalytics('week');
+      // Process analytics
       setAnalyticsData(analyticsResponse.data);
-
-      // Set activity data for chart
       if (analyticsResponse.data?.weekly) {
         setActivityData(analyticsResponse.data.weekly);
       }
 
-      // 3. Fetch recent voice notes
-      const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
+      // Process voice notes
       const notesWithFormattedData = (notesResponse.data.voiceNotes || notesResponse.data.notes || []).map((note) => ({
         id: note.id,
         title: note.title || 'Untitled Recording',
@@ -94,10 +92,10 @@ export default function DashboardHome() {
         tags: note.tags || [],
         playCount: note.play_count || 0
       }));
-      
+
       setRecentRecordings(notesWithFormattedData);
 
-      // 4. Calculate storage usage
+      // Calculate storage usage
       const storageDistribution = calculateStorageDistribution(notesResponse.data.voiceNotes || notesResponse.data.notes || []);
       setStorageData(storageDistribution);
 
