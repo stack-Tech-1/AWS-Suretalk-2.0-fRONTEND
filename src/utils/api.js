@@ -127,8 +127,13 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
-    if (response.data.token) {
+
+    // 2FA required — no token issued yet, pass response to login page for challenge
+    if (response.requiresTwoFactor) {
+      return response;
+    }
+
+    if (response.data?.token) {
       this.setToken(response.data.token);
       this.clearCache();
     }
