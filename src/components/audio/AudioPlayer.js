@@ -10,7 +10,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 
-export default function AudioPlayer({ audioUrl, title, onPlay }) {
+export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false, compact = false }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -58,6 +58,11 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
           if (!isMounted) return;
           setDuration(audioElement.duration);
           setIsLoading(false);
+          if (autoPlay) {
+            audioElement.play()
+              .then(() => { if (isMounted) { setIsPlaying(true); if (onPlay) onPlay(); } })
+              .catch(() => {});
+          }
         };
         
         const handleTimeUpdate = () => {
@@ -309,8 +314,91 @@ export default function AudioPlayer({ audioUrl, title, onPlay }) {
     );
   }
 
+  if (compact) {
+    return (
+      <div className="rounded-xl bg-gray-50/80 dark:bg-gray-800/60 p-3 border border-gray-100 dark:border-gray-700/50">
+        {/* Scrubber */}
+        <div
+          ref={progressBarRef}
+          onClick={handleProgressClick}
+          className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer mb-3"
+        >
+          <div
+            className="h-full bg-gradient-to-r from-brand-500 to-accent-500 rounded-full transition-all"
+            style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+          />
+        </div>
+        {/* Controls row */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Skip + Play */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={skipBackward}
+              disabled={isLoading || !audioRef.current}
+              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
+              title="Back 10s"
+            >
+              <SkipBack className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+            <button
+              onClick={togglePlayPause}
+              disabled={isLoading || !audioRef.current}
+              className="p-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:shadow-md transition-all disabled:opacity-50"
+            >
+              {isLoading
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={skipForward}
+              disabled={isLoading || !audioRef.current}
+              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
+              title="Forward 10s"
+            >
+              <SkipForward className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+          </div>
+          {/* Time */}
+          <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+          {/* Speed pills */}
+          <div className="flex items-center gap-1">
+            {[0.75, 1, 1.5, 2].map(rate => (
+              <button
+                key={rate}
+                onClick={() => { setPlaybackRate(rate); if (audioRef.current) audioRef.current.playbackRate = rate; }}
+                disabled={!audioRef.current}
+                className={`text-xs px-2 py-0.5 rounded-full transition-colors disabled:opacity-40 ${
+                  playbackRate === rate
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                {rate}×
+              </button>
+            ))}
+          </div>
+          {/* Mute toggle */}
+          <button
+            onClick={toggleMute}
+            disabled={!audioRef.current}
+            className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
+          >
+            {isMuted
+              ? <VolumeX className="w-4 h-4 text-gray-500" />
+              : <Volume2 className="w-4 h-4 text-gray-500" />}
+          </button>
+        </div>
+        {isLoading && (
+          <p className="text-xs text-center text-gray-400 mt-2">Loading audio…</p>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 
+    <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800
                     rounded-2xl p-6 shadow-lg">
       {/* Title */}
       <div className="mb-6">

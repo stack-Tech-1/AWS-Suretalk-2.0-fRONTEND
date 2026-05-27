@@ -1,7 +1,8 @@
 //C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\app\usersDashboard\voice-notes\page.js
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import AudioPlayer from '@/components/audio/AudioPlayer';
 import { 
   Mic, 
   Play, 
@@ -33,8 +34,7 @@ import Link from 'next/link';
 import { toast } from '@/components/ui/Toast';
 
 export default function VoiceNotes() {
-  const [playingAudio, setPlayingAudio] = useState(null);
-  const audioRef = useRef(null);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -445,69 +445,25 @@ const selectAllNotes = () => {
     }
   };
 
-  // Handle audio playback
-  const handlePlayAudio = async (note) => {
-    // Clicking the same note again — pause it
-    if (playingAudio === note.id) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      setPlayingAudio(null);
-      return;
+  // Fetch and cache a playable URL for a note
+  const getAudioUrl = async (note) => {
+    if (note.downloadUrl) return note.downloadUrl;
+    const res = await api.getVoiceNoteDownloadUrl(note.id);
+    const url = res.data.downloadUrl;
+    if (url) {
+      setVoiceNotes(prev => prev.map(n => n.id === note.id ? { ...n, downloadUrl: url } : n));
     }
+    if (!url) throw new Error('No audio available for this recording');
+    return url;
+  };
 
-    // Stop any currently playing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setPlayingAudio(null);
-
-    try {
-      let url = note.downloadUrl;
-
-      if (!url) {
-        const downloadResponse = await api.getVoiceNoteDownloadUrl(note.id);
-        url = downloadResponse.data.downloadUrl;
-        setVoiceNotes(prev => prev.map(n =>
-          n.id === note.id ? { ...n, downloadUrl: url } : n
-        ));
-      }
-
-      if (!url) {
-        toast.error('No audio available for this recording');
-        return;
-      }
-
-      const audio = new Audio(url);
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        setPlayingAudio(null);
-        audioRef.current = null;
-      };
-
-      audio.onerror = () => {
-        setPlayingAudio(null);
-        audioRef.current = null;
-        toast.error('Failed to play audio. The file may not be supported by your browser.');
-      };
-
-      await audio.play();
-      setPlayingAudio(note.id);
-
-      await analytics.recordEvent('voice_note_played', {
-        noteId: note.id,
-        title: note.title,
-        duration: note.duration
-      });
-
-    } catch (error) {
-      console.error('Failed to play audio:', error);
-      setPlayingAudio(null);
-      audioRef.current = null;
-      toast.error('Failed to play audio. Please try again.');
+  // Toggle inline player for a note
+  const handleTogglePlayer = (note) => {
+    if (expandedPlayer === note.id) {
+      setExpandedPlayer(null);
+    } else {
+      setExpandedPlayer(note.id);
+      analytics.recordEvent('voice_note_played', { noteId: note.id, title: note.title, duration: note.duration });
     }
   };
 
@@ -995,15 +951,15 @@ const selectAllNotes = () => {
             {/* Player Controls */}
             <div className="flex items-center justify-between">
               <button
-                onClick={() => handlePlayAudio(note)}
+                onClick={() => handleTogglePlayer(note)}
                 disabled={loading}
                 className={`flex items-center gap-2 md:px-4 md:py-2 px-5 py-3 rounded-xl transition-all press-effect disabled:opacity-50 disabled:cursor-not-allowed ${
-                  playingAudio === note.id
+                  expandedPlayer === note.id
                     ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
-                {playingAudio === note.id ? (
+                {expandedPlayer === note.id ? (
                   <>
                     <Pause className="w-4 h-4" />
                     Pause
@@ -1061,21 +1017,26 @@ const selectAllNotes = () => {
               </div>
             </div>
 
-            {/* Progress Bar */}
-            {playingAudio === note.id && (
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-brand-500 to-accent-500 h-2 rounded-full"
-                    style={{ width: '45%' }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  <span>0:00</span>
-                  <span>{note.duration}</span>
-                </div>
-              </div>
-            )}
+            {/* Inline Audio Player */}
+            <AnimatePresence>
+              {expandedPlayer === note.id && (
+                <motion.div
+                  key={note.id}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-4 overflow-hidden"
+                >
+                  <AudioPlayer
+                    key={note.id}
+                    audioUrl={() => getAudioUrl(note)}
+                    autoPlay={true}
+                    compact={true}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ))}
       </motion.div>
