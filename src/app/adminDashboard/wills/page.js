@@ -211,15 +211,23 @@ export default function VoiceWills() {
     }
   };
 
-  // Handle delete will (placeholder - you might want to implement this)
   const handleDeleteWill = async (id, title) => {
     if (!confirm(`Are you sure you want to delete "${title}"? This action is permanent.`)) {
       return;
     }
-    
-    // Note: You'll need to implement a delete endpoint in your backend
-    // For now, just show a message
-    toast.info('Delete functionality requires backend implementation', 'Not Implemented');
+
+    try {
+      const response = await api.request(`/admin/wills/${id}`, { method: 'DELETE' });
+      if (response.success) {
+        setWills(prev => prev.filter(w => w.id !== id));
+        toast.success(`"${title}" has been deleted`, 'Will Deleted');
+      } else {
+        toast.error(response.error || 'Failed to delete will', 'Error');
+      }
+    } catch (error) {
+      console.error('Delete will error:', error);
+      toast.error('Failed to delete will', 'Error');
+    }
   };
 
   // Handle view details

@@ -116,23 +116,37 @@ const handleBulkApprove = async () => {
   }
 };
 
-// Add export function
-const handleExportRequests = async () => {
+const handleExportRequests = () => {
   try {
-    setExporting(true); // Add this
-    
-    const filters = {
-      status: filter !== 'all' ? filter : undefined,
-      search: searchTerm || undefined
-    };
-    
-    // Remove undefined filters
-    Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-    
-    const response = await api.exportAdminRequests('csv', filters);
-    
-    // Download CSV file
-    const url = window.URL.createObjectURL(response);
+    setExporting(true);
+
+    let filtered = requests;
+    if (filter !== 'all') filtered = filtered.filter(r => r.status === filter);
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r =>
+        (r.full_name || '').toLowerCase().includes(term) ||
+        (r.email || '').toLowerCase().includes(term) ||
+        (r.phone || '').toLowerCase().includes(term)
+      );
+    }
+
+    const headers = ['Full Name', 'Email', 'Phone', 'Reason', 'Status', 'Created At'];
+    const rows = filtered.map(r => [
+      r.full_name || '',
+      r.email || '',
+      r.phone || '',
+      (r.reason || '').replace(/"/g, '""'),
+      r.status || '',
+      r.created_at ? new Date(r.created_at).toISOString() : ''
+    ]);
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(v => `"${v}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `admin_requests_${Date.now()}.csv`;
@@ -140,12 +154,12 @@ const handleExportRequests = async () => {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
+    toast.success('Requests exported successfully');
   } catch (error) {
-    console.error("Export failed:", error);
-    toast.error("Failed to export requests");
+    console.error('Export failed:', error);
+    toast.error('Failed to export requests');
   } finally {
-    setExporting(false); // Add this
+    setExporting(false);
   }
 };
   

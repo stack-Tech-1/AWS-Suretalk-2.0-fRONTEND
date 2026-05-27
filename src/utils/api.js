@@ -845,7 +845,7 @@ async getVaultUploadUrl(fileName, fileType, isWill = false) {
 
 // Settings endpoints
 async getSettings() {
-  return this.request('/users/settings');
+  return this.request('/admin/settings');
 }
 
 async updateSettings(category, key, value) {
