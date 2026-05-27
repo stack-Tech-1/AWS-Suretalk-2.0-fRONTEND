@@ -9,19 +9,8 @@ const nextConfig = {
     // Better tree-shaking for large icon/animation libraries
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
-  webpack: (config) => {
-    // Bundle recharts once and share across all pages instead of including per-page
-    config.optimization.splitChunks.cacheGroups = {
-      ...config.optimization.splitChunks.cacheGroups,
-      recharts: {
-        test: /[\\/]node_modules[\\/]recharts/,
-        name: 'recharts',
-        chunks: 'all',
-        priority: 10,
-      },
-    };
-    return config;
-  },
+  // Explicitly opt into Turbopack (default in Next.js 16) — suppresses the webpack/turbopack mismatch warning
+  turbopack: {},
 
   // COOP header — relaxed to allow OAuth/payment popups
   async headers() {
