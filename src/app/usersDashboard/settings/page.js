@@ -89,6 +89,10 @@ export default function Settings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
+  const [disable2FACode, setDisable2FACode] = useState('');
+  const [disabling2FA, setDisabling2FA] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -253,6 +257,25 @@ export default function Settings() {
     }
   };
 
+  const handleDisable2FA = async () => {
+    if (disable2FACode.length !== 6) {
+      toast.error('Please enter the 6-digit code', '2FA');
+      return;
+    }
+    setDisabling2FA(true);
+    try {
+      await api.disableTwoFactor(disable2FACode);
+      setTwoFactorEnabled(false);
+      setShowDisable2FAModal(false);
+      setDisable2FACode('');
+      toast.success('Two-factor authentication has been disabled', '2FA Disabled');
+    } catch (err) {
+      toast.error(err.message || 'Invalid code. Please try again.', 'Error');
+    } finally {
+      setDisabling2FA(false);
+    }
+  };
+
   const handleRemoveDevice = async (deviceId) => {
     try {
       await api.request(`/devices/${deviceId}`, { method: 'DELETE' });
@@ -278,6 +301,9 @@ export default function Settings() {
 
   useEffect(() => {
     if (authLoading) return;
+    if (user?.two_factor_enabled !== undefined) {
+      setTwoFactorEnabled(!!user.two_factor_enabled);
+    }
     const loadDevices = async () => {
       try {
         const res = await api.request('/devices');
@@ -289,7 +315,7 @@ export default function Settings() {
       }
     };
     loadDevices();
-  }, [authLoading]);
+  }, [authLoading, user]);
 
   // ✅ Show loading while auth loads
   if (authLoading) {
@@ -661,15 +687,30 @@ export default function Settings() {
                 {/* Two-Factor Authentication */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-5 h-5 text-gray-400" />
+                    <ShieldCheck className="w-5 h-5 text-gray-500" />
                     <div>
                       <h3 className="font-medium text-gray-800 dark:text-white">Two-Factor Authentication</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security to your account</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {twoFactorEnabled ? 'Enabled — your account is protected' : 'Add an extra layer of security'}
+                      </p>
                     </div>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap">
-                    Coming soon
-                  </span>
+                  <button
+                    onClick={() => {
+                      if (twoFactorEnabled) {
+                        setShowDisable2FAModal(true);
+                      } else {
+                        router.push('/usersDashboard/settings/2fa');
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      twoFactorEnabled ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      twoFactorEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
                 </div>
 
                 {/* Login Alerts */}
@@ -980,6 +1021,52 @@ export default function Settings() {
               </button>
             </div>
           </motion.div>
+        </div>
+      )}
+
+      {/* Disable 2FA Modal */}
+      {showDisable2FAModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowDisable2FAModal(false); setDisable2FACode(''); }} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/30">
+                <ShieldCheck className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Disable 2FA</h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+              Enter the 6-digit code from your authenticator app to confirm you want to disable two-factor authentication.
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={disable2FACode}
+              onChange={e => setDisable2FACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full text-center text-2xl tracking-widest py-3 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500 mb-4"
+              placeholder="000000"
+              autoFocus
+              disabled={disabling2FA}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDisable2FAModal(false); setDisable2FACode(''); }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                disabled={disabling2FA}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisable2FA}
+                disabled={disabling2FA || disable2FACode.length !== 6}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {disabling2FA ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {disabling2FA ? 'Disabling…' : 'Disable 2FA'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

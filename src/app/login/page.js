@@ -17,6 +17,9 @@ function LoginInner() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [step, setStep] = useState(1);
+  const [tempToken, setTempToken] = useState('');
+  const [twoFaCode, setTwoFaCode] = useState('');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -69,16 +72,25 @@ function LoginInner() {
 
           // Attempt regular user login
           const response = await api.login(formData.email, formData.password);
+
+          // 2FA challenge — show code entry instead of redirecting
+          if (response.requiresTwoFactor) {
+            setTempToken(response.tempToken);
+            setStep(2);
+            setLoading(false);
+            return;
+          }
+
           const userData = response.data.user;
-          
+
           // Check if user is admin
           const isAdmin = userData.is_admin || userData.isAdmin;
-          
+
           // REJECT ADMIN ACCOUNTS
           if (isAdmin) {
             throw new Error('Admin accounts cannot login here. Please use the admin login portal.');
           }
-          
+
           // Store remember me preference
             if (formData.rememberMe) {
               localStorage.setItem('rememberMe', 'true');
@@ -114,7 +126,29 @@ function LoginInner() {
           } finally {
             setLoading(false);
           }
-        };             
+        };
+
+  const handleVerify2FA = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (twoFaCode.length !== 6) throw new Error('Please enter the 6-digit code');
+      const response = await api.verifyTwoFactorLogin(tempToken, twoFaCode);
+      const { token, refreshToken, user: userData } = response.data;
+      localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+      if (formData.rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+        localStorage.setItem('rememberedEmail', formData.email);
+      }
+      window.location.href = '/usersDashboard';
+    } catch (err) {
+      setError(err.message || 'Invalid code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
@@ -152,6 +186,68 @@ function LoginInner() {
 
         {/* Login Card */}
         <div className="glass rounded-2xl p-8 shadow-2xl">
+          {step === 2 ? (
+            <>
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Two-Factor Auth</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Open your authenticator app and enter the 6-digit code
+                </p>
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3"
+                >
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleVerify2FA} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Authentication Code
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={twoFaCode}
+                    onChange={e => setTwoFaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full text-center text-2xl tracking-widest py-3 px-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    placeholder="000000"
+                    autoFocus
+                    disabled={loading}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading || twoFaCode.length !== 6}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-accent-500 text-white font-medium rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <><Shield className="w-5 h-5" /> Verify & Sign In</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStep(1); setError(''); setTwoFaCode(''); }}
+                  className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                >
+                  ← Back to login
+                </button>
+              </form>
+            </>
+          ) : (
+          <>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
             Welcome Back
           </h2>
@@ -361,6 +457,8 @@ function LoginInner() {
               Registered via phone call? Activate your web account →
             </Link>
           </div>
+          </>
+          )}
         </div>
 
         {/* Footer */}

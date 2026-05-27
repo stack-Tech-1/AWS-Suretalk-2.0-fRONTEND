@@ -949,19 +949,35 @@ async resetPassword(token, newPassword) {
 
 // Two-factor authentication
 async setupTwoFactor() {
-  return this.request('/auth/2fa/setup');
+  return this.request('/auth/2fa/setup', { method: 'POST' });
 }
 
-async verifyTwoFactor(token) {
-  return this.request('/auth/2fa/verify', {
+async verifyTwoFactorSetup(token) {
+  return this.request('/auth/2fa/setup-verify', {
     method: 'POST',
     body: JSON.stringify({ token }),
   });
 }
 
-async disableTwoFactor() {
+async verifyTwoFactorLogin(tempToken, token) {
+  // No auth header — uses tempToken in body
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+  const response = await fetch(`${API_BASE_URL}/auth/2fa/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tempToken, token }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Verification failed');
+  }
+  return response.json();
+}
+
+async disableTwoFactor(token) {
   return this.request('/auth/2fa/disable', {
     method: 'POST',
+    body: JSON.stringify({ token }),
   });
 }
 
