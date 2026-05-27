@@ -101,6 +101,14 @@ export default function Settings() {
           if (saved.notifications) setSettings(prev => ({ ...prev, notifications: { ...prev.notifications, ...saved.notifications } }));
           if (saved.privacy) setSettings(prev => ({ ...prev, privacy: { ...prev.privacy, ...saved.privacy } }));
           if (saved.appearance) setSettings(prev => ({ ...prev, appearance: { ...prev.appearance, ...saved.appearance } }));
+          if (saved.security) setSettings(prev => ({
+            ...prev,
+            security: {
+              ...prev.security,
+              loginAlerts: saved.security.loginAlerts ?? prev.security.loginAlerts,
+              sessionTimeout: saved.security.sessionTimeout ?? prev.security.sessionTimeout,
+            }
+          }));
         }
       } catch (err) {
         // Fallback to localStorage
@@ -158,7 +166,11 @@ export default function Settings() {
           settings: {
             notifications: settings.notifications,
             privacy: settings.privacy,
-            appearance: settings.appearance
+            appearance: settings.appearance,
+            security: {
+              loginAlerts: settings.security.loginAlerts,
+              sessionTimeout: settings.security.sessionTimeout,
+            }
           }
         })
       });
@@ -649,24 +661,15 @@ export default function Settings() {
                 {/* Two-Factor Authentication */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-5 h-5 text-gray-500" />
+                    <ShieldCheck className="w-5 h-5 text-gray-400" />
                     <div>
                       <h3 className="font-medium text-gray-800 dark:text-white">Two-Factor Authentication</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Add an extra layer of security</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security to your account</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleSettingChange('security', 'twoFactor', !settings.security.twoFactor)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      settings.security.twoFactor ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        settings.security.twoFactor ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap">
+                    Coming soon
+                  </span>
                 </div>
 
                 {/* Login Alerts */}
