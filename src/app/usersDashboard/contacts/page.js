@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import ContactsContent from "./ContactsContent";
 
+
 export default function Page() {
   return (
     <Suspense fallback={
