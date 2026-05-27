@@ -198,35 +198,25 @@ export default function Settings() {
     try {
       setExportLoading(true);
       setShowConfirmModal(null);
-      
-      const date = new Date().toISOString().split('T')[0];
-      
-      // Prepare data to export
-      const exportData = {
-        exportedAt: new Date().toISOString(),
-        userProfile: user, // ✅ Use user from AuthContext
-        settings,
-        connectedDevices
-      };
-      
-      // Create and download JSON file
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `suretalk-data-export-${date}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Data exported successfully');
-      
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${baseUrl}/users/export/zip`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SureTalk-Export-${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Your data has been exported successfully', 'Export Complete');
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Failed to export data');
+      toast.error('Failed to export data. Please try again.', 'Export Failed');
     } finally {
       setExportLoading(false);
     }
@@ -995,8 +985,7 @@ export default function Settings() {
               <h3 className="text-xl font-bold text-gray-800 dark:text-white">Export Data</h3>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              This will export all your data including voice notes, contacts, and settings.
-              The download may take a few minutes.
+              This will download a ZIP archive with your profile, voice notes (including audio download links), contacts, scheduled messages, and activity history. The download may take a moment.
             </p>
             <div className="flex gap-3">
               <button

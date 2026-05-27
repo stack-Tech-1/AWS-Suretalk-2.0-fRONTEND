@@ -19,8 +19,7 @@ export default function DataExport() {
       const token = localStorage.getItem('token');
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-      // Use the existing user export endpoint
-      const response = await fetch(`${baseUrl}/users/export`, {
+      const response = await fetch(`${baseUrl}/users/export/zip`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -30,7 +29,7 @@ export default function DataExport() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SureTalk-Data-Export-${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `SureTalk-Export-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -66,12 +65,12 @@ export default function DataExport() {
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Export All Your Data</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Download a complete copy of your SureTalk data including your profile,
-              voice notes metadata, contacts, scheduled messages, and activity history.
-              Your audio files are stored securely in the cloud and are not included in this export.
+              Download a complete copy of your SureTalk data as a ZIP archive. Includes your profile,
+              voice notes with direct audio download links, contacts, scheduled messages, and activity history.
+              Audio download links are valid for 7 days from export date.
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {['Profile & Settings', 'Voice Notes Metadata', 'Contacts', 'Scheduled Messages', 'Activity Log'].map(item => (
+              {['Profile & Settings', 'Voice Notes + Audio Links', 'Contacts', 'Scheduled Messages', 'Activity Log'].map(item => (
                 <span key={item} className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
                   {item}
                 </span>
@@ -104,8 +103,9 @@ export default function DataExport() {
         <div>
           <p className="text-sm font-medium text-gray-900 dark:text-white">About your data</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Your data export is provided as an Excel spreadsheet (.xlsx). Audio recordings are not included
-            but remain accessible in your account. Exports are available at any time.
+            Your export is a ZIP archive containing JSON files and presigned audio download links.
+            Audio links expire 7 days after export — generate a new export for fresh links.
+            Exports are available at any time.
           </p>
         </div>
       </div>
