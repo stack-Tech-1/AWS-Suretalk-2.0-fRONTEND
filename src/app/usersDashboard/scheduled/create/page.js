@@ -747,7 +747,7 @@ export default function CreateScheduledMessage() {
                 )}
               </div>
 
-              {formData.deliveryMethod.includes("email") && (
+              {(formData.deliveryMethod === 'email' || formData.deliveryMethod === 'both') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email Address
@@ -762,7 +762,7 @@ export default function CreateScheduledMessage() {
                 </div>
               )}
 
-              {formData.deliveryMethod.includes("phone") && (
+              {(formData.deliveryMethod === 'phone' || formData.deliveryMethod === 'both') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Phone Number
