@@ -33,8 +33,10 @@ import { toast } from '@/components/ui/Toast';
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import { Suspense } from "react";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function BillingPageInner() {
+  const { t } = useLanguage();
   const router = useRouter();
   const analytics = useAnalyticsContext();
   const searchParams = useSearchParams();
@@ -258,7 +260,7 @@ function BillingPageInner() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading billing information...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -295,10 +297,10 @@ function BillingPageInner() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Billing & Plans
+              {t('billing.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Manage your subscription and billing information
+              {t('billing.subtitle')}
             </p>
           </div>
           
@@ -325,7 +327,7 @@ function BillingPageInner() {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    Manage Billing
+                    {t('billing.manageBilling')}
                   </>
                 )}
               </button>
@@ -476,7 +478,7 @@ function BillingPageInner() {
                         ) : (
                           <>
                             <CreditCard className="w-4 h-4" />
-                            Manage Subscription
+                            {t('billing.manageSubscription')}
                           </>
                         )}
                       </button>
@@ -498,9 +500,9 @@ function BillingPageInner() {
       >
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Choose Your Plan</h2>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{t('billing.choosePlan')}</h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Select the perfect plan for your voice messaging needs
+              {t('billing.choosePlanDesc')}
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -579,11 +581,11 @@ function BillingPageInner() {
                     {processing && selectedPlan?.id === plan.id ? (
                       <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                     ) : isCurrentPlan ? (
-                      'Current Plan'
+                      t('billing.currentPlan')
                     ) : currentPlan && index < currentPlanIndex ? (
-                      plan.price === "$0" ? 'Downgrade to Free' : `Downgrade to ${plan.name}`
+                      plan.price === "$0" ? t('billing.downgradeToFree') : `${t('billing.downgradeTo')} ${plan.name}`
                     ) : (
-                      `Upgrade to ${plan.name}`
+                      `${t('common.upgrade')} ${plan.name}`
                     )}
                   </button>
                   

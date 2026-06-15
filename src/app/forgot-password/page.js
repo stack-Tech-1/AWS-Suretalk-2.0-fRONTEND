@@ -5,8 +5,10 @@ import { Mail, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import Image from 'next/image';
 import Link from "next/link";
 import { api } from "../../utils/api";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function ForgotPasswordInner() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -68,25 +70,25 @@ function ForgotPasswordInner() {
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Check your inbox</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('auth.checkEmail')}</h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                If an account exists with this email, a reset link has been sent. Please check your inbox.
+                {t('auth.resetSent')}
               </p>
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-700 font-medium text-sm transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Login
+                {t('auth.backToSignIn')}
               </Link>
             </div>
           ) : (
             <>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-center">
-                Forgot Password?
+                {t('auth.forgotTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-6">
-                Enter your email and we'll send you a reset link.
+                {t('auth.forgotSubtitle')}
               </p>
 
               {/* Error banner */}
@@ -105,7 +107,7 @@ function ForgotPasswordInner() {
                 {/* Email field */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email Address
+                    {t('auth.emailLabel')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -136,10 +138,10 @@ function ForgotPasswordInner() {
                   {loading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending...
+                      {t('auth.sending')}
                     </>
                   ) : (
-                    'Send Reset Link'
+                    t('auth.resetLink')
                   )}
                 </button>
               </form>
@@ -151,7 +153,7 @@ function ForgotPasswordInner() {
                   className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Login
+                  {t('auth.backToSignIn')}
                 </Link>
               </div>
             </>
@@ -160,11 +162,11 @@ function ForgotPasswordInner() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 SureTalk. All rights reserved.</p>
+          <p>{t('auth.copyright')}</p>
           <p className="mt-1">
-            <Link href="/privacy" className="hover:text-brand-600 transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-brand-600 transition-colors">{t('auth.privacy')}</Link>
             {" · "}
-            <Link href="/terms" className="hover:text-brand-600 transition-colors">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-brand-600 transition-colors">{t('auth.terms')}</Link>
           </p>
         </div>
       </motion.div>

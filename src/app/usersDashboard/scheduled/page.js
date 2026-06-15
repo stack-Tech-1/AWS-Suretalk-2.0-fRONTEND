@@ -49,8 +49,10 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, parseISO, isBefore, isAfter, addDays } from 'date-fns';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ScheduledMessages() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
   
@@ -103,12 +105,12 @@ export default function ScheduledMessages() {
   }, []);
 
   const filters = [
-    { id: "all", label: "All Messages", icon: CalendarDays },
-    { id: "scheduled", label: "Scheduled", icon: CalendarClock },
-    { id: "upcoming", label: "Upcoming", icon: Clock },
-    { id: "sent", label: "Sent", icon: CheckCircle },
-    { id: "failed", label: "Failed", icon: AlertCircle },
-    { id: "cancelled", label: "Cancelled", icon: X },
+    { id: "all", label: t('scheduled.allMessages'), icon: CalendarDays },
+    { id: "scheduled", label: t('scheduled.statusScheduled'), icon: CalendarClock },
+    { id: "upcoming", label: t('scheduled.upcoming'), icon: Clock },
+    { id: "sent", label: t('scheduled.statusSent'), icon: CheckCircle },
+    { id: "failed", label: t('scheduled.statusFailed'), icon: AlertCircle },
+    { id: "cancelled", label: t('scheduled.statusCancelled'), icon: X },
   ];
 
   // ✅ Remove fetchUserTier function - user tier is in AuthContext
@@ -466,7 +468,7 @@ Status: ${message.delivery_status}`;
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
-        <p className="text-gray-600 dark:text-gray-400">Loading scheduled messages...</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -511,10 +513,10 @@ Status: ${message.delivery_status}`;
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                  Scheduled Messages
+                  {t('scheduled.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Plan and schedule voice messages to be delivered at future dates
+                  {t('scheduled.subtitle')}
                 </p>
               </div>
             </div>
@@ -527,14 +529,14 @@ Status: ${message.delivery_status}`;
                        dark:hover:bg-gray-700 transition-all"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              {t('common.refresh')}
             </button>
             <Link
               href="/usersDashboard/scheduled/create"
               className="btn-primary brand-glow-hover flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Schedule Message
+              {t('scheduled.createNew')}
             </Link>
           </div>
         </div>
@@ -570,29 +572,29 @@ Status: ${message.delivery_status}`;
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger-children"
       >
         {[
-          { 
-            label: "Total Messages", 
-            value: loadingStats ? '...' : stats.total_messages || 0, 
-            icon: CalendarDays, 
-            color: "from-blue-500 to-cyan-500" 
+          {
+            label: t('scheduled.totalMessages'),
+            value: loadingStats ? '...' : stats.total_messages || 0,
+            icon: CalendarDays,
+            color: "from-blue-500 to-cyan-500"
           },
-          { 
-            label: "Upcoming", 
-            value: loadingStats ? '...' : stats.upcoming || 0, 
-            icon: CalendarClock, 
-            color: "from-green-500 to-emerald-500" 
+          {
+            label: t('scheduled.upcoming'),
+            value: loadingStats ? '...' : stats.upcoming || 0,
+            icon: CalendarClock,
+            color: "from-green-500 to-emerald-500"
           },
-          { 
-            label: "Sent", 
-            value: loadingStats ? '...' : stats.delivered || 0, 
-            icon: CheckCircle, 
-            color: "from-purple-500 to-pink-500" 
+          {
+            label: t('scheduled.statusSent'),
+            value: loadingStats ? '...' : stats.delivered || 0,
+            icon: CheckCircle,
+            color: "from-purple-500 to-pink-500"
           },
-          { 
-            label: "Failed", 
-            value: loadingStats ? '...' : stats.failed || 0, 
-            icon: AlertCircle, 
-            color: "from-orange-500 to-red-500" 
+          {
+            label: t('scheduled.statusFailed'),
+            value: loadingStats ? '...' : stats.failed || 0,
+            icon: AlertCircle,
+            color: "from-orange-500 to-red-500"
           },
         ].map((stat, index) => (
           <div 
@@ -627,7 +629,7 @@ Status: ${message.delivery_status}`;
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                   type="search"
-                  placeholder="Search messages by title, recipient, or status..."
+                  placeholder={t('scheduled.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -703,12 +705,12 @@ Status: ${message.delivery_status}`;
               <Calendar className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-              {searchQuery ? 'No messages found' : 'No scheduled messages yet'}
+              {searchQuery ? t('scheduled.noMessages') : t('scheduled.noMessages')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              {searchQuery 
-                ? 'Try a different search term or clear the search'
-                : 'Start by scheduling your first voice message for future delivery'
+              {searchQuery
+                ? t('common.noResults')
+                : t('scheduled.noMessagesDesc')
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -716,15 +718,15 @@ Status: ${message.delivery_status}`;
                 onClick={() => setSearchQuery('')}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                Clear Search
+                {t('common.clearSearch')}
               </button>
               <Link
                 href="/usersDashboard/scheduled/create"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600
                          text-white rounded-xl hover:shadow-lg transition-all"
               >
                 <Plus className="w-5 h-5" />
-                Schedule Your First Message
+                {t('scheduled.createNew')}
               </Link>
             </div>
           </div>
@@ -813,19 +815,19 @@ Status: ${message.delivery_status}`;
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Message
+                      {t('scheduled.tableMessage')}
                     </th>
                     <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Recipient
+                      {t('scheduled.tableRecipient')}
                     </th>
                     <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Scheduled For
+                      {t('scheduled.tableScheduledFor')}
                     </th>
                     <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Status
+                      {t('common.status')}
                     </th>
                     <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Actions
+                      {t('common.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -1338,11 +1340,11 @@ Status: ${message.delivery_status}`;
                 <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                   <AlertTriangle className="w-6 h-6 text-red-500" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cancel Scheduled Message</h3>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('scheduled.cancelTitle')}</h3>
               </div>
-              
+
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Are you sure you want to cancel this scheduled message? This action cannot be undone.
+                {t('scheduled.cancelConfirm')} {t('common.thisActionCannotBeUndone')}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1350,7 +1352,7 @@ Status: ${message.delivery_status}`;
                   onClick={() => setShowDeleteConfirm(null)}
                   className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  Keep Scheduled
+                  {t('scheduled.keepScheduled')}
                 </button>
                 <button
                   onClick={() => handleCancelMessage(showDeleteConfirm)}
@@ -1360,12 +1362,12 @@ Status: ${message.delivery_status}`;
                   {actionLoading === showDeleteConfirm ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Cancelling...
+                      {t('common.loading')}
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-4 h-4" />
-                      Cancel Message
+                      {t('scheduled.cancelMessage')}
                     </>
                   )}
                 </button>
@@ -1396,8 +1398,8 @@ Status: ${message.delivery_status}`;
                     <Send className="w-6 h-6 text-blue-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Send Test Message</h3>
-                    <p className="text-sm text-gray-500">Test your scheduled message</p>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('scheduled.sendTest')}</h3>
+                    <p className="text-sm text-gray-500">{t('scheduled.sendTestDesc')}</p>
                   </div>
                 </div>
                 <button
@@ -1474,11 +1476,11 @@ Status: ${message.delivery_status}`;
                   onClick={() => setShowTestModal(false)}
                   className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleSendTest}
-                  disabled={actionLoading === 'test' || 
+                  disabled={actionLoading === 'test' ||
                     (testForm.deliveryMethod.includes('email') && !testForm.recipientEmail) ||
                     (testForm.deliveryMethod.includes('sms') && !testForm.recipientPhone)}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
@@ -1486,12 +1488,12 @@ Status: ${message.delivery_status}`;
                   {actionLoading === 'test' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Sending...
+                      {t('common.loading')}
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      Send Test
+                      {t('scheduled.sendTest')}
                     </>
                   )}
                 </button>

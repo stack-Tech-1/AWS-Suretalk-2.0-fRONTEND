@@ -33,8 +33,10 @@ import { api } from "@/utils/api";
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { useRouter } from "next/navigation";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function NotificationsPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
   
@@ -259,7 +261,7 @@ export default function NotificationsPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading notifications...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -270,7 +272,7 @@ export default function NotificationsPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading notifications...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -292,10 +294,10 @@ export default function NotificationsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                Notifications
+                {t('notifications.title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Stay updated with your activity and system alerts
+                {t('notifications.subtitle')}
               </p>
             </div>
           </div>
@@ -441,7 +443,7 @@ export default function NotificationsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="search"
-              placeholder="Search notifications..."
+              placeholder={t('notifications.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 pr-4 py-3 w-full rounded-xl border border-gray-300 dark:border-gray-600 
@@ -483,7 +485,7 @@ export default function NotificationsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:shadow-lg"
             >
               <CheckCircle className="w-4 h-4" />
-              Mark All Read
+              {t('notifications.markAllRead')}
             </button>
           </div>
         </div>
@@ -500,19 +502,19 @@ export default function NotificationsPage() {
             <BellOff className="w-12 h-12 text-gray-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-            No notifications found
+            {t('notifications.noNotifications')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {searchQuery 
-              ? `No notifications match "${searchQuery}"`
-              : 'You\'re all caught up! No new notifications.'}
+            {searchQuery
+              ? t('common.noResults')
+              : t('notifications.allCaughtUp')}
           </p>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="px-6 py-2 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg"
             >
-              Clear Search
+              {t('common.clearSearch')}
             </button>
           )}
         </motion.div>
@@ -586,7 +588,7 @@ export default function NotificationsPage() {
                         className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm hover:shadow-md"
                       >
                         <Eye className="w-3 h-3" />
-                        Mark as Read
+                        {t('notifications.markAsRead')}
                       </button>
                     )}
                     <button
@@ -649,7 +651,7 @@ export default function NotificationsPage() {
         transition={{ duration: 0.5, delay: 0.3 }}
         className="mt-12 glass rounded-2xl p-6"
       >
-        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Notification Settings</h3>
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('notifications.settings')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">

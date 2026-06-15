@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "../../utils/api";
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { toast } from '@/components/ui/Toast';
 
 const containerVariants = {
@@ -19,17 +20,19 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } }
 };
 
-const FEATURES = [
-  { icon: Mic,   text: 'Store voice notes securely' },
-  { icon: Heart, text: 'Send messages to loved ones' },
-  { icon: Globe, text: 'Access from anywhere, anytime' },
-];
+// Features are rendered inside LoginInner where t() is available
 
 const WAVE_HEIGHTS = [28, 40, 52, 36, 48, 56, 32, 44, 52, 38, 48, 30];
 
 function LoginInner() {
   useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
+  const FEATURES = [
+    { icon: Mic,   text: t('auth.feature1') },
+    { icon: Heart, text: t('auth.feature2') },
+    { icon: Globe, text: t('auth.feature3') },
+  ];
   const searchParams = useSearchParams();
   const activated = searchParams.get('activated');
   const [loading, setLoading] = useState(false);
@@ -167,7 +170,7 @@ function LoginInner() {
                 <span className="text-3xl font-bold text-white">SureTalk</span>
               </div>
               <p className="text-white/75 text-base leading-snug">
-                Your voice, preserved forever.
+                {t('auth.tagline')}
               </p>
             </div>
 
@@ -226,9 +229,9 @@ function LoginInner() {
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
                       <Shield className="w-7 h-7 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Two-Factor Auth</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{t('auth.2faTitle')}</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Open your authenticator app and enter the 6-digit code
+                      {t('auth.2faSubtitle')}
                     </p>
                   </div>
 
@@ -246,7 +249,7 @@ function LoginInner() {
                   <form onSubmit={handleVerify2FA} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Authentication Code
+                        {t('auth.2faLabel')}
                       </label>
                       <input
                         type="text"
@@ -270,7 +273,7 @@ function LoginInner() {
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <><Shield className="w-5 h-5" /> Verify & Sign In</>
+                        <><Shield className="w-5 h-5" /> {t('auth.verifySignIn')}</>
                       )}
                     </motion.button>
                     <button
@@ -278,7 +281,7 @@ function LoginInner() {
                       onClick={() => { setStep(1); setError(''); setTwoFaCode(''); }}
                       className="w-full text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
-                      ← Back to login
+                      {t('auth.backToLogin')}
                     </button>
                   </form>
                 </motion.div>
@@ -292,7 +295,7 @@ function LoginInner() {
                   exit={{ opacity: 0, x: -24 }}
                 >
                   <motion.h2 variants={itemVariants} className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">
-                    Welcome Back
+                    {t('auth.welcomeBack')}
                   </motion.h2>
 
                   {activated === 'true' && (
@@ -323,7 +326,7 @@ function LoginInner() {
                     {/* Email */}
                     <motion.div variants={itemVariants} className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Email Address
+                        {t('auth.emailLabel')}
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -333,7 +336,7 @@ function LoginInner() {
                           value={formData.email}
                           onChange={handleChange}
                           className={`${inputClass} pl-11 pr-4`}
-                          placeholder="you@example.com"
+                          placeholder={t('auth.emailPlaceholder')}
                           required
                           disabled={loading}
                         />
@@ -344,10 +347,10 @@ function LoginInner() {
                     <motion.div variants={itemVariants} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Password
+                          {t('auth.passwordLabel')}
                         </label>
                         <Link href="/forgot-password" className="text-sm text-brand-600 hover:text-brand-700 transition-colors">
-                          Forgot password?
+                          {t('auth.forgotPassword')}
                         </Link>
                       </div>
                       <div className="relative">
@@ -358,7 +361,7 @@ function LoginInner() {
                           value={formData.password}
                           onChange={handleChange}
                           className={`${inputClass} pl-11 pr-12`}
-                          placeholder="Enter your password"
+                          placeholder={t('auth.passwordPlaceholder')}
                           required
                           disabled={loading}
                         />
@@ -385,7 +388,7 @@ function LoginInner() {
                         className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded disabled:opacity-50"
                       />
                       <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                        Remember me for 30 days
+                        {t('auth.rememberMe')}
                       </label>
                     </motion.div>
 
@@ -401,10 +404,10 @@ function LoginInner() {
                         {loading ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Signing in...
+                            {t('auth.signingIn')}
                           </>
                         ) : (
-                          <><Lock className="w-5 h-5" /> Sign In</>
+                          <><Lock className="w-5 h-5" /> {t('auth.signIn')}</>
                         )}
                       </motion.button>
                     </motion.div>
@@ -416,7 +419,7 @@ function LoginInner() {
                       <div className="w-full border-t border-gray-300 dark:border-gray-700" />
                     </div>
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white/50 dark:bg-gray-800/50 text-gray-500">Or continue with</span>
+                      <span className="px-4 bg-white/50 dark:bg-gray-800/50 text-gray-500">{t('auth.orContinueWith')}</span>
                     </div>
                   </motion.div>
 
@@ -433,7 +436,7 @@ function LoginInner() {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
-                      Continue with Google
+                      {t('auth.continueGoogle')}
                     </button>
                   </motion.div>
 
@@ -444,15 +447,15 @@ function LoginInner() {
                       className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors inline-flex items-center gap-1"
                     >
                       <Shield className="w-4 h-4" />
-                      Admin Access
+                      {t('auth.adminAccess')}
                     </Link>
                   </motion.div>
 
                   {/* Signup */}
                   <motion.p variants={itemVariants} className="text-center mt-4 text-sm text-gray-600 dark:text-gray-400">
-                    Don't have an account?{" "}
+                    {t('auth.noAccount')}{" "}
                     <Link href="/signup" className="font-semibold text-brand-600 hover:text-brand-700 transition-colors">
-                      Create account
+                      {t('auth.createAccount')}
                     </Link>
                   </motion.p>
 
@@ -463,7 +466,7 @@ function LoginInner() {
                       className="text-xs text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors inline-flex items-center gap-1"
                     >
                       <Smartphone className="w-3.5 h-3.5" />
-                      Registered via phone call? Activate your web account →
+                      {t('auth.activatedViaPhone')}
                     </Link>
                   </motion.div>
                 </motion.div>
@@ -474,11 +477,11 @@ function LoginInner() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 SureTalk. All rights reserved.</p>
+          <p>{t('auth.copyright')}</p>
           <p className="mt-1">
-            <Link href="/privacy" className="hover:text-brand-600 transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-brand-600 transition-colors">{t('auth.privacy')}</Link>
             {" · "}
-            <Link href="/terms" className="hover:text-brand-600 transition-colors">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-brand-600 transition-colors">{t('auth.terms')}</Link>
           </p>
         </div>
       </div>

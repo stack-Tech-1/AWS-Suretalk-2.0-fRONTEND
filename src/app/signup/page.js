@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, Check, Star } from "lucide-react";
@@ -9,8 +9,10 @@ import Button from "../../components/common/Button";
 import { api } from "../../utils/api";
 import React from "react";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function Signup() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedTier, setSelectedTier] = useState("LITE");
@@ -28,50 +30,46 @@ export default function Signup() {
   const tiers = [
     {
       id: "LITE",
-      name: "SureTalk LITE",
+      name: t('auth.tier.lite.name'),
       price: "$0",
-      period: "forever",
-      description: "Perfect for trying out voice messaging",
+      period: t('home.pricing.lite.period'),
+      description: t('auth.tier.lite.desc'),
       features: [
-        "Up to 3 contacts",
-        "Up to 3 voice notes",        
-        "Phone access",
-        "Web dashboard access",
-        "Basic IVR menu",
+        t('auth.tier.lite.f1'),
+        t('auth.tier.lite.f2'),
+        t('auth.tier.lite.f3'),
+        t('auth.tier.lite.f4'),
+        t('auth.tier.lite.f5'),
       ],
       color: "blue",
     },
     {
       id: "ESSENTIAL",
-      name: "SureTalk Essential",
+      name: t('auth.tier.essential.name'),
       price: "$4.99",
-      period: "per month",
-      description: "Our most popular plan",
+      period: t('home.pricing.essential.period'),
+      description: t('auth.tier.essential.desc'),
       features: [
-        "Up to 9 contacts",
-        //"Unlimited voice notes",
-        "Advanced IVR features",
-        "Web dashboard access",
-        "Voice note exports",
-        //"90-day Standard-IA storage",
+        t('auth.tier.essential.f1'),
+        t('auth.tier.essential.f2'),
+        t('auth.tier.essential.f3'),
+        t('auth.tier.essential.f4'),
       ],
       color: "purple",
       highlighted: true,
     },
     {
       id: "LEGACY_VAULT_PREMIUM",
-      name: "Legacy Vault",
+      name: t('auth.tier.premium.name'),
       price: "$9.99",
-      period: "per month",
-      description: "Permanent storage & legacy features",
+      period: t('home.pricing.premium.period'),
+      description: t('auth.tier.premium.desc'),
       features: [
-        "All Essential features",
-        "Permanent voice storage",
-        "Voice Wills creation",
-        "Scheduled legacy messages",
-        //"Glacier Deep Archive",
-        //"KMS encryption",
-        "Priority support",
+        t('auth.tier.premium.f1'),
+        t('auth.tier.premium.f2'),
+        t('auth.tier.premium.f3'),
+        t('auth.tier.premium.f4'),
+        t('auth.tier.premium.f5'),
       ],
       color: "amber",
     },
@@ -108,7 +106,7 @@ const handleSubmit = async (e) => {
     // Call the real API
     await api.register(apiData);
 
-     // Show verification message instead of auto-login
+     // Show v ion message instead of auto-login
      setStep(2); 
 
   } catch (error) {
@@ -136,8 +134,8 @@ const handleSubmit = async (e) => {
   if (step === 2) {
     return (
       <AuthLayout
-        title="Welcome to SureTalk!"
-        subtitle="Your account has been created successfully"
+        title={t('auth.welcomeTitle')}
+        subtitle={t('auth.welcomeSubtitle')}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -147,72 +145,72 @@ const handleSubmit = async (e) => {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-green-600" />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Account Created Successfully!
+            {t('auth.accountCreated')}
           </h2>
-          
+
           <p className="text-gray-600 mb-6">
-            We've sent a verification email to <strong>{formData.email}</strong>. 
-            Please check your inbox (or spam) and click the verification link to activate your account.
+            {t('auth.verificationSent')} <strong>{formData.email}</strong>.
+            {t('auth.verificationCheck')}
           </p>
-          
+
           <div className="bg-brand-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold text-brand-700 mb-2">
-              Next Steps:
+              {t('auth.nextSteps')}
             </h3>
             <ul className="text-sm text-gray-600 space-y-1 text-left">
               <li className="flex items-center">
                 <Check className="w-4 h-4 text-green-500 mr-2" />
-                Verify your email address
+                {t('auth.step1')}
               </li>
               <li className="flex items-center">
                 <Check className="w-4 h-4 text-green-500 mr-2" />
-                Complete your subscription setup
+                {t('auth.step2')}
               </li>
               <li className="flex items-center">
                 <Check className="w-4 h-4 text-green-500 mr-2" />
-                Start recording voice notes!
+                {t('auth.step3')}
               </li>
             </ul>
           </div>
-          
+
           <div className="space-y-4">
             <Button
               className="w-full btn-primary"
               onClick={() => window.location.href = '/login'}
             >
-              Go to Login
+              {t('auth.goToLogin')}
             </Button>
 
             <Button
-            variant="outline"
-            className="w-full"
-            onClick={async () => {
-              try {
-                setLoading(true);
-                await api.resendVerification({ email: formData.email });
-                toast.success('Verification email resent successfully!', 'Email Sent');
-              } catch (error) {
-                toast.error('Failed to resend: ' + error.message);
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-          >
-            {loading ? 'Sending...' : 'Resend Verification Email'}
-          </Button>
-            
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  await api.resendVerification({ email: formData.email });
+                  toast.success('Verification email resent successfully!', 'Email Sent');
+                } catch (error) {
+                  toast.error('Failed to resend: ' + error.message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? t('auth.sending') : t('auth.resendVerification')}
+            </Button>
+
             <Button
               variant="outline"
               className="w-full"
               onClick={() => window.location.reload()}
             >
-              Create Another Account
+              {t('auth.createAnother')}
             </Button>
           </div>
-          
+
         </motion.div>
       </AuthLayout>
     );
@@ -220,8 +218,8 @@ const handleSubmit = async (e) => {
 
   return (
     <AuthLayout
-      title="Join SureTalk"
-      subtitle="Create your account in minutes"
+      title={t('auth.joinTitle')}
+      subtitle={t('auth.joinSubtitle')}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -231,10 +229,10 @@ const handleSubmit = async (e) => {
         <div className="glass-card p-8 rounded-2xl shadow-2xl">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Choose Your Plan
+              {t('auth.choosePlan')}
             </h2>
             <p className="text-gray-600">
-              Start with LITE for free, or unlock premium features with Essential or Premium.
+              {t('auth.choosePlanSubtitle')}
             </p>
           </div>
 
@@ -296,10 +294,10 @@ const handleSubmit = async (e) => {
                   {selectedTier === tier.id ? (
                     <span className="flex items-center justify-center">
                       <Check className="w-4 h-4 mr-2" />
-                      Selected
+                      {t('auth.selected')}
                     </span>
                   ) : (
-                    "Select Plan"
+                    t('auth.selectPlan')
                   )}
                 </div>
               </motion.div>
@@ -309,7 +307,7 @@ const handleSubmit = async (e) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <Input
-                label="First Name"
+                label={t('auth.firstName')}
                 name="firstName"
                 placeholder="John"
                 value={formData.firstName}
@@ -319,7 +317,7 @@ const handleSubmit = async (e) => {
               />
               
               <Input
-                label="Last Name"
+                label={t('auth.lastName')}
                 name="lastName"
                 placeholder="Doe"
                 value={formData.lastName}
@@ -330,7 +328,7 @@ const handleSubmit = async (e) => {
             </div>
 
             <Input
-              label="Email Address"
+              label={t('auth.emailLabel')}
               name="email"
               type="email"
               placeholder="john@example.com"
@@ -342,7 +340,7 @@ const handleSubmit = async (e) => {
 
             <div>
               <Input
-                label="Phone Number"
+                label={t('auth.phoneLabel')}
                 name="phone"
                 type="tel"
                 placeholder="+1 (555) 123-4567"
@@ -352,13 +350,13 @@ const handleSubmit = async (e) => {
                 icon={<Phone className="w-5 h-5 text-gray-400" />}
               />
               <p className="mt-1 text-xs text-gray-500">
-                We’ll send a one-time verification code via SMS for account security.
+                {t('auth.phoneHint')}
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <Input
-                label="Password"
+                label={t('auth.passwordCreate')}
                 name="password"
                 type="password"
                 placeholder="Create a strong password"
@@ -367,9 +365,9 @@ const handleSubmit = async (e) => {
                 required
                 icon={<Lock className="w-5 h-5 text-gray-400" />}
               />
-              
+
               <Input
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 name="confirmPassword"
                 type="password"
                 placeholder="Re-enter your password"
@@ -392,13 +390,13 @@ const handleSubmit = async (e) => {
                 required
               />
               <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-                I agree to the SureTalk{" "}
+                {t('auth.agreeTerms')}{" "}
                 <a href="/terms" className="text-brand-600 hover:underline">
-                  Terms of Service
+                  {t('auth.terms')}
                 </a>{" "}
-                and{" "}
+                {t('auth.agreeTermsAnd')}{" "}
                 <a href="/privacy" className="text-brand-600 hover:underline">
-                  Privacy Policy
+                  {t('auth.privacy')}
                 </a>
               </label>
             </div>
@@ -414,8 +412,7 @@ const handleSubmit = async (e) => {
                 className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
               />
               <label htmlFor="smsConsent" className="ml-2 text-sm text-gray-600">
-                I agree to receive SMS messages from SureTalk for account verification, notifications, and security purposes. 
-                Message frequency varies. Message & data rates may apply. Reply STOP to opt out. Reply HELP for help.
+                {t('auth.smsConsent')}
               </label>
             </div>
 
@@ -425,20 +422,20 @@ const handleSubmit = async (e) => {
                 loading={loading}
                 className="w-full btn-primary py-4 text-lg font-semibold"
               >
-                {loading ? "Creating Account..." : `Start with ${selectedTier}`}
+                {loading ? t('auth.creatingAccount') : `${t('auth.startWith')} ${selectedTier}`}
               </Button>
             </div>
           </form>
 
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-              Already have an account?{" "}
+              {t('auth.alreadyAccount')}{" "}
               <Link
                 href="/login"
-                className="font-semibold text-brand-600 hover:text-brand-700 
+                className="font-semibold text-brand-600 hover:text-brand-700
                            transition-colors"
               >
-                Sign in here
+                {t('auth.signInHere')}
               </Link>
             </p>
           </div>
@@ -446,26 +443,26 @@ const handleSubmit = async (e) => {
 
         <div className="mt-8 p-6 bg-gradient-to-r from-brand-50 to-accent-50 rounded-xl">
           <h3 className="font-semibold text-brand-800 mb-3">
-            Why Choose SureTalk?
+            {t('auth.whySuretalk')}
           </h3>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center">
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">Secure & Encrypted Storage</span>
+              <span className="text-gray-700">{t('auth.whyF1')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">24/7 Voice Access</span>
+              <span className="text-gray-700">{t('auth.whyF2')}</span>
             </div>
             <div className="flex items-center">
               <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">Legacy Message Protection</span>
+              <span className="text-gray-700">{t('auth.whyF3')}</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\components\dashboard\Topbar.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,6 +27,7 @@ import {
 import { api } from "@/utils/api";
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Topbar({ 
   type, 
@@ -36,8 +37,12 @@ export default function Topbar({
   loading = false 
 }) {
   const { user, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
+  const { lang, setLang, t } = useLanguage();
   const router = useRouter();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return document.documentElement.classList.contains('dark');
+  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -52,9 +57,11 @@ export default function Topbar({
   const isLoading = authLoading || loading;
   const userTier = currentUser?.subscription_tier;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setDarkMode(document.documentElement.classList.contains('dark'));
+  }, []);
 
+  useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -264,16 +271,16 @@ export default function Topbar({
   };
 
   const userMenuItems = type === "admin" ? [
-    { icon: <User className="w-4 h-4" />, label: "Admin Profile", href: "/admin/profile" },
-    { icon: <Settings className="w-4 h-4" />, label: "System Settings", href: "/admin/settings" },
-    { icon: <Globe className="w-4 h-4" />, label: "Logs", href: "/admin/logs" },
-    { icon: <LogOut className="w-4 h-4" />, label: "Logout", href: "/" },
+    { icon: <User className="w-4 h-4" />, label: t('dash.menu.adminProfile'), href: "/admin/profile" },
+    { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.systemSettings'), href: "/admin/settings" },
+    { icon: <Globe className="w-4 h-4" />, label: t('dash.menu.logs'), href: "/admin/logs" },
+    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/" },
   ] : [
-    { icon: <User className="w-4 h-4" />, label: "Profile", href: "/usersDashboard/settings/profile" },
-    { icon: <Settings className="w-4 h-4" />, label: "Settings", href: "/usersDashboard/settings" },
-    { icon: <CreditCard className="w-4 h-4" />, label: "Billing", href: "/usersDashboard/billing" },
-    { icon: <Zap className="w-4 h-4" />, label: "Upgrade Plan", href: "/usersDashboard/billing" },
-    { icon: <LogOut className="w-4 h-4" />, label: "Logout", href: "/" },
+    { icon: <User className="w-4 h-4" />, label: t('dash.menu.profile'), href: "/usersDashboard/settings/profile" },
+    { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.settings'), href: "/usersDashboard/settings" },
+    { icon: <CreditCard className="w-4 h-4" />, label: t('dash.menu.billing'), href: "/usersDashboard/billing" },
+    { icon: <Zap className="w-4 h-4" />, label: t('dash.menu.upgradePlan'), href: "/usersDashboard/billing" },
+    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/" },
   ];
 
   const toggleDarkMode = () => {
@@ -332,7 +339,7 @@ export default function Topbar({
           {/* Page title */}
           <div className="hidden md:block">
             <h1 className="text-xl font-display font-semibold text-gray-900 dark:text-white tracking-tight">
-              {type === "admin" ? "Admin Dashboard" : "User Dashboard"}
+              {type === "admin" ? t('dash.topbar.adminDash') : t('dash.topbar.userDash')}
             </h1>
           </div>
 
@@ -415,6 +422,15 @@ export default function Topbar({
             )}
           </button>
 
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-xs font-bold text-gray-600 dark:text-gray-400 min-w-[36px]"
+            title={lang === 'en' ? 'Cambiar a Español' : 'Switch to English'}
+          >
+            {lang === 'en' ? 'ES' : 'EN'}
+          </button>
+
           {/* Help */}
           <Link
             href="/usersDashboard/helpandsupport"
@@ -450,9 +466,9 @@ export default function Topbar({
                 <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] card card-elevated rounded-2xl z-50 overflow-hidden">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-white">Notifications</h3>
+                      <h3 className="font-semibold text-gray-800 dark:text-white">{t('dash.topbar.notifications')}</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {unreadCount} unread • {notifications.length} total
+                        {unreadCount} {t('dash.topbar.unread')} • {notifications.length} {t('dash.topbar.total')}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -460,13 +476,13 @@ export default function Topbar({
                         onClick={handleMarkAllAsRead}
                         className="text-xs px-3 py-1 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-lg hover:shadow-md"
                       >
-                        Mark all read
+                        {t('dash.topbar.markAllRead')}
                       </button>
                       <button
                         onClick={() => window.location.href = '/usersDashboard/notifications'}
                         className="text-xs px-3 py-1 border border-brand-500 text-brand-600 dark:text-brand-400 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20"
                       >
-                        View all
+                        {t('dash.topbar.viewAll')}
                       </button>
                     </div>
                   </div>
@@ -475,13 +491,13 @@ export default function Topbar({
                     {loadingNotifications ? (
                       <div className="p-8 text-center">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('dash.topbar.loadingNotifications')}</p>
                       </div>
                     ) : notifications.length === 0 ? (
                       <div className="p-8 text-center">
                         <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 dark:text-gray-400">No notifications yet</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">We'll notify you when there's news</p>
+                        <p className="text-gray-600 dark:text-gray-400">{t('dash.topbar.noNotifications')}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('dash.topbar.noNotificationsDesc')}</p>
                       </div>
                     ) : (
                       notifications.map((notification) => (
@@ -515,7 +531,7 @@ export default function Topbar({
                                 </span>
                                 {!notification.is_read && (
                                   <span className="text-xs px-2 py-0.5 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-full">
-                                    New
+                                    {t('dash.topbar.new')}
                                   </span>
                                 )}
                               </div>
@@ -566,7 +582,7 @@ export default function Topbar({
                           {currentUser?.full_name || (type === "admin" ? "Administrator" : "User")}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {type === "admin" ? "System Admin" : currentUser?.subscription_tier || 'User'}
+                          {type === "admin" ? t('dash.topbar.systemAdmin') : currentUser?.subscription_tier || 'User'}
                         </p>
                       </>
                     )}
@@ -635,7 +651,7 @@ export default function Topbar({
                                        bg-gradient-to-r from-brand-600 to-accent-500 text-white
                                        rounded-lg hover:shadow-lg transition-all text-sm">
                         <Zap className="w-4 h-4" />
-                        Upgrade Plan
+                        {t('dash.menu.upgradePlan')}
                       </button>
                     </div>
                   )}

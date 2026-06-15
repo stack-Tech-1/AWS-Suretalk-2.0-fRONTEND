@@ -2,8 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function VoiceMessagePlayer() {
+  const { t } = useLanguage();
   const params = useParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -127,7 +129,7 @@ export default function VoiceMessagePlayer() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
               </div>
-              <p className="text-indigo-200 text-sm">Loading your voice message...</p>
+              <p className="text-indigo-200 text-sm">{t('play.subtitle')}</p>
             </div>
           )}
 
@@ -139,8 +141,8 @@ export default function VoiceMessagePlayer() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Link Expired</h2>
-              <p className="text-slate-400 mb-8">This voice message link has expired and is no longer available.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('play.expired')}</h2>
+              <p className="text-slate-400 mb-8">{t('play.expired')}</p>
               <Link href="/register" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-indigo-500/25 transition-all">
                 Try SureTalk Free
               </Link>
@@ -155,7 +157,7 @@ export default function VoiceMessagePlayer() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Message Not Found</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t('play.notFound')}</h2>
               <p className="text-slate-400 mb-8">{error}</p>
               <Link href="/" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all">
                 Go to SureTalk
@@ -174,7 +176,7 @@ export default function VoiceMessagePlayer() {
                     {messageData.senderName?.charAt(0)?.toUpperCase() || 'S'}
                   </span>
                 </div>
-                <p className="text-indigo-300 text-sm font-medium uppercase tracking-widest mb-1">Voice message from</p>
+                <p className="text-indigo-300 text-sm font-medium uppercase tracking-widest mb-1">{t('play.from')}</p>
                 <h1 className="text-2xl font-bold text-white">{messageData.senderName || 'Someone'}</h1>
                 {messageData.customMessage && (
                   <p className="mt-3 text-slate-300 text-sm leading-relaxed max-w-sm mx-auto px-4">
@@ -255,8 +257,8 @@ export default function VoiceMessagePlayer() {
 
               {/* CTA */}
               <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-6 text-center">
-                <p className="text-white font-semibold mb-1">Want to send voice messages like this?</p>
-                <p className="text-slate-400 text-sm mb-4">Join SureTalk and start sharing your voice with the people who matter.</p>
+                <p className="text-white font-semibold mb-1">{t('play.secureMessage')}</p>
+                <p className="text-slate-400 text-sm mb-4">{t('play.poweredBy')}</p>
                 <Link
                   href="/register"
                   className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-indigo-500/25 hover:scale-105 transition-all duration-200"

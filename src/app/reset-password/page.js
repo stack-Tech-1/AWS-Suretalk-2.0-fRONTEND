@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../utils/api";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function ResetPasswordInner() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -99,12 +101,12 @@ function ResetPasswordInner() {
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
                 <AlertCircle className="w-8 h-8 text-red-500" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Invalid Link</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('auth.verifyFailed')}</h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                This reset link is invalid. Please request a new one.
+                {t('auth.verifyFailedMsg')}
               </p>
               <Link href="/forgot-password" className={ctaButtonClass}>
-                Request New Link
+                {t('auth.resetLink')}
               </Link>
             </div>
           )}
@@ -115,12 +117,12 @@ function ResetPasswordInner() {
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
                 <AlertCircle className="w-8 h-8 text-red-500" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Link Expired</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('auth.verifyFailed')}</h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                This reset link has expired. Please request a new one.
+                {t('auth.verifyFailedMsg')}
               </p>
               <Link href="/forgot-password" className={ctaButtonClass}>
-                Request New Link
+                {t('auth.resetLink')}
               </Link>
             </div>
           )}
@@ -131,12 +133,12 @@ function ResetPasswordInner() {
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Password Reset!</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('auth.verifySuccess')}</h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
-                Your password has been reset successfully.
+                {t('auth.passwordReset')}
               </p>
               <Link href="/login" className={ctaButtonClass}>
-                Sign In
+                {t('auth.signIn')}
               </Link>
             </div>
           )}
@@ -145,10 +147,10 @@ function ResetPasswordInner() {
           {token && !tokenExpired && !success && (
             <>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-center">
-                Reset Password
+                {t('auth.resetTitle')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm text-center mb-6">
-                Choose a new password for your account.
+                {t('auth.resetSubtitle')}
               </p>
 
               {/* Error banner */}
@@ -167,7 +169,7 @@ function ResetPasswordInner() {
                 {/* New password */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    New Password
+                    {t('auth.newPassword')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -194,7 +196,7 @@ function ResetPasswordInner() {
                 {/* Confirm password */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Confirm New Password
+                    {t('auth.confirmNewPassword')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -231,12 +233,12 @@ function ResetPasswordInner() {
                   {loading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Resetting...
+                      {t('auth.resetting')}
                     </>
                   ) : (
                     <>
                       <Lock className="w-5 h-5" />
-                      Reset Password
+                      {t('auth.resetButton')}
                     </>
                   )}
                 </button>
@@ -249,7 +251,7 @@ function ResetPasswordInner() {
                   className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Login
+                  {t('auth.backToSignIn')}
                 </Link>
               </div>
             </>
@@ -258,11 +260,11 @@ function ResetPasswordInner() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 SureTalk. All rights reserved.</p>
+          <p>{t('auth.copyright')}</p>
           <p className="mt-1">
-            <Link href="/privacy" className="hover:text-brand-600 transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-brand-600 transition-colors">{t('auth.privacy')}</Link>
             {" · "}
-            <Link href="/terms" className="hover:text-brand-600 transition-colors">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-brand-600 transition-colors">{t('auth.terms')}</Link>
           </p>
         </div>
       </motion.div>

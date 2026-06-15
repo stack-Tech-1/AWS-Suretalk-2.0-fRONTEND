@@ -30,10 +30,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function VoiceWills() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -258,17 +260,16 @@ export default function VoiceWills() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Shield className="w-20 h-20 text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Voice Wills Access Required</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('vault.requiresPremium')}</h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          Voice Wills are available only for LEGACY_VAULT_PREMIUM subscribers.
-          Upgrade your plan to create and manage your legacy voice messages.
+          {t('vault.noWillsDesc')}
         </p>
         <Link
           href="/usersDashboard/billing"
           className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600
                    text-white rounded-xl hover:shadow-lg transition-all font-medium"
         >
-          Upgrade to Premium
+          {t('vault.upgradeToPremium')}
         </Link>
       </div>
     );
@@ -324,7 +325,7 @@ export default function VoiceWills() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                  Voice Wills
+                  {t('vault.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   {stats.total_wills || 0} voice {stats.total_wills === 1 ? 'will' : 'wills'}
@@ -338,7 +339,7 @@ export default function VoiceWills() {
               className="btn-primary brand-glow-hover flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              Create Voice Will
+              {t('vault.createWill')}
             </Link>
           </div>
         </div>
@@ -352,8 +353,8 @@ export default function VoiceWills() {
         className="grid grid-cols-2 gap-4 mb-8 stagger-children"
       >
         {[
-          { label: "Voice Wills", value: stats.total_wills || 0, icon: FileAudio, color: "from-purple-500 to-pink-500" },
-          { label: "Storage Used", value: safeStorage(stats?.totalStorageBytes || 0), icon: Archive, color: "from-orange-500 to-red-500" },
+          { label: t('vault.title'), value: stats.total_wills || 0, icon: FileAudio, color: "from-purple-500 to-pink-500" },
+          { label: t('dash.storageUsage'), value: safeStorage(stats?.totalStorageBytes || 0), icon: Archive, color: "from-orange-500 to-red-500" },
         ].map((stat, index) => (
           <div
             key={index}
@@ -429,12 +430,12 @@ export default function VoiceWills() {
               <FileAudio className="w-10 h-10 text-white" />
             </div>
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-              {searchQuery ? 'No voice wills found' : 'No voice wills yet'}
+              {searchQuery ? t('vault.noWills') : t('vault.noWills')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
               {searchQuery
-                ? 'Try a different search term or clear the search'
-                : 'Create your first voice will to preserve your legacy messages.'
+                ? t('common.noResults')
+                : t('vault.noWillsDesc')
               }
             </p>
             {!searchQuery && (
@@ -444,7 +445,7 @@ export default function VoiceWills() {
                          text-white rounded-xl hover:shadow-lg transition-all"
               >
                 <Plus className="w-4 h-4" />
-                Create Voice Will
+                {t('vault.createWill')}
               </Link>
             )}
           </div>

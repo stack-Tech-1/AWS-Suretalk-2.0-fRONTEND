@@ -20,6 +20,7 @@ import { api } from '@/utils/api';
 import Link from 'next/link';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);
@@ -30,7 +31,8 @@ export default function DashboardHome() {
   
   // ✅ Use AuthContext instead of separate user state
   const { user, hasLegacyVault, loading: authLoading, refreshProfile } = useAuth();
-  
+  const { t } = useLanguage();
+
   // State for all dashboard data
   // ✅ Remove userData state - use AuthContext user instead
   const [analyticsData, setAnalyticsData] = useState(null);
@@ -336,7 +338,7 @@ export default function DashboardHome() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -361,35 +363,35 @@ export default function DashboardHome() {
 
   // Stats cards data with real analytics
   const stats = [
-    { 
-      icon: <Mic className="w-5 h-5" />, 
-      label: "Voice Notes", 
-      value: quickStats.voiceNotes.value, 
-      change: quickStats.voiceNotes.change, 
+    {
+      icon: <Mic className="w-5 h-5" />,
+      label: t('dash.voiceNotes'),
+      value: quickStats.voiceNotes.value,
+      change: quickStats.voiceNotes.change,
       color: "from-blue-500 to-cyan-500",
       trend: "up"
     },
-    { 
-      icon: <Users className="w-5 h-5" />, 
-      label: "Contacts", 
-      value: quickStats.contacts.value, 
-      change: quickStats.contacts.change, 
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: t('dash.contacts'),
+      value: quickStats.contacts.value,
+      change: quickStats.contacts.change,
       color: "from-green-500 to-emerald-500",
       trend: "up"
     },
-    { 
-      icon: <Shield className="w-5 h-5" />, 
-      label: "Wills",
-      value: quickStats.vaultItems.value, 
-      change: quickStats.vaultItems.change, 
+    {
+      icon: <Shield className="w-5 h-5" />,
+      label: t('dash.vault'),
+      value: quickStats.vaultItems.value,
+      change: quickStats.vaultItems.change,
       color: "from-purple-500 to-pink-500",
       trend: "secure"
     },
-    { 
-      icon: <Calendar className="w-5 h-5" />, 
-      label: "Scheduled", 
-      value: quickStats.scheduled.value, 
-      change: quickStats.scheduled.change, 
+    {
+      icon: <Calendar className="w-5 h-5" />,
+      label: t('dash.scheduled'),
+      value: quickStats.scheduled.value,
+      change: quickStats.scheduled.change,
       color: "from-orange-500 to-red-500",
       trend: "active"
     },
@@ -397,28 +399,28 @@ export default function DashboardHome() {
 
   // Quick actions with proper links
   const quickActions = [
-    { 
-      icon: <Plus className="w-5 h-5" />, 
-      label: "New Recording", 
+    {
+      icon: <Plus className="w-5 h-5" />,
+      label: t('voice.record'),
       color: "bg-blue-500",
       href: "/usersDashboard/voice-notes?record=new"
     },
-    { 
-      icon: <Users className="w-5 h-5" />, 
-      label: "Add Contact", 
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: t('contacts.addContact'),
       color: "bg-green-500",
       href: "/usersDashboard/contacts"
     },
     {
       icon: <Calendar className="w-5 h-5" />,
-      label: "Schedule Message",
+      label: t('scheduled.createNew'),
       color: "bg-purple-500",
       href: "/usersDashboard/scheduled",
       availableFor: ['ESSENTIAL', 'LEGACY_VAULT_PREMIUM'],
     },
-    { 
-      icon: <Shield className="w-5 h-5" />, 
-      label: "Secure in Vault", 
+    {
+      icon: <Shield className="w-5 h-5" />,
+      label: t('vault.createWill'),
       color: "bg-red-500",
       href: "/usersDashboard/vault",
       availableFor: ['LEGACY_VAULT_PREMIUM'],
@@ -436,9 +438,9 @@ export default function DashboardHome() {
   
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('dash.greetingMorning');
+    if (hour < 18) return t('dash.greetingAfternoon');
+    return t('dash.greetingEvening');
   };
 
    return (
@@ -467,7 +469,7 @@ export default function DashboardHome() {
             className="btn-audio flex items-center gap-2 text-sm py-2 px-4 rounded-xl"
           >
             <Mic className="w-4 h-4" />
-            New Recording
+            {t('voice.record')}
           </Link>
           <Link
             href="/usersDashboard/notifications"
@@ -507,7 +509,7 @@ export default function DashboardHome() {
           <h3 className="text-4xl font-display font-bold text-gray-900 dark:text-white stat-number mb-1 relative z-10">
             {quickStats.voiceNotes.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm relative z-10">Voice Notes</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm relative z-10">{t('dash.voiceNotes')}</p>
         </div>
 
         {/* Contacts */}
@@ -523,7 +525,7 @@ export default function DashboardHome() {
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
             {quickStats.contacts.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Contacts</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('dash.contacts')}</p>
         </div>
 
         {/* Scheduled */}
@@ -539,7 +541,7 @@ export default function DashboardHome() {
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
             {quickStats.scheduled.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Scheduled</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('dash.scheduled')}</p>
         </div>
 
         {/* Wills — full width on mobile, normal on desktop */}
@@ -558,7 +560,7 @@ export default function DashboardHome() {
               </div>
             </div>
             <Link href="/usersDashboard/vault" className="ml-auto btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
-              Manage <ArrowUpRight className="w-3.5 h-3.5" />
+              {t('common.edit')} <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         )}
@@ -578,7 +580,7 @@ export default function DashboardHome() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Activity className="w-5 h-5 text-brand-500" />
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">Weekly Activity</h2>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('dash.activityOverview')}</h2>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
                   {analyticsData?.totals?.total_notes_created 
@@ -647,10 +649,10 @@ export default function DashboardHome() {
                 <div className="h-full flex flex-col items-center justify-center">
                   <Headphones className="w-16 h-16 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    No activity data yet
+                    {t('dash.noRecordings')}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-500 text-center max-w-md mb-4">
-                    Start recording and playing voice notes to see your weekly activity
+                    {t('dash.createFirst')}
                   </p>
                   <Link
                     href="/usersDashboard/voice-notes?record=new"
@@ -658,7 +660,7 @@ export default function DashboardHome() {
                                text-white rounded-xl hover:shadow-lg transition-all text-sm"
                   >
                     <Plus className="w-4 h-4" />
-                    Record Your First Note
+                    {t('dash.recordNow')}
                   </Link>
                 </div>
               )}
@@ -674,17 +676,17 @@ export default function DashboardHome() {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Recent Recordings</h2>
-                <p className="text-gray-600 dark:text-gray-400">Your latest voice notes</p>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('dash.recentRecordings')}</h2>
+                <p className="text-gray-600 dark:text-gray-400">{t('voice.subtitle')}</p>
               </div>
-              <Link 
+              <Link
                 href="/usersDashboard/voice-notes?record=new"
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
                          text-white rounded-xl hover:shadow-lg transition-all"
                 onClick={() => analytics.recordEvent('cta_click', { cta: 'new_recording' })}
               >
                 <Plus className="w-4 h-4" />
-                New Recording
+                {t('voice.record')}
               </Link>
             </div>
 
@@ -788,7 +790,7 @@ export default function DashboardHome() {
                     className="flex items-center justify-center gap-2 text-brand-600 hover:text-brand-700 transition-colors font-medium"
                     onClick={() => analytics.recordEvent('cta_click', { cta: 'view_all_recordings' })}
                   >
-                    View all recordings
+                    {t('common.viewAll')}
                     <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -799,19 +801,19 @@ export default function DashboardHome() {
                   <Mic className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                  No recordings yet — your story starts here
+                  {t('dash.noRecordings')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Start by recording your first voice note!
+                  {t('dash.createFirst')}
                 </p>
-                <Link 
+                <Link
                   href="/usersDashboard/voice-notes?record=new"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
                            text-white rounded-xl hover:shadow-lg transition-all"
                   onClick={() => analytics.recordEvent('cta_click', { cta: 'record_first_note_empty' })}
                 >
                   <Plus className="w-4 h-4" />
-                  Record Your First Note
+                  {t('dash.recordNow')}
                 </Link>
               </div>
             )}
@@ -829,9 +831,9 @@ export default function DashboardHome() {
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Storage Usage</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('dash.storageUsage')}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {storageUsedGB.toFixed(2)} GB of {storageLimitGB} GB used
+                  {storageUsedGB.toFixed(2)} GB {t('common.of')} {storageLimitGB} GB {t('dash.usedOf')}
                 </p>
               </div>
               <TrendingUp className="w-5 h-5 text-green-500" />
@@ -897,7 +899,7 @@ export default function DashboardHome() {
 
           {/* Quick Actions */}
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('dash.quickStats')}</h3>
             <div className="grid grid-cols-2 gap-4">
               {quickActions
                 .filter(action => !action.availableFor || action.availableFor.includes(user?.subscription_tier))
@@ -995,8 +997,8 @@ export default function DashboardHome() {
           ) : subscriptionInfo?.currentTier !== 'LEGACY_VAULT_PREMIUM' ? (
             <div className="bg-gradient-to-r from-brand-600 to-accent-500 rounded-2xl p-6">
               <div className="text-white mb-4">
-                <h3 className="text-lg font-bold mb-1">Upgrade to Legacy Vault</h3>
-                <p className="text-sm opacity-90">Get permanent storage & advanced features</p>
+                <h3 className="text-lg font-bold mb-1">{t('dash.upgradePlan')}</h3>
+                <p className="text-sm opacity-90">{t('vault.upgradeToPremium')}</p>
               </div>
 
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
@@ -1027,7 +1029,7 @@ export default function DashboardHome() {
                 onClick={() => analytics.recordEvent('cta_click', { cta: 'upgrade_from_dashboard' })}
               >
                 <Zap className="w-4 h-4" />
-                Upgrade Now
+                {t('common.upgrade')}
               </Link>
             </div>
           ) : null}

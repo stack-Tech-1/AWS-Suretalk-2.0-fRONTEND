@@ -1,10 +1,12 @@
 "use client";
 import SimplePageLayout from "../../components/layout/SimplePageLayout";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function PrivacyPage() {
+  const { t } = useLanguage();
   return (
-    <SimplePageLayout 
-      title="Privacy Policy"
+    <SimplePageLayout
+      title={t('legal.privacyTitle')}
       subtitle="How we protect and handle your personal information"
       gradientFrom="from-blue-50"
       gradientTo="to-cyan-50"

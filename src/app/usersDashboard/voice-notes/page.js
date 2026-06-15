@@ -32,8 +32,10 @@ import { api } from '@/utils/api';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import Link from 'next/link';
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function VoiceNotes() {
+  const { t } = useLanguage();
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -58,9 +60,9 @@ export default function VoiceNotes() {
   });
 
   const filters = [
-    { id: "all", label: "All Notes" },
-    { id: "favorites", label: "Favorites" },
-    { id: "recent", label: "Recent" },
+    { id: "all", label: t('voice.allNotes') },
+    { id: "favorites", label: t('voice.favorites') },
+    { id: "recent", label: t('voice.recent') },
     { id: "permanent", label: "Legacy" },
     { id: "work", label: "Work" },
     { id: "personal", label: "Personal" },
@@ -611,11 +613,11 @@ const selectAllNotes = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Voice Notes
+              {t('voice.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {stats.totalNotes === 0 
-                ? 'Record and manage your voice notes'
+              {stats.totalNotes === 0
+                ? t('voice.subtitle')
                 : `Manage and organize your ${stats.totalNotes} voice recordings`
               }
             </p>
@@ -626,7 +628,7 @@ const selectAllNotes = () => {
             onClick={() => analytics.recordEvent('cta_click', { cta: 'new_recording_voice_notes' })}
           >
             <Plus className="w-4 h-4" />
-            New Recording
+            {t('voice.record')}
           </Link>
         </div>
       </motion.div>
@@ -668,7 +670,7 @@ const selectAllNotes = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="search"
-                placeholder="Search notes, tags, or content..."
+                placeholder={t('voice.searchPlaceholder')}
                 value={searchQuery}
                 onChange={handleSearch}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
@@ -725,7 +727,7 @@ const selectAllNotes = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Notes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('voice.title')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.totalNotes}
               </p>
@@ -749,7 +751,7 @@ const selectAllNotes = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Favorites</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('voice.favorites')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.favoriteNotes}
               </p>
@@ -1128,24 +1130,24 @@ const selectAllNotes = () => {
           </div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
             {searchQuery || selectedFilter !== 'all'
-              ? 'No voice notes found'
-              : 'No voice notes yet'
+              ? t('voice.noNotes')
+              : t('voice.noNotes')
             }
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
             {searchQuery || selectedFilter !== 'all'
-              ? 'Try adjusting your search or filter to find what you\'re looking for.'
-              : 'Start by recording your first voice note to preserve memories, share messages, or document important moments.'
+              ? t('common.noResults')
+              : t('voice.noNotesDesc')
             }
           </p>
           <Link
             href="/usersDashboard/voice-notes/record"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500
                      text-white rounded-xl hover:shadow-lg transition-all font-medium"
             onClick={() => analytics.recordEvent('cta_click', { cta: 'record_first_note_empty' })}
           >
             <Plus className="w-5 h-5" />
-            Record Your First Note
+            {t('voice.record')}
           </Link>
         </motion.div>
       )}

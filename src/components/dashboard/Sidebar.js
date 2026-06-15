@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 import { UserProfileSkeleton, SidebarCountSkeleton } from '../ui/Skeleton';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
-export default function Sidebar({ 
+export default function Sidebar({
   type, 
   isOpen, 
   collapsed, 
@@ -22,6 +23,7 @@ export default function Sidebar({
   stats,
   loading = false
 }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading, logout, profileImageUrl } = useAuth(); // ✅ Use AuthContext
 
@@ -33,38 +35,38 @@ export default function Sidebar({
   // User menu items - DYNAMIC BASED ON TIER
   const getUserMenu = () => {
     const baseMenu = [
-      { 
-        icon: <Home className="w-5 h-5" />, 
-        label: "Dashboard", 
-        href: "/usersDashboard", 
+      {
+        icon: <Home className="w-5 h-5" />,
+        label: t('dash.home'),
+        href: "/usersDashboard",
         count: null,
         availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
-      { 
-        icon: <Mic className="w-5 h-5" />, 
-        label: "Voice Notes", 
-        href: "/usersDashboard/voice-notes", 
+      {
+        icon: <Mic className="w-5 h-5" />,
+        label: t('dash.voiceNotes'),
+        href: "/usersDashboard/voice-notes",
         count: loading ? null : stats?.voiceNotes || 0,
         availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
-      { 
-        icon: <Users className="w-5 h-5" />, 
-        label: "Contacts", 
-        href: "/usersDashboard/contacts", 
+      {
+        icon: <Users className="w-5 h-5" />,
+        label: t('dash.contacts'),
+        href: "/usersDashboard/contacts",
         count: loading ? null : stats?.contacts || 0,
         availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
-      { 
-        icon: <Calendar className="w-5 h-5" />, 
-        label: "Scheduled", 
-        href: "/usersDashboard/scheduled", 
+      {
+        icon: <Calendar className="w-5 h-5" />,
+        label: t('dash.scheduled'),
+        href: "/usersDashboard/scheduled",
         count: loading ? null : stats?.scheduled || 0,
         availableFor: ['ESSENTIAL', 'LEGACY_VAULT_PREMIUM'] // LITE doesn't get scheduled
       },
-      { 
-        icon: <Settings className="w-5 h-5" />, 
-        label: "Settings", 
-        href: "/usersDashboard/settings", 
+      {
+        icon: <Settings className="w-5 h-5" />,
+        label: t('common.settings'),
+        href: "/usersDashboard/settings",
         count: null,
         availableFor: ['LITE', 'ESSENTIAL', 'LEGACY_VAULT_PREMIUM']
       },
@@ -74,7 +76,7 @@ export default function Sidebar({
     if (hasLegacyVault()) {
       baseMenu.splice(3, 0, { // Insert after Contacts, before Scheduled
         icon: <Shield className="w-5 h-5" />,
-        label: "Voice Wills",
+        label: t('vault.title'),
         href: "/usersDashboard/vault",
         count: loading ? null : stats?.vault || 0,
         availableFor: ['LEGACY_VAULT_PREMIUM'],
@@ -148,7 +150,7 @@ export default function Sidebar({
       }
       
       // Special handling for Voice Wills (show total + pending)
-      if (item.label === "Voice Wills" && stats && typeof stats.wills === 'object') {
+      if (item.href === "/usersDashboard/vault" && stats && typeof stats.wills === 'object') {
         let total = 0;
         let pending = 0;
         
@@ -408,7 +410,7 @@ export default function Sidebar({
                             hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer
                             ${collapsed ? 'justify-center px-3' : ''}`}>
               <HelpCircle className="w-5 h-5" />
-              {!collapsed && <span className="font-medium">Help & Support</span>}
+              {!collapsed && <span className="font-medium">{t('dash.helpSupport')}</span>}
             </div>
           </Link>
 
@@ -420,7 +422,7 @@ export default function Sidebar({
                         ${collapsed ? 'justify-center px-3' : ''}`}
           >
             <LogOut className="w-5 h-5" />
-            {!collapsed && <span className="font-medium">Logout</span>}
+            {!collapsed && <span className="font-medium">{t('common.logout')}</span>}
           </button>
           
           {/* Version info - only when not collapsed */}

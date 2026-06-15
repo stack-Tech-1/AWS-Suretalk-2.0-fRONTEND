@@ -115,13 +115,14 @@ export const AuthProvider = ({ children }) => {
     // 1. Capture token BEFORE clearing (needed to authenticate the backend call)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-    // 2. Clear everything IMMEDIATELY — no waiting
+    // 2. Clear auth keys IMMEDIATELY — preserve user preferences (theme, language)
     try { api.removeToken(); } catch (e) {}
     try { api.clearCache(); } catch (e) {}
-    try { localStorage.clear(); } catch (e) {
-      ['token', 'refreshToken', 'user', 'adminToken', 'isAdmin', 'admin_session']
+    try {
+      ['token', 'refreshToken', 'user', 'adminToken', 'isAdmin', 'admin_session',
+       'impersonationData', 'rememberMe', 'rememberedEmail']
         .forEach(key => { try { localStorage.removeItem(key); } catch (e2) {} });
-    }
+    } catch (e) {}
     try { sessionStorage.setItem('just_logged_out', 'true'); } catch (e) {}
 
     // 3. Clear React state

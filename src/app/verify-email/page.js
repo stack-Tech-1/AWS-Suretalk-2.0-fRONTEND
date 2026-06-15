@@ -6,8 +6,10 @@ import { Check, X, AlertCircle, Mail, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { api } from "../../utils/api";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function VerifyEmailPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState("verifying"); // verifying, success, error, expired
@@ -81,8 +83,8 @@ export default function VerifyEmailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-600 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700">Verifying your email...</h2>
-          <p className="text-gray-500 mt-2">Please wait a moment.</p>
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('auth.verifyTitle')}</h2>
+          <p className="text-gray-500 mt-2">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -113,10 +115,10 @@ export default function VerifyEmailPage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            {status === "success" ? "Email Verified!" :
-             status === "expired" ? "Link Expired" :
-             "Verification Failed"}
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+            {status === "success" ? t('auth.verifySuccess') :
+             status === "expired" ? t('auth.verifyFailed') :
+             t('auth.verifyFailed')}
           </h1>
 
           {/* Message */}
@@ -139,10 +141,10 @@ export default function VerifyEmailPage() {
               <>
                 <Link
                   href="/login"
-                  className="block w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-accent-500 
+                  className="block w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-accent-500
                            text-white font-medium rounded-xl hover:shadow-lg transition-all"
                 >
-                  Go to Login
+                  {t('auth.goLogin')}
                 </Link>
                 <p className="text-sm text-gray-500">
                   Redirecting in 3 seconds...
@@ -157,24 +159,24 @@ export default function VerifyEmailPage() {
                     className="w-full py-3 px-4 bg-brand-600 text-white font-medium rounded-xl 
                              hover:bg-brand-700 transition-colors disabled:opacity-50"
                   >
-                    {loading ? "Sending..." : "Resend Verification Email"}
+                    {loading ? t('auth.sending') : t('auth.resendVerification')}
                   </button>
                 )}
                 
                 <Link
                   href="/login"
-                  className="block w-full py-3 px-4 border border-gray-300 text-gray-700 
+                  className="block w-full py-3 px-4 border border-gray-300 text-gray-700
                            font-medium rounded-xl hover:bg-gray-50 transition-colors"
                 >
-                  Go to Login
+                  {t('auth.goLogin')}
                 </Link>
-                
+
                 <Link
                   href="/signup"
-                  className="block w-full py-3 px-4 text-brand-600 font-medium 
+                  className="block w-full py-3 px-4 text-brand-600 font-medium
                            hover:text-brand-700 transition-colors"
                 >
-                  Create New Account
+                  {t('auth.createAccount')}
                 </Link>
               </>
             )}

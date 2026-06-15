@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const STEP_LABELS = ['Phone', 'Verify', 'Profile'];
 
@@ -41,6 +42,7 @@ function StepIndicator({ step }) {
 
 export default function ClaimAccount() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // Multi-step state
   const [step, setStep] = useState(1);
@@ -218,7 +220,7 @@ export default function ClaimAccount() {
             </h1>
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            Activate your web account
+            {t('auth.claimSubtitle')}
           </p>
         </div>
 
@@ -262,16 +264,16 @@ export default function ClaimAccount() {
             <form onSubmit={handleCheckPhone} className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-1 text-center">
-                  Activate Your Account
+                  {t('auth.claimTitle')}
                 </h2>
                 <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-                  Enter the phone number you registered with via phone call
+                  {t('auth.claimSubtitle')}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Phone Number
+                  {t('auth.phoneLabel')}
                 </label>
                 <div className="relative">
                   <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
@@ -306,9 +308,9 @@ export default function ClaimAccount() {
               </button>
 
               <p className="text-center text-sm text-gray-500">
-                Already have an account?{' '}
+                {t('auth.alreadyAccount')}{' '}
                 <Link href="/login" className="text-brand-600 hover:text-brand-700 font-medium transition-colors">
-                  Sign in
+                  {t('auth.signInHere')}
                 </Link>
               </p>
             </form>
@@ -397,7 +399,7 @@ export default function ClaimAccount() {
 
               {/* Full Name */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.fullName')}</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -414,7 +416,7 @@ export default function ClaimAccount() {
 
               {/* Email */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('auth.emailLabel')}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -431,7 +433,7 @@ export default function ClaimAccount() {
 
               {/* Password */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('auth.passwordCreate')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -455,7 +457,7 @@ export default function ClaimAccount() {
 
               {/* Confirm Password */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('auth.confirmPassword')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -485,15 +487,15 @@ export default function ClaimAccount() {
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Activating…
+                    {t('auth.claimActivating')}
                   </>
                 ) : success ? (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    Activated!
+                    {t('auth.accountCreated')}
                   </>
                 ) : (
-                  'Activate Account'
+                  t('auth.claimButton')
                 )}
               </button>
 
@@ -512,11 +514,11 @@ export default function ClaimAccount() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>© 2024 SureTalk. All rights reserved.</p>
+          <p>{t('auth.copyright')}</p>
           <p className="mt-1">
-            <Link href="/privacy" className="hover:text-brand-600 transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" className="hover:text-brand-600 transition-colors">{t('auth.privacy')}</Link>
             {" · "}
-            <Link href="/terms" className="hover:text-brand-600 transition-colors">Terms of Service</Link>
+            <Link href="/terms" className="hover:text-brand-600 transition-colors">{t('auth.terms')}</Link>
           </p>
         </div>
       </motion.div>

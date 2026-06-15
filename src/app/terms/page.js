@@ -1,9 +1,12 @@
+"use client";
 import SimplePageLayout from "../../components/layout/SimplePageLayout";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function TermsPage() {
+  const { t } = useLanguage();
   return (
-    <SimplePageLayout 
-      title="Terms of Service"
+    <SimplePageLayout
+      title={t('legal.termsTitle')}
       subtitle="Our terms and conditions"
       gradientFrom="from-gray-50"
       gradientTo="to-gray-100"

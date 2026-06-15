@@ -28,11 +28,13 @@ import {
 import { api } from "@/utils/api";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 //import ContactsSelector from "@/components/shared/ContactsSelector";
 
 export default function Contacts() {
   const router = useRouter();
   const analytics = useAnalyticsContext();
+  const { t } = useLanguage();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -516,11 +518,11 @@ export default function Contacts() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Contacts
+              {t('contacts.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {stats.totalContacts === 0 
-                ? 'Add and manage your contacts'
+              {stats.totalContacts === 0
+                ? t('contacts.subtitle')
                 : `Manage ${stats.totalContacts} contact${stats.totalContacts !== 1 ? 's' : ''}`
               }
             </p>
@@ -546,7 +548,7 @@ export default function Contacts() {
               title={stats.remainingContacts <= 0 ? `Contact limit reached (${stats.contactLimit} max)` : ''}
             >
               <UserPlus className="w-4 h-4" />
-              Add Contact
+              {t('contacts.addContact')}
             </button>
           </div>
         </div>
@@ -647,7 +649,7 @@ export default function Contacts() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="search"
-                placeholder="Search contacts by name, phone, or email..."
+                placeholder={t('contacts.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
@@ -953,22 +955,22 @@ export default function Contacts() {
             <UserPlus className="w-10 h-10 text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-            {searchQuery ? 'No contacts found' : 'No contacts yet'}
+            {searchQuery ? t('contacts.noContacts') : t('contacts.noContacts')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            {searchQuery 
-              ? "Try adjusting your search to find what you're looking for."
-              : "Add contacts to send voice messages and schedule Legacy Vault deliveries."
+            {searchQuery
+              ? t('common.noResults')
+              : t('contacts.noContactsDesc')
             }
           </p>
           <button
             onClick={() => setShowAddModal(true)}
             disabled={stats.remainingContacts <= 0}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500
                      text-white rounded-xl hover:shadow-lg transition-all font-medium disabled:opacity-50"
           >
             <Plus className="w-5 h-5" />
-            Add Your First Contact
+            {t('contacts.addContact')}
           </button>
         </motion.div>
       )}
@@ -982,7 +984,7 @@ export default function Contacts() {
             className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Add New Contact</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('contacts.addContact')}</h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -1159,12 +1161,12 @@ export default function Contacts() {
               </div>
               
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-                Delete Contact
+                {t('contacts.deleteContact')}
               </h3>
-              
+
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Are you sure you want to delete <span className="font-semibold">{contactToDelete.name}</span>? 
-                This action cannot be undone.
+                {t('contacts.confirmDelete')} <span className="font-semibold">{contactToDelete.name}</span>?
+                {t('common.thisActionCannotBeUndone')}
               </p>
 
               <div className="flex gap-3">

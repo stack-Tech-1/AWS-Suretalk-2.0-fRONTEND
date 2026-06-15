@@ -2,6 +2,7 @@
 import '../styles/globals.css';
 import { AnalyticsProvider } from '@/contexts/AnalyticsContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata = {
@@ -11,13 +12,20 @@ export const metadata = {
 
 const themeScript = `
   try {
-    const stored = localStorage.getItem('suretalk-theme');
+    var stored = localStorage.getItem('suretalk-theme');
     if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  } catch {}
+  } catch(e) {}
+`;
+
+const langScript = `
+  try {
+    var lang = localStorage.getItem('suretalk-lang') || 'en';
+    document.documentElement.lang = lang;
+  } catch(e) {}
 `;
 
 export default function RootLayout({ children }) {
@@ -25,13 +33,16 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: langScript }} />
       </head>
       <body>
         <AuthProvider>
-          <AnalyticsProvider>
-            {children}
-            <ToastProvider />
-          </AnalyticsProvider>
+          <LanguageProvider>
+            <AnalyticsProvider>
+              {children}
+              <ToastProvider />
+            </AnalyticsProvider>
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>

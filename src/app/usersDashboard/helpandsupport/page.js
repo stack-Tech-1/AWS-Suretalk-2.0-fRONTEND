@@ -11,8 +11,10 @@ import {
   Home, Mail, Tag, Calendar, User, ThumbsUp, ThumbsDown,
   BookOpen, Headphones, Shield, CreditCard, Settings
 } from "lucide-react";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function UserHelpSupport() {
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('knowledge-base');
   const [loading, setLoading] = useState(true);
@@ -212,20 +214,20 @@ export default function UserHelpSupport() {
                 <HelpCircle className="w-6 h-6 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                Help & Support
+                {t('support.title')}
               </h1>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Find answers, submit tickets, and get help with SureTalk
+              {t('support.subtitle')}
             </p>
           </div>
-          <button 
+          <button
             onClick={() => setShowNewTicket(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
                      text-white rounded-xl hover:shadow-lg transition-all"
           >
             <Plus className="w-4 h-4" />
-            New Support Ticket
+            {t('support.newTicket')}
           </button>
         </div>
       </motion.div>
@@ -245,7 +247,7 @@ export default function UserHelpSupport() {
             >
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                  Create Support Ticket
+                  {t('support.createTicket')}
                 </h3>
                 
                 <div className="space-y-4">
@@ -323,18 +325,18 @@ export default function UserHelpSupport() {
                 <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={() => setShowNewTicket(false)}
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 
-                             text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600
+                             text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50
                              dark:hover:bg-gray-800 transition-colors"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleCreateTicket}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500
                              text-white rounded-xl hover:shadow-lg transition-all"
                   >
-                    Submit Ticket
+                    {t('support.submitTicket')}
                   </button>
                 </div>
               </div>
@@ -392,7 +394,7 @@ export default function UserHelpSupport() {
           >
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Knowledge Base
+              {t('support.knowledgeBase')}
             </div>
           </button>
           <button
@@ -405,7 +407,7 @@ export default function UserHelpSupport() {
           >
             <div className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              My Tickets ({tickets.length})
+              {t('support.myTickets')} ({tickets.length})
             </div>
           </button>
         </div>
@@ -422,7 +424,7 @@ export default function UserHelpSupport() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="search"
-            placeholder="Search for answers..."
+            placeholder={t('support.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
@@ -443,7 +445,7 @@ export default function UserHelpSupport() {
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
             </div>
           </div>
         ) : activeTab === 'knowledge-base' ? (
@@ -520,10 +522,10 @@ export default function UserHelpSupport() {
                   <FileText className="w-10 h-10 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                  No articles found
+                  {t('support.noArticles')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Try adjusting your search or contact support for help.
+                  {t('common.noResults')}
                 </p>
               </div>
             )}
@@ -595,17 +597,17 @@ export default function UserHelpSupport() {
                   <MessageSquare className="w-10 h-10 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                  No support tickets yet
+                  {t('support.noTickets')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Submit a ticket to get help from our support team.
+                  {t('support.noTicketsDesc')}
                 </p>
-                <button 
+                <button
                   onClick={() => setShowNewTicket(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 
+                  className="px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500
                            text-white rounded-xl hover:shadow-lg transition-all"
                 >
-                  Create Your First Ticket
+                  {t('support.createFirstTicket')}
                 </button>
               </div>
             )}

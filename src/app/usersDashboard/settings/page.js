@@ -46,8 +46,10 @@ import { api } from "@/utils/api";
 import { toast } from '@/components/ui/Toast';
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Settings() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user, loading: authLoading, logout, refreshProfile } = useAuth(); // ✅ Use AuthContext
   
@@ -313,7 +315,7 @@ export default function Settings() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -324,7 +326,7 @@ export default function Settings() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading settings...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -344,11 +346,11 @@ export default function Settings() {
             <SettingsIcon className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Settings
+            {t('settings.title')}
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400">
-          Manage your account preferences and security settings
+          {t('settings.subtitle')}
         </p>
       </motion.div>
 
@@ -383,13 +385,13 @@ export default function Settings() {
           <div className="glass rounded-2xl p-6 sticky top-24">
             <nav className="space-y-2">
               {[
-                { icon: Bell, label: "Notifications", id: "notifications" },
-                { icon: Shield, label: "Privacy", id: "privacy" },
-                { icon: Palette, label: "Appearance", id: "appearance" },
-                { icon: Lock, label: "Security", id: "security" },
-                { icon: UserCog, label: "Profile", id: "profile" },
-                { icon: CreditCard, label: "Billing", id: "billing" },
-                { icon: Database, label: "Data Management", id: "data" },
+                { icon: Bell, label: t('settings.navNotifications'), id: "notifications" },
+                { icon: Shield, label: t('settings.navPrivacy'), id: "privacy" },
+                { icon: Palette, label: t('settings.navAppearance'), id: "appearance" },
+                { icon: Lock, label: t('settings.navSecurity'), id: "security" },
+                { icon: UserCog, label: t('settings.navProfile'), id: "profile" },
+                { icon: CreditCard, label: t('settings.navBilling'), id: "billing" },
+                { icon: Database, label: t('settings.navData'), id: "data" },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -429,7 +431,7 @@ export default function Settings() {
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Save All Changes
+                    {t('settings.saveAll')}
                   </>
                 )}
               </button>
@@ -449,7 +451,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Bell className="w-6 h-6 text-blue-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Notifications</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.navNotifications')}</h2>
               </div>
               <div className="space-y-4">
                 {[
@@ -489,7 +491,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Shield className="w-6 h-6 text-green-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Privacy</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.navPrivacy')}</h2>
               </div>
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
@@ -569,7 +571,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Palette className="w-6 h-6 text-purple-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Appearance</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.navAppearance')}</h2>
               </div>
               <div className="space-y-6">
                 <div>
@@ -652,7 +654,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Lock className="w-6 h-6 text-red-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Security</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.navSecurity')}</h2>
               </div>
               <div className="space-y-6">
                 {/* Change Password */}
@@ -792,7 +794,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <UserCog className="w-6 h-6 text-blue-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Profile Settings</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.profileSettings')}</h2>
               </div>
               {user ? (
                 <div className="space-y-6">
@@ -861,7 +863,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <CreditCard className="w-6 h-6 text-green-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Billing & Subscription</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.billingSubscription')}</h2>
               </div>
               <div className="space-y-4">
                 <button
@@ -917,7 +919,7 @@ export default function Settings() {
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Database className="w-6 h-6 text-purple-500" />
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Data Management</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('settings.navData')}</h2>
               </div>
               <div className="space-y-4">
                 <button
