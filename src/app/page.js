@@ -27,15 +27,19 @@ import {
   X,
   Smartphone,
   PhoneCall,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext";
 import LogoIcon from "../components/common/LogoIcon";
+import { useTheme } from "../hooks/useTheme";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
   const { lang, setLang, t } = useLanguage();
+  const { darkMode, toggleDarkMode, mounted } = useTheme();
 
   // ── Pricing tiers ────────────────────────────────────────────────────────
   const tiers = [
@@ -196,6 +200,15 @@ export default function Home() {
               >
                 {lang === "en" ? "ES" : "EN"}
               </button>
+              {mounted && (
+                <button
+                  onClick={toggleDarkMode}
+                  className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {darkMode ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
+                </button>
+              )}
               <Link href="/signup" className="btn-primary px-5 py-2 text-sm">
                 {t("nav.startFree")}
               </Link>
@@ -251,6 +264,15 @@ export default function Home() {
                   >
                     {lang === "en" ? "Cambiar a Español" : "Switch to English"}
                   </button>
+                  {mounted && (
+                    <button
+                      onClick={() => { toggleDarkMode(); setMobileMenuOpen(false); }}
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-xl py-3 text-sm font-bold text-gray-600 dark:text-gray-300 flex items-center justify-center gap-2"
+                    >
+                      {darkMode ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
+                      {darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
