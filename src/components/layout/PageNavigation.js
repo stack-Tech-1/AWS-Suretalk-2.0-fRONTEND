@@ -17,8 +17,8 @@ export default function PageNavigation({ showBackButton = true }) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               {showBackButton && (
-                <Link 
-                  href="/" 
+                <Link
+                  href="https://suretalknow.com"
                   className="flex items-center text-gray-700 hover:text-brand-600 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
@@ -26,7 +26,7 @@ export default function PageNavigation({ showBackButton = true }) {
                 </Link>
               )}
               
-              <Link href="/" className="flex items-center space-x-2">
+              <Link href="https://suretalknow.com" className="flex items-center space-x-2">
                 <LogoIcon size={40} />
                 <span className="text-xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
               </Link>
@@ -77,7 +77,7 @@ export default function PageNavigation({ showBackButton = true }) {
           
           <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gradient-to-b from-white/95 to-gray-50/95 backdrop-blur-xl px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10 shadow-2xl">
             <div className="flex items-center justify-between">
-              <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
+              <Link href="https://suretalknow.com" className="-m-1.5 p-1.5 flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
                 <LogoIcon size={40} />
                 <span className="text-xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
               </Link>

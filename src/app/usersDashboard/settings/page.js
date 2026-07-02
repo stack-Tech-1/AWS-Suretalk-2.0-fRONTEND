@@ -240,7 +240,7 @@ export default function Settings() {
       toast.success('Your account has been deleted', 'Account Deleted');
       await new Promise(resolve => setTimeout(resolve, 2000));
       logout();
-      window.location.href = '/';
+      window.location.href = 'https://suretalknow.com';
     } catch (err) {
       toast.error(err.message || 'Failed to delete account', 'Error');
     } finally {

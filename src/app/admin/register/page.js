@@ -152,7 +152,7 @@ export default function AdminRegister() {
               </button>
               
               <button
-                onClick={() => router.push('/')}
+                onClick={() => { window.location.href = 'https://suretalknow.com'; }}
                 className="w-full py-3 border border-gray-700 text-gray-400 hover:text-white rounded-xl font-medium transition-colors"
               >
                 Go to Home

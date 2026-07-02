@@ -42,6 +42,11 @@ const nextConfig = {
         destination: '/verify-email?token=:token',
         permanent: true,
       },
+      {
+        source: '/',
+        destination: 'https://suretalknow.com',
+        permanent: false,
+      },
     ];
   },
 };

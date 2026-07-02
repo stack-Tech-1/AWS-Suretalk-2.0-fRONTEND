@@ -159,7 +159,7 @@ export default function VoiceMessagePlayer() {
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">{t('play.notFound')}</h2>
               <p className="text-slate-400 mb-8">{error}</p>
-              <Link href="/" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all">
+              <Link href="https://suretalknow.com" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all">
                 Go to SureTalk
               </Link>
             </div>

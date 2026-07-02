@@ -33,7 +33,7 @@ export default function AuthLayout({
         {/* Top navigation */}
         <nav className="relative z-10 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="https://suretalknow.com" className="flex items-center space-x-2">
             <LogoIcon size={40} />
               <span className="text-xl font-bold text-gray-800">SureTalk</span>
             </Link>

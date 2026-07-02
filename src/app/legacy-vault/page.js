@@ -226,7 +226,7 @@ export default function LegacyVaultPage() {
             <span className="text-white font-bold">SureTalk</span>
           </div>
           <div className="flex gap-6 text-sm">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <Link href="https://suretalknow.com" className="hover:text-white transition-colors">Home</Link>
             <Link href="/#pricing" className="hover:text-white transition-colors">{t("home.footer.pricing")}</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">{t("home.footer.privacy")}</Link>
             <Link href="/terms" className="hover:text-white transition-colors">{t("home.footer.terms")}</Link>
