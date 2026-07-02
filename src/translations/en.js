@@ -65,7 +65,7 @@ const en = {
 
   // ── How it works ───────────────────────────────────────────────────────────
   "home.how.title": "How SureTalk Works",
-  "home.how.subtitle": "Simple three-step process to preserve and share your voice",
+  "home.how.subtitle": "Five simple steps to stay connected and sure.",
   "home.how.step1.title": "Record Your Message",
   "home.how.step1.desc": "Call our number or use the web dashboard to record your voice message",
   "home.how.step2.title": "Choose Recipients",
@@ -91,7 +91,7 @@ const en = {
   "home.pricing.lite.f5": "Basic IVR",
   "home.pricing.lite.btn": "Start Free",
   "home.pricing.essential.name": "Essential",
-  "home.pricing.essential.price": "$4.99",
+  "home.pricing.essential.price": "$6.99",
   "home.pricing.essential.period": "per month",
   "home.pricing.essential.desc": "Most popular choice",
   "home.pricing.essential.f1": "Unlimited Voice Notes",
@@ -102,7 +102,7 @@ const en = {
   "home.pricing.essential.f6": "Advanced IVR",
   "home.pricing.essential.btn": "Get Essential",
   "home.pricing.premium.name": "Premium",
-  "home.pricing.premium.price": "$9.99",
+  "home.pricing.premium.price": "$12.99",
   "home.pricing.premium.period": "per month",
   "home.pricing.premium.desc": "Legacy & Permanent",
   "home.pricing.premium.f1": "Everything in Essential",
@@ -664,6 +664,126 @@ const en = {
   "legal.termsTitle": "Terms of Service",
   "legal.lastUpdated": "Last Updated",
   "legal.backHome": "Back to Home",
+
+  // ── SureTalk 2.0 — Brand & Slogan ─────────────────────────────────────────
+  "home.slogan": "Stay Connected, Stay Sure.",
+  "home.heroHeadline1": "Stay Connected,",
+  "home.heroHeadline2": "Stay Sure.",
+  "home.heroSub": "Your voice matters more than you think. Store important voice messages, trusted contacts, and family memories without internet, apps, or smartphones. Whether you're preserving your legacy, supporting loved ones, or preparing for life's unexpected moments, SureTalk keeps your voice within reach.",
+  "home.ctaPrimary": "Start Free with SureTalk LITE",
+  "home.ctaDemo": "Watch 60-Second Demo",
+
+  // ── Works On strip ─────────────────────────────────────────────────────────
+  "home.worksOn": "Works On:",
+  "home.works.cell": "Cell Phones",
+  "home.works.landline": "Landlines",
+  "home.works.smart": "Smartphones",
+  "home.works.lang": "English & Spanish",
+
+  // ── Emotional Value section ────────────────────────────────────────────────
+  "home.ev.title": "What Happens If Someone Needs To Hear Your Voice Tomorrow?",
+  "home.ev.intro": "SureTalk helps you:",
+  "home.ev.p1": "Save important voice messages",
+  "home.ev.p2": "Store trusted contacts",
+  "home.ev.p3": "Preserve family memories",
+  "home.ev.p4": "Create future legacy messages",
+  "home.ev.p5": "Access everything from virtually any phone",
+  "home.ev.tagline": "Stay Connected, Stay Sure.",
+
+  // ── How It Works (5 steps) ─────────────────────────────────────────────────
+  "home.how.step1.title": "Create Your Account",
+  "home.how.step1.desc": "Sign up free in minutes — no credit card needed.",
+  "home.how.step2.title": "Record Voice Notes",
+  "home.how.step2.desc": "Call our number or use the web dashboard to record your voice message.",
+  "home.how.step3.title": "Save Trusted Contacts",
+  "home.how.step3.desc": "Add the people you want to stay connected with.",
+  "home.how.step4.title": "Access Everything With A Phone Call",
+  "home.how.step4.desc": "Your messages and contacts are always one call away.",
+  "home.how.step5.title": "Upgrade When You Need More",
+  "home.how.step5.desc": "Unlock Essential or Premium features as your needs grow.",
+
+  // ── Use Cases (6) ─────────────────────────────────────────────────────────
+  "home.uc.title": "Who SureTalk Is For",
+  "home.uc.subtitle": "Built for people who know that staying connected matters.",
+  "home.uc.families.title": "Families",
+  "home.uc.families.desc": "Keep important voices close.",
+  "home.uc.seniors.title": "Seniors",
+  "home.uc.seniors.desc": "Simple phone access without technology barriers.",
+  "home.uc.parents.title": "Parents",
+  "home.uc.parents.desc": "Leave instructions, encouragement, and important memories.",
+  "home.uc.caregivers.title": "Caregivers",
+  "home.uc.caregivers.desc": "Store critical information and contacts.",
+  "home.uc.incarceration.title": "Incarceration Preparation",
+  "home.uc.incarceration.desc": "Maintain connection through voice.",
+  "home.uc.legacy.title": "Legacy Planning",
+  "home.uc.legacy.desc": "Preserve messages for future generations.",
+
+  // ── Updated Pricing (2.0) ─────────────────────────────────────────────────
+  "home.pricing.lite.btn2": "Start Free",
+  "home.pricing.essential.price2": "$6.99",
+  "home.pricing.essential.btn2": "Start 30-Day Free Trial",
+  "home.pricing.premium.price2": "$12.99",
+  "home.pricing.premium.name2": "Premium — Legacy Vault",
+  "home.pricing.premium.btn2": "Protect My Legacy",
+
+  // ── Testimonials ───────────────────────────────────────────────────────────
+  "home.testimonials.title": "What Our Users Say",
+  "home.testimonials.subtitle": "Real voices. Real families. Real peace of mind.",
+  "home.testimonials.t1": "Now my kids can hear my voice anytime.",
+  "home.testimonials.t2": "Finally something my mom can use without needing a smartphone.",
+  "home.testimonials.t3": "The Legacy Vault gives me peace of mind knowing my family will always have my voice.",
+  "home.testimonials.n1": "Maria G.",
+  "home.testimonials.n2": "James T.",
+  "home.testimonials.n3": "Sandra K.",
+
+  // ── FAQ ───────────────────────────────────────────────────────────────────
+  "home.faq.title": "Frequently Asked Questions",
+  "home.faq.subtitle": "Everything you need to know about SureTalk.",
+  "home.faq.q1": "What is SureTalk LITE?",
+  "home.faq.a1": "A free plan with 3 contacts and 3 voice notes. Perfect for getting started with no credit card required.",
+  "home.faq.q2": "What is SureTalk Essential?",
+  "home.faq.a2": "Our core plan with expanded storage and up to 9 contacts — plus voice note downloads and enhanced IVR features.",
+  "home.faq.q3": "What is Legacy Vault?",
+  "home.faq.a3": "A premium feature that preserves your voice permanently and allows you to create Voice Wills and schedule messages for future delivery.",
+  "home.faq.q4": "Do I need internet to use SureTalk?",
+  "home.faq.a4": "No. SureTalk works from virtually any phone — cell phones, landlines, and smartphones.",
+  "home.faq.q5": "Can I upgrade anytime?",
+  "home.faq.a5": "Yes. Upgrade instantly from your dashboard. Your existing voice notes and contacts are always preserved.",
+
+  // ── Final CTA & Footer (2.0) ───────────────────────────────────────────────
+  "home.finalCta.title": "Start Free With SureTalk LITE Today.",
+  "home.finalCta.sub": "No Credit Card Required.",
+  "home.finalCta.btn": "Create My Free Account",
+
+  // ── Legacy Vault Landing Page ──────────────────────────────────────────────
+  "vault.lp.badge": "Premium Feature",
+  "vault.lp.headline": "Stay Connected Today.",
+  "vault.lp.headline2": "Stay Remembered Tomorrow.",
+  "vault.lp.sub": "Some voices should last forever.",
+  "vault.lp.cta": "Start Your Legacy Vault Today",
+  "vault.lp.ctaSub": "$12.99/month — Cancel anytime",
+  "vault.lp.f1.title": "Permanent Voice Memories",
+  "vault.lp.f1.desc": "Preserve important recordings indefinitely with AWS Glacier deep archive storage.",
+  "vault.lp.f2.title": "Voice Wills",
+  "vault.lp.f2.desc": "Create messages and instructions for loved ones to receive when the time comes.",
+  "vault.lp.f3.title": "Scheduled Legacy Messages",
+  "vault.lp.f3.desc": "Send future messages on birthdays, anniversaries, graduations, and life milestones.",
+  "vault.lp.f4.title": "Secure Preservation",
+  "vault.lp.f4.desc": "End-to-end encrypted, KMS-managed long-term cloud storage.",
+  "vault.lp.how.title": "How Legacy Vault Works",
+  "vault.lp.how.s1": "Sign Up for Premium",
+  "vault.lp.how.s1d": "Upgrade your account to unlock Legacy Vault features.",
+  "vault.lp.how.s2": "Record Your Messages",
+  "vault.lp.how.s2d": "Use the dashboard or call our number to record voice notes.",
+  "vault.lp.how.s3": "Set Future Delivery",
+  "vault.lp.how.s3d": "Schedule messages for milestones or leave them as permanent memories.",
+  "vault.lp.bottomCta": "Your voice is your legacy. Don't let it disappear.",
+  "vault.lp.included": "What's Included in Premium",
+
+  // ── Navbar (2.0) ──────────────────────────────────────────────────────────
+  "nav.legacyVault": "Legacy Vault",
+  "nav.startFree": "Start Free",
+  "nav.howItWorks": "How It Works",
 };
 
 export default en;

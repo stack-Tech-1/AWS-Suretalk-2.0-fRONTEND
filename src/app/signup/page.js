@@ -46,7 +46,7 @@ export default function Signup() {
     {
       id: "ESSENTIAL",
       name: t('auth.tier.essential.name'),
-      price: "$4.99",
+      price: "$6.99",
       period: t('home.pricing.essential.period'),
       description: t('auth.tier.essential.desc'),
       features: [
@@ -61,7 +61,7 @@ export default function Signup() {
     {
       id: "LEGACY_VAULT_PREMIUM",
       name: t('auth.tier.premium.name'),
-      price: "$9.99",
+      price: "$12.99",
       period: t('home.pricing.premium.period'),
       description: t('auth.tier.premium.desc'),
       features: [

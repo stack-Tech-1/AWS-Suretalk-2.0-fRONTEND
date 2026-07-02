@@ -73,7 +73,7 @@ function BillingPageInner() {
     {
       id: "ESSENTIAL",
       name: "SureTalk Essential",
-      price: "$4.99",
+      price: "$6.99",
       period: "per month",
       description: "Our most popular plan",
       features: [
@@ -93,7 +93,7 @@ function BillingPageInner() {
     {
       id: "LEGACY_VAULT_PREMIUM",
       name: "Legacy Vault",
-      price: "$9.99",
+      price: "$12.99",
       period: "per month",
       description: "Permanent storage & legacy features",
       features: [

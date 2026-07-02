@@ -1004,7 +1004,7 @@ export default function DashboardHome() {
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-medium">Legacy Vault Premium</span>
-                  <span className="text-white/80 text-sm">$9.99/mo</span>
+                  <span className="text-white/80 text-sm">$12.99/mo</span>
                 </div>
                 <ul className="text-white/80 text-sm space-y-1">
                   <li className="flex items-center gap-2">

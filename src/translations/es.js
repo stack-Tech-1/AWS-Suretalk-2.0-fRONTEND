@@ -65,7 +65,7 @@ const es = {
 
   // ── How it works ───────────────────────────────────────────────────────────
   "home.how.title": "Cómo Funciona SureTalk",
-  "home.how.subtitle": "Un proceso simple de tres pasos para preservar y compartir tu voz",
+  "home.how.subtitle": "Cinco pasos simples para mantenerte conectado y seguro.",
   "home.how.step1.title": "Graba Tu Mensaje",
   "home.how.step1.desc": "Llama a nuestro número o usa el panel web para grabar tu mensaje de voz",
   "home.how.step2.title": "Elige Destinatarios",
@@ -91,7 +91,7 @@ const es = {
   "home.pricing.lite.f5": "IVR Básico",
   "home.pricing.lite.btn": "Empezar Gratis",
   "home.pricing.essential.name": "Essential",
-  "home.pricing.essential.price": "$4.99",
+  "home.pricing.essential.price": "$6.99",
   "home.pricing.essential.period": "por mes",
   "home.pricing.essential.desc": "La opción más popular",
   "home.pricing.essential.f1": "Notas de Voz Ilimitadas",
@@ -102,7 +102,7 @@ const es = {
   "home.pricing.essential.f6": "IVR Avanzado",
   "home.pricing.essential.btn": "Obtener Essential",
   "home.pricing.premium.name": "Premium",
-  "home.pricing.premium.price": "$9.99",
+  "home.pricing.premium.price": "$12.99",
   "home.pricing.premium.period": "por mes",
   "home.pricing.premium.desc": "Legado y Permanente",
   "home.pricing.premium.f1": "Todo en Essential",
@@ -664,6 +664,126 @@ const es = {
   "legal.termsTitle": "Términos de Servicio",
   "legal.lastUpdated": "Última Actualización",
   "legal.backHome": "Volver al Inicio",
+
+  // ── SureTalk 2.0 — Marca y Eslogan ────────────────────────────────────────
+  "home.slogan": "Mantente Conectado, Mantente Seguro.",
+  "home.heroHeadline1": "Mantente Conectado,",
+  "home.heroHeadline2": "Mantente Seguro.",
+  "home.heroSub": "Tu voz importa más de lo que piensas. Almacena mensajes de voz importantes, contactos de confianza y recuerdos familiares sin internet, aplicaciones ni smartphones. Ya sea que estés preservando tu legado, apoyando a seres queridos o preparándote para los momentos inesperados de la vida, SureTalk mantiene tu voz al alcance.",
+  "home.ctaPrimary": "Empieza Gratis con SureTalk LITE",
+  "home.ctaDemo": "Ver Demo de 60 Segundos",
+
+  // ── Franja 'Funciona En' ───────────────────────────────────────────────────
+  "home.worksOn": "Funciona En:",
+  "home.works.cell": "Teléfonos Celulares",
+  "home.works.landline": "Teléfonos Fijos",
+  "home.works.smart": "Smartphones",
+  "home.works.lang": "Inglés y Español",
+
+  // ── Sección de Valor Emocional ─────────────────────────────────────────────
+  "home.ev.title": "¿Qué Pasa Si Alguien Necesita Escuchar Tu Voz Mañana?",
+  "home.ev.intro": "SureTalk te ayuda a:",
+  "home.ev.p1": "Guardar mensajes de voz importantes",
+  "home.ev.p2": "Almacenar contactos de confianza",
+  "home.ev.p3": "Preservar recuerdos familiares",
+  "home.ev.p4": "Crear mensajes de legado para el futuro",
+  "home.ev.p5": "Acceder a todo desde prácticamente cualquier teléfono",
+  "home.ev.tagline": "Mantente Conectado, Mantente Seguro.",
+
+  // ── Cómo Funciona (5 pasos) ───────────────────────────────────────────────
+  "home.how.step1.title": "Crea Tu Cuenta",
+  "home.how.step1.desc": "Regístrate gratis en minutos, sin tarjeta de crédito.",
+  "home.how.step2.title": "Graba Notas de Voz",
+  "home.how.step2.desc": "Llama a nuestro número o usa el panel web para grabar tu mensaje de voz.",
+  "home.how.step3.title": "Guarda Contactos de Confianza",
+  "home.how.step3.desc": "Agrega a las personas con quienes quieres mantenerte conectado.",
+  "home.how.step4.title": "Accede a Todo Con Una Llamada",
+  "home.how.step4.desc": "Tus mensajes y contactos siempre están a una llamada de distancia.",
+  "home.how.step5.title": "Mejora Cuando Necesites Más",
+  "home.how.step5.desc": "Desbloquea funciones Essential o Premium según crezcan tus necesidades.",
+
+  // ── Casos de Uso (6) ──────────────────────────────────────────────────────
+  "home.uc.title": "Para Quién Es SureTalk",
+  "home.uc.subtitle": "Creado para personas que saben que mantenerse conectados importa.",
+  "home.uc.families.title": "Familias",
+  "home.uc.families.desc": "Mantén las voces importantes cerca.",
+  "home.uc.seniors.title": "Adultos Mayores",
+  "home.uc.seniors.desc": "Acceso telefónico simple sin barreras tecnológicas.",
+  "home.uc.parents.title": "Padres",
+  "home.uc.parents.desc": "Deja instrucciones, aliento y recuerdos importantes.",
+  "home.uc.caregivers.title": "Cuidadores",
+  "home.uc.caregivers.desc": "Almacena información crítica y contactos.",
+  "home.uc.incarceration.title": "Preparación para Reclusión",
+  "home.uc.incarceration.desc": "Mantén la conexión a través de la voz.",
+  "home.uc.legacy.title": "Planificación de Legado",
+  "home.uc.legacy.desc": "Preserva mensajes para las generaciones futuras.",
+
+  // ── Precios Actualizados (2.0) ────────────────────────────────────────────
+  "home.pricing.lite.btn2": "Empieza Gratis",
+  "home.pricing.essential.price2": "$6.99",
+  "home.pricing.essential.btn2": "Iniciar Prueba Gratuita de 30 Días",
+  "home.pricing.premium.price2": "$12.99",
+  "home.pricing.premium.name2": "Premium — Legacy Vault",
+  "home.pricing.premium.btn2": "Proteger Mi Legado",
+
+  // ── Testimonios ───────────────────────────────────────────────────────────
+  "home.testimonials.title": "Lo Que Dicen Nuestros Usuarios",
+  "home.testimonials.subtitle": "Voces reales. Familias reales. Tranquilidad real.",
+  "home.testimonials.t1": "Ahora mis hijos pueden escuchar mi voz en cualquier momento.",
+  "home.testimonials.t2": "Por fin algo que mi mamá puede usar sin necesitar un smartphone.",
+  "home.testimonials.t3": "El Legacy Vault me da tranquilidad de saber que mi familia siempre tendrá mi voz.",
+  "home.testimonials.n1": "Maria G.",
+  "home.testimonials.n2": "James T.",
+  "home.testimonials.n3": "Sandra K.",
+
+  // ── Preguntas Frecuentes ──────────────────────────────────────────────────
+  "home.faq.title": "Preguntas Frecuentes",
+  "home.faq.subtitle": "Todo lo que necesitas saber sobre SureTalk.",
+  "home.faq.q1": "¿Qué es SureTalk LITE?",
+  "home.faq.a1": "Un plan gratuito con 3 contactos y 3 notas de voz. Perfecto para comenzar sin tarjeta de crédito.",
+  "home.faq.q2": "¿Qué es SureTalk Essential?",
+  "home.faq.a2": "Nuestro plan principal con almacenamiento expandido y hasta 9 contactos, más descarga de notas de voz y funciones IVR mejoradas.",
+  "home.faq.q3": "¿Qué es Legacy Vault?",
+  "home.faq.a3": "Una función premium que preserva tu voz permanentemente y te permite crear Testamentos de Voz y programar mensajes para entrega futura.",
+  "home.faq.q4": "¿Necesito internet para usar SureTalk?",
+  "home.faq.a4": "No. SureTalk funciona desde prácticamente cualquier teléfono: celulares, teléfonos fijos y smartphones.",
+  "home.faq.q5": "¿Puedo mejorar mi plan en cualquier momento?",
+  "home.faq.a5": "Sí. Mejora instantáneamente desde tu panel. Tus notas de voz y contactos siempre se conservan.",
+
+  // ── CTA Final y Pie de Página (2.0) ──────────────────────────────────────
+  "home.finalCta.title": "Empieza Gratis con SureTalk LITE Hoy.",
+  "home.finalCta.sub": "Sin Tarjeta de Crédito.",
+  "home.finalCta.btn": "Crear Mi Cuenta Gratuita",
+
+  // ── Página Legacy Vault ───────────────────────────────────────────────────
+  "vault.lp.badge": "Función Premium",
+  "vault.lp.headline": "Mantente Conectado Hoy.",
+  "vault.lp.headline2": "Sé Recordado Mañana.",
+  "vault.lp.sub": "Algunas voces deben durar para siempre.",
+  "vault.lp.cta": "Empieza Tu Legacy Vault Hoy",
+  "vault.lp.ctaSub": "$12.99/mes — Cancela cuando quieras",
+  "vault.lp.f1.title": "Recuerdos de Voz Permanentes",
+  "vault.lp.f1.desc": "Preserva grabaciones importantes indefinidamente con almacenamiento AWS Glacier.",
+  "vault.lp.f2.title": "Testamentos de Voz",
+  "vault.lp.f2.desc": "Crea mensajes e instrucciones para seres queridos cuando llegue el momento.",
+  "vault.lp.f3.title": "Mensajes de Legado Programados",
+  "vault.lp.f3.desc": "Envía mensajes futuros en cumpleaños, aniversarios, graduaciones y momentos importantes.",
+  "vault.lp.f4.title": "Preservación Segura",
+  "vault.lp.f4.desc": "Almacenamiento en la nube a largo plazo con cifrado de extremo a extremo y gestión KMS.",
+  "vault.lp.how.title": "Cómo Funciona Legacy Vault",
+  "vault.lp.how.s1": "Regístrate en Premium",
+  "vault.lp.how.s1d": "Actualiza tu cuenta para desbloquear las funciones de Legacy Vault.",
+  "vault.lp.how.s2": "Graba Tus Mensajes",
+  "vault.lp.how.s2d": "Usa el panel o llama a nuestro número para grabar notas de voz.",
+  "vault.lp.how.s3": "Programa la Entrega Futura",
+  "vault.lp.how.s3d": "Programa mensajes para hitos o déjalos como recuerdos permanentes.",
+  "vault.lp.bottomCta": "Tu voz es tu legado. No dejes que desaparezca.",
+  "vault.lp.included": "Qué Incluye el Plan Premium",
+
+  // ── Barra de Navegación (2.0) ─────────────────────────────────────────────
+  "nav.legacyVault": "Legacy Vault",
+  "nav.startFree": "Empieza Gratis",
+  "nav.howItWorks": "Cómo Funciona",
 };
 
 export default es;

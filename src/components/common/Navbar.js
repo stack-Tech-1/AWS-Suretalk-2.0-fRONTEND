@@ -19,30 +19,36 @@ export default function Navbar({ type = "landing" }) {
 
           {type === "landing" && (
             <div className="flex items-center space-x-6">
-              <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium hidden md:block transition-colors">
+              <a href="/#features" className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 font-medium hidden md:block transition-colors text-sm">
                 {t('nav.features')}
               </a>
-              <a href="#pricing" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium hidden md:block transition-colors">
+              <a href="/#pricing" className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 font-medium hidden md:block transition-colors text-sm">
                 {t('nav.pricing')}
               </a>
               <Link
+                href="/legacy-vault"
+                className="text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 font-medium hidden md:block transition-colors text-sm"
+              >
+                {t('nav.legacyVault')}
+              </Link>
+              <Link
                 href="/login"
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium transition-colors text-sm"
               >
                 {t('nav.signIn')}
               </Link>
               <button
                 onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-                className="text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                 title={lang === 'en' ? t('nav.switchToSpanish') : t('nav.switchToEnglish')}
               >
                 {lang === 'en' ? 'ES' : 'EN'}
               </button>
               <Link
                 href="/signup"
-                className="btn-primary px-6 py-2"
+                className="btn-primary px-5 py-2 text-sm"
               >
-                {t('nav.getStartedFree')}
+                {t('nav.startFree')}
               </Link>
             </div>
           )}

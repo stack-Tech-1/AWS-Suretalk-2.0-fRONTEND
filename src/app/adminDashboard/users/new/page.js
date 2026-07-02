@@ -38,8 +38,8 @@ export default function CreateUser() {
 
   const subscriptionPlans = [
     { id: "LITE", name: "Lite", storage: 2, contacts: 10, notes: 50, price: "$0" },
-    { id: "ESSENTIAL", name: "Essential", storage: 5, contacts: 50, notes: 100, price: "$4.99" },
-    { id: "LEGACY_VAULT_PREMIUM", name: "Premium", storage: 1000, contacts: 500, notes: 1000, price: "$9.99" },
+    { id: "ESSENTIAL", name: "Essential", storage: 5, contacts: 50, notes: 100, price: "$6.99" },
+    { id: "LEGACY_VAULT_PREMIUM", name: "Premium", storage: 1000, contacts: 500, notes: 1000, price: "$12.99" },
   ];
 
   // Breadcrumb items
