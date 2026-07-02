@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import Image from 'next/image';
 import Head from "next/head";
+import LogoIcon from "@/components/common/LogoIcon";
 import Link from "next/link";
 
 export default function AuthLayout({
@@ -34,14 +34,7 @@ export default function AuthLayout({
         <nav className="relative z-10 py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-            <Image
-              unoptimized
-              src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
-              alt="SureTalk Logo"
-              width={40}
-              height={40}
-              className="object-contain"
-            />
+            <LogoIcon size={40} />
               <span className="text-xl font-bold text-gray-800">SureTalk</span>
             </Link>
             

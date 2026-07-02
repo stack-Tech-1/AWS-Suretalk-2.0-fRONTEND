@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Mail, Smartphone, Eye, EyeOff, AlertCircle, Shield, CheckCircle, Mic, Heart, Globe } from "lucide-react";
-import Image from 'next/image';
+import LogoIcon from "@/components/common/LogoIcon";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "../../utils/api";
@@ -159,14 +159,7 @@ function LoginInner() {
             {/* Logo */}
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-3">
-                <Image
-                  unoptimized
-                  src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
-                  alt="SureTalk Logo"
-                  width={44}
-                  height={44}
-                  className="object-contain"
-                />
+                <LogoIcon size={44} />
                 <span className="text-3xl font-bold text-white">SureTalk</span>
               </div>
               <p className="text-white/75 text-base leading-snug">
@@ -202,14 +195,7 @@ function LoginInner() {
           <div className="glass md:rounded-none rounded-3xl px-8 py-10 flex flex-col justify-center">
             {/* Mobile-only logo */}
             <div className="flex md:hidden items-center justify-center gap-3 mb-6">
-              <Image
-                unoptimized
-                src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
-                alt="SureTalk Logo"
-                width={36}
-                height={36}
-                className="object-contain"
-              />
+              <LogoIcon size={36} />
               <span className="text-2xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
                 SureTalk
               </span>
