@@ -144,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // 5. Hard redirect — token is already gone before this line
-    window.location.href = '/login';
+    window.location.href = 'https://suretalknow.com';
   };
 
   // 🎯 Helper methods for common checks
