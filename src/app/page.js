@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "../contexts/LanguageContext";
+import LogoIcon from "../components/common/LogoIcon";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -168,9 +169,7 @@ export default function Home() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-white" />
-              </div>
+              <LogoIcon size={36} />
               <span className="text-xl font-bold text-gray-900 dark:text-white">SureTalk</span>
             </Link>
 
@@ -268,6 +267,12 @@ export default function Home() {
         </div>
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Hero logo */}
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
+            className="flex justify-center mb-6">
+            <LogoIcon size={72} className="drop-shadow-xl" />
+          </motion.div>
+
           {/* Badge */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-700 mb-8">
@@ -562,9 +567,7 @@ export default function Home() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
+                <LogoIcon size={36} />
                 <span className="text-white font-bold text-lg">SureTalk</span>
               </div>
               <p className="text-sm leading-relaxed mb-4">{t("home.footer.tagline")}</p>

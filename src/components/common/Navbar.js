@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LogoIcon from "@/components/common/LogoIcon";
 
 export default function Navbar({ type = "landing" }) {
   const { lang, setLang, t } = useLanguage();
@@ -11,9 +11,7 @@ export default function Navbar({ type = "landing" }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-accent-500 rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-white" />
-            </div>
+            <LogoIcon size={40} />
             <span className="text-xl font-bold text-gray-800 dark:text-white">SureTalk</span>
           </Link>
 

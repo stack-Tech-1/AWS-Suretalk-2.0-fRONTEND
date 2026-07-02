@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { X, Home, MessageSquare, Users, Settings, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from '@/contexts/AuthContext';
+import LogoIcon from "@/components/common/LogoIcon";
 
 export default function MobileMenu({ isOpen, onClose, type = "user" }) {
   const { logout } = useAuth();
@@ -46,9 +47,7 @@ export default function MobileMenu({ isOpen, onClose, type = "user" }) {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-accent-500 rounded flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-white" />
-              </div>
+              <LogoIcon size={32} />
               <span className="font-bold text-gray-800">
                 SureTalk {type === "admin" ? "Admin" : ""}
               </span>

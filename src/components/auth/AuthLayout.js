@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import Image from 'next/image';
 import Head from "next/head";
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
 
 export default function AuthLayout({
   children,

@@ -8,7 +8,6 @@ import {
   Shield,
   ArrowRight,
   CheckCircle,
-  MessageSquare,
   UserCheck,
   Mic,
   Clock,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import Navbar from "../../components/common/Navbar";
 import { useLanguage } from "../../contexts/LanguageContext";
+import LogoIcon from "../../components/common/LogoIcon";
 
 export default function LegacyVaultPage() {
   const { t } = useLanguage();
@@ -222,9 +222,7 @@ export default function LegacyVaultPage() {
       <footer className="bg-gray-900 dark:bg-gray-950 text-gray-400 py-10">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-white" />
-            </div>
+            <LogoIcon size={32} />
             <span className="text-white font-bold">SureTalk</span>
           </div>
           <div className="flex gap-6 text-sm">

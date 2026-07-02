@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import Link from "next/link";
 import { Dialog } from '@headlessui/react';
-import { Menu, X, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Menu, X, ArrowLeft } from 'lucide-react';
 import Button from "../common/Button";
+import LogoIcon from "../common/LogoIcon";
 
 export default function PageNavigation({ showBackButton = true }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,9 +27,7 @@ export default function PageNavigation({ showBackButton = true }) {
               )}
               
               <Link href="/" className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
+                <LogoIcon size={40} />
                 <span className="text-xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
               </Link>
             </div>
@@ -79,9 +78,7 @@ export default function PageNavigation({ showBackButton = true }) {
           <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gradient-to-b from-white/95 to-gray-50/95 backdrop-blur-xl px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10 shadow-2xl">
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-accent-500 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-white" />
-                </div>
+                <LogoIcon size={40} />
                 <span className="text-xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
               </Link>
               <button
