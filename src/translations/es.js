@@ -365,6 +365,10 @@ const es = {
   "common.markAllRead": "Marcar todo como leído",
   "common.areYouSure": "¿Estás seguro?",
   "common.thisActionCannotBeUndone": "Esta acción no se puede deshacer.",
+  "common.clearSearch": "Borrar búsqueda",
+  "common.of": "de",
+  "common.status": "Estado",
+  "common.actions": "Acciones",
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   "dash.greetingMorning": "Buenos Días",
@@ -419,6 +423,7 @@ const es = {
   "dash.menu.adminProfile": "Perfil de Admin",
   "dash.menu.systemSettings": "Configuración del Sistema",
   "dash.menu.logs": "Registros",
+  "dash.home": "Inicio",
 
   // ── Voice Notes ────────────────────────────────────────────────────────────
   "voice.title": "Notas de Voz",
@@ -521,6 +526,22 @@ const es = {
   "scheduled.selectRecipient": "Seleccionar Destinatario",
   "scheduled.scheduleDate": "Fecha y Hora Programada",
   "scheduled.message": "Mensaje",
+  "scheduled.allMessages": "Todos los mensajes",
+  "scheduled.statusScheduled": "Programado",
+  "scheduled.upcoming": "Próximos",
+  "scheduled.statusSent": "Enviado",
+  "scheduled.statusFailed": "Fallido",
+  "scheduled.statusCancelled": "Cancelado",
+  "scheduled.totalMessages": "Total de mensajes",
+  "scheduled.searchPlaceholder": "Buscar mensajes...",
+  "scheduled.tableMessage": "Mensaje",
+  "scheduled.tableRecipient": "Destinatario",
+  "scheduled.tableScheduledFor": "Programado para",
+  "scheduled.cancelTitle": "Cancelar mensaje programado",
+  "scheduled.cancelConfirm": "¿Estás seguro de que deseas cancelar este mensaje programado? Esta acción no se puede deshacer.",
+  "scheduled.keepScheduled": "Mantener programado",
+  "scheduled.sendTest": "Enviar prueba",
+  "scheduled.sendTestDesc": "Envía una prueba para verificar que este mensaje funciona correctamente.",
 
   // ── Notifications ──────────────────────────────────────────────────────────
   "notifications.title": "Notificaciones",
@@ -531,6 +552,10 @@ const es = {
   "notifications.unread": "No leídas",
   "notifications.all": "Todas",
   "notifications.new": "Nueva",
+  "notifications.searchPlaceholder": "Buscar notificaciones...",
+  "notifications.allCaughtUp": "¡Estás al día!",
+  "notifications.markAsRead": "Marcar como leída",
+  "notifications.settings": "Configuración de notificaciones",
 
   // ── Billing ────────────────────────────────────────────────────────────────
   "billing.title": "Facturación",
@@ -559,6 +584,12 @@ const es = {
   "billing.noCardsDesc": "Agrega una tarjeta para gestionar tu suscripción",
   "billing.successTitle": "¡Pago Exitoso!",
   "billing.successSubtitle": "Tu suscripción ha sido activada",
+  "billing.manageSubscription": "Gestionar Suscripción",
+  "billing.manageBilling": "Gestionar Facturación",
+  "billing.choosePlan": "Elige un Plan",
+  "billing.choosePlanDesc": "Cambia tu plan en cualquier momento. Cancela cuando quieras.",
+  "billing.downgradeToFree": "Cambiar a Gratuito",
+  "billing.downgradeTo": "Cambiar a",
 
   // ── Settings ───────────────────────────────────────────────────────────────
   "settings.title": "Configuración",
@@ -601,6 +632,16 @@ const es = {
   "settings.dangerZone": "Zona de Peligro",
   "settings.deleteWarning": "Esta acción es irreversible. Todos tus datos serán eliminados permanentemente.",
   "settings.confirmDeleteType": "Escribe 'ELIMINAR' para confirmar",
+  "settings.navProfile": "Perfil",
+  "settings.navSecurity": "Seguridad",
+  "settings.navNotifications": "Notificaciones",
+  "settings.navAppearance": "Apariencia",
+  "settings.navPrivacy": "Privacidad",
+  "settings.navBilling": "Facturación",
+  "settings.navData": "Datos y respaldo",
+  "settings.saveAll": "Guardar todos los cambios",
+  "settings.profileSettings": "Configuración de perfil",
+  "settings.billingSubscription": "Facturación y suscripción",
 
   // ── Help & Support ─────────────────────────────────────────────────────────
   "support.title": "Ayuda y Soporte",
@@ -619,6 +660,11 @@ const es = {
   "support.noTicketsDesc": "Crea un ticket si necesitas ayuda",
   "support.backToArticles": "Volver a Artículos",
   "support.backToTickets": "Volver a Tickets",
+  "support.newTicket": "Nuevo ticket",
+  "support.knowledgeBase": "Base de conocimiento",
+  "support.myTickets": "Mis tickets",
+  "support.noArticles": "No se encontraron artículos",
+  "support.createFirstTicket": "Crea tu primer ticket",
 
   // ── Admin ──────────────────────────────────────────────────────────────────
   "admin.title": "Panel de Administrador",

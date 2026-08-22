@@ -365,6 +365,10 @@ const en = {
   "common.markAllRead": "Mark all read",
   "common.areYouSure": "Are you sure?",
   "common.thisActionCannotBeUndone": "This action cannot be undone.",
+  "common.clearSearch": "Clear search",
+  "common.of": "of",
+  "common.status": "Status",
+  "common.actions": "Actions",
 
   // ── Dashboard ──────────────────────────────────────────────────────────────
   "dash.greetingMorning": "Good Morning",
@@ -419,6 +423,7 @@ const en = {
   "dash.menu.adminProfile": "Admin Profile",
   "dash.menu.systemSettings": "System Settings",
   "dash.menu.logs": "Logs",
+  "dash.home": "Home",
 
   // ── Voice Notes ────────────────────────────────────────────────────────────
   "voice.title": "Voice Notes",
@@ -521,6 +526,22 @@ const en = {
   "scheduled.selectRecipient": "Select Recipient",
   "scheduled.scheduleDate": "Schedule Date & Time",
   "scheduled.message": "Message",
+  "scheduled.allMessages": "All Messages",
+  "scheduled.statusScheduled": "Scheduled",
+  "scheduled.upcoming": "Upcoming",
+  "scheduled.statusSent": "Sent",
+  "scheduled.statusFailed": "Failed",
+  "scheduled.statusCancelled": "Cancelled",
+  "scheduled.totalMessages": "Total Messages",
+  "scheduled.searchPlaceholder": "Search messages...",
+  "scheduled.tableMessage": "Message",
+  "scheduled.tableRecipient": "Recipient",
+  "scheduled.tableScheduledFor": "Scheduled For",
+  "scheduled.cancelTitle": "Cancel Scheduled Message",
+  "scheduled.cancelConfirm": "Are you sure you want to cancel this scheduled message? This cannot be undone.",
+  "scheduled.keepScheduled": "Keep Scheduled",
+  "scheduled.sendTest": "Send Test",
+  "scheduled.sendTestDesc": "Send a test delivery to verify this message works correctly.",
 
   // ── Notifications ──────────────────────────────────────────────────────────
   "notifications.title": "Notifications",
@@ -531,6 +552,10 @@ const en = {
   "notifications.unread": "Unread",
   "notifications.all": "All",
   "notifications.new": "New",
+  "notifications.searchPlaceholder": "Search notifications...",
+  "notifications.allCaughtUp": "You're all caught up!",
+  "notifications.markAsRead": "Mark as read",
+  "notifications.settings": "Notification Settings",
 
   // ── Billing ────────────────────────────────────────────────────────────────
   "billing.title": "Billing",
@@ -559,6 +584,12 @@ const en = {
   "billing.noCardsDesc": "Add a card to manage your subscription",
   "billing.successTitle": "Payment Successful!",
   "billing.successSubtitle": "Your subscription has been activated",
+  "billing.manageSubscription": "Manage Subscription",
+  "billing.manageBilling": "Manage Billing",
+  "billing.choosePlan": "Choose a Plan",
+  "billing.choosePlanDesc": "Upgrade or downgrade your plan at any time. Cancel anytime.",
+  "billing.downgradeToFree": "Downgrade to Free",
+  "billing.downgradeTo": "Downgrade to",
 
   // ── Settings ───────────────────────────────────────────────────────────────
   "settings.title": "Settings",
@@ -601,6 +632,16 @@ const en = {
   "settings.dangerZone": "Danger Zone",
   "settings.deleteWarning": "This action is irreversible. All your data will be permanently deleted.",
   "settings.confirmDeleteType": "Type 'DELETE' to confirm",
+  "settings.navProfile": "Profile",
+  "settings.navSecurity": "Security",
+  "settings.navNotifications": "Notifications",
+  "settings.navAppearance": "Appearance",
+  "settings.navPrivacy": "Privacy",
+  "settings.navBilling": "Billing",
+  "settings.navData": "Data & Backup",
+  "settings.saveAll": "Save All Changes",
+  "settings.profileSettings": "Profile Settings",
+  "settings.billingSubscription": "Billing & Subscription",
 
   // ── Help & Support ─────────────────────────────────────────────────────────
   "support.title": "Help & Support",
@@ -619,6 +660,11 @@ const en = {
   "support.noTicketsDesc": "Create a ticket if you need help",
   "support.backToArticles": "Back to Articles",
   "support.backToTickets": "Back to Tickets",
+  "support.newTicket": "New Ticket",
+  "support.knowledgeBase": "Knowledge Base",
+  "support.myTickets": "My Tickets",
+  "support.noArticles": "No articles found",
+  "support.createFirstTicket": "Create Your First Ticket",
 
   // ── Admin ──────────────────────────────────────────────────────────────────
   "admin.title": "Admin Dashboard",
