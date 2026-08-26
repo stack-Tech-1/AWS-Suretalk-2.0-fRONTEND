@@ -193,21 +193,42 @@ function BillingPageInner() {
   const handlePlanChange = async (newTier) => {
     try {
       setProcessing(true);
-      
+
       const response = await api.request('/billing/change-tier', {
         method: 'POST',
         body: JSON.stringify({ tier: newTier }),
       });
 
       if (response.success) {
+        // Direct change succeeded (IVR user with no Stripe subscription)
         const newPlan = tiers.find(p => p.id === newTier);
         setCurrentPlan(newPlan);
-        toast.success(`Successfully switched to ${newPlan.name} plan!`, 'Plan Updated');
+        toast.success(`Successfully switched to ${newPlan?.name || newTier} plan!`, 'Plan Updated');
         await fetchBillingData();
         window.location.reload();
-      } else {
-        throw new Error(response.error);
+        return;
       }
+
+      // Backend says: cancel via Stripe portal (user has an active Stripe subscription)
+      if (response.code === 'USE_PORTAL') {
+        toast.info(
+          'To downgrade to the free plan, please cancel your current subscription from the billing portal.',
+          'Cancel via Portal'
+        );
+        const portalResponse = await api.request('/billing/create-portal-session', {
+          method: 'POST',
+          body: JSON.stringify({ returnUrl: `${window.location.origin}/usersDashboard/billing` }),
+        });
+        if (portalResponse.success) {
+          window.location.href = portalResponse.data.url;
+        } else {
+          throw new Error(portalResponse.error || 'Failed to open billing portal');
+        }
+        return;
+      }
+
+      // Any other failure (e.g. USE_CHECKOUT block — shouldn't be reachable from this path)
+      throw new Error(response.error || 'Failed to change plan');
     } catch (error) {
       console.error('Plan change error:', error);
       toast.error(`Failed to change plan: ${error.message}`);
