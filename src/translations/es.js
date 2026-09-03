@@ -185,6 +185,7 @@ const es = {
   "auth.confirmPasswordPlaceholder": "Vuelve a ingresar tu contraseña",
   "auth.agreeTerms": "Acepto los",
   "auth.agreeTermsAnd": "y la",
+  "auth.ageConfirm": "Confirmo que tengo 13 años de edad o más.",
   "auth.smsConsent": "Acepto recibir mensajes SMS de SureTalk para verificación de cuenta, notificaciones y propósitos de seguridad. La frecuencia de los mensajes puede variar. Se pueden aplicar tarifas de mensajes y datos. Responde STOP para cancelar. Responde HELP para obtener ayuda.",
   "auth.selected": "Seleccionado",
   "auth.selectPlan": "Seleccionar Plan",

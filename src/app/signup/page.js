@@ -24,6 +24,7 @@ export default function Signup() {
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
+    ageConfirmed: false,
     smsConsent: false,
   });
 
@@ -91,7 +92,11 @@ const handleSubmit = async (e) => {
     }
 
     if (!formData.agreeToTerms) {
-      throw new Error("You must agree to the terms and conditions");
+      throw new Error("You must agree to the Terms of Service and Privacy Policy");
+    }
+
+    if (!formData.ageConfirmed) {
+      throw new Error("You must confirm that you are 13 years of age or older");
     }
 
     // Prepare data for API - NOW INCLUDING SELECTED TIER
@@ -100,7 +105,9 @@ const handleSubmit = async (e) => {
       phone: formData.phone,
       fullName: `${formData.firstName} ${formData.lastName}`.trim(),
       password: formData.password,
-      subscriptionTier: selectedTier, 
+      subscriptionTier: selectedTier,
+      agreeToTerms: formData.agreeToTerms,
+      smsConsent: formData.smsConsent,
     };
 
     // Call the real API
@@ -398,6 +405,22 @@ const handleSubmit = async (e) => {
                 <a href="/privacy" className="text-brand-600 hover:underline">
                   {t('auth.privacy')}
                 </a>
+              </label>
+            </div>
+
+            {/* Age Confirmation (REQUIRED) */}
+            <div className="flex items-start mt-3">
+              <input
+                id="ageConfirmed"
+                name="ageConfirmed"
+                type="checkbox"
+                checked={formData.ageConfirmed}
+                onChange={handleChange}
+                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+                required
+              />
+              <label htmlFor="ageConfirmed" className="ml-2 text-sm text-gray-600">
+                {t('auth.ageConfirm')}
               </label>
             </div>
 
