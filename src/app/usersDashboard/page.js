@@ -64,7 +64,7 @@ export default function DashboardHome() {
       // Fire all three independent requests in parallel — was sequential (waterfall)
       const [statsResponse, analyticsResponse, notesResponse] = await Promise.all([
         api.getUserDashboardStats(),
-        api.getActivityAnalytics('week'),
+        api.getActivityAnalytics('week', Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'),
         api.getVoiceNotes({ page: 1, limit: 4 })
       ]);
 
@@ -397,6 +397,10 @@ export default function DashboardHome() {
     },
   ];
 
+  // Activity Overview totals — same 7-day window as the chart
+  const weekNotesCreated = activityData.reduce((sum, d) => sum + (d.notes || 0), 0);
+  const weekListens = activityData.reduce((sum, d) => sum + (d.listens || 0), 0);
+
   // KPI cards link to their pages. On touch screens (no hover) the arrow is always shown;
   // on mouse devices it appears on hover or keyboard focus.
   const statCardLinkClass = "group block focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900";
@@ -597,10 +601,7 @@ export default function DashboardHome() {
                   <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('dash.activityOverview')}</h2>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {analyticsData?.totals?.total_notes_created 
-                    ? `Based on ${analyticsData.totals.total_notes_created} notes and ${analyticsData.totals.total_notes_played} listens`
-                    : 'Your voice note activity this week'
-                  }
+                  {`${t('dash.last7Days')}: ${weekNotesCreated} ${t(weekNotesCreated === 1 ? 'dash.noteCreated' : 'dash.notesCreated')}, ${weekListens} ${t(weekListens === 1 ? 'dash.listen' : 'dash.listens')}`}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -616,7 +617,7 @@ export default function DashboardHome() {
             </div>
 
             <div className="h-72">
-              {activityData.length > 0 && activityData.some(day => day.notes > 0 || day.listens > 0) ? (
+              {weekNotesCreated + weekListens > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={activityData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -661,21 +662,13 @@ export default function DashboardHome() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center">
-                  <Headphones className="w-16 h-16 text-gray-400 mb-4" />
+                  <Activity className="w-16 h-16 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('dash.noRecordings')}
+                    {t('dash.noActivity')}
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-500 text-center max-w-md mb-4">
-                    {t('dash.createFirst')}
+                  <p className="text-gray-500 dark:text-gray-500 text-center max-w-md">
+                    {t('dash.noActivityHint')}
                   </p>
-                  <Link
-                    href="/usersDashboard/voice-notes?record=new"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
-                               text-white rounded-xl hover:shadow-lg transition-all text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    {t('dash.recordNow')}
-                  </Link>
                 </div>
               )}
             </div>

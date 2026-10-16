@@ -760,7 +760,7 @@ async getVaultStats() {
 
 // Analytics endpoints
 async getActivityAnalytics(period = 'week', timezone = 'UTC') {
-  return this.request(`/users/activity?period=${period}&timezone=${timezone}`);
+  return this.request(`/users/activity?period=${encodeURIComponent(period)}&timezone=${encodeURIComponent(timezone)}`);
 }
 
 async recordAnalyticsEvent(eventData) {
