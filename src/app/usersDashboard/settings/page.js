@@ -49,7 +49,7 @@ import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Settings() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const { user, loading: authLoading, logout, refreshProfile } = useAuth(); // ✅ Use AuthContext
   
@@ -188,9 +188,9 @@ export default function Settings() {
         appearance: settings.appearance
       }));
 
-      toast.success('Settings saved successfully', 'Settings');
+      toast.success(t('set.saved'), t('settings.title'));
     } catch (err) {
-      toast.error('Failed to save settings. Please try again.', 'Error');
+      toast.error(t('set.saveError'), t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -215,10 +215,10 @@ export default function Settings() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success('Your data has been exported successfully', 'Export Complete');
+      toast.success(t('set.exportSuccess'), t('set.exportComplete'));
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Failed to export data. Please try again.', 'Export Failed');
+      toast.error(t('set.exportError'), t('set.exportFailed'));
     } finally {
       setExportLoading(false);
     }
@@ -226,7 +226,7 @@ export default function Settings() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
-      toast.error('Please type DELETE to confirm', 'Confirmation Required');
+      toast.error(t('set.typeDeleteToast'), t('set.confirmRequired'));
       return;
     }
 
@@ -237,12 +237,12 @@ export default function Settings() {
         body: JSON.stringify({ confirmation: 'DELETE' })
       });
 
-      toast.success('Your account has been deleted', 'Account Deleted');
+      toast.success(t('set.accountDeleted'), t('set.accountDeletedTitle'));
       await new Promise(resolve => setTimeout(resolve, 2000));
       logout();
       window.location.href = 'https://suretalknow.com';
     } catch (err) {
-      toast.error(err.message || 'Failed to delete account', 'Error');
+      toast.error(err.message || t('set.deleteError'), t('common.error'));
     } finally {
       setDeleting(false);
       setShowDeleteModal(false);
@@ -251,7 +251,7 @@ export default function Settings() {
 
   const handleDisable2FA = async () => {
     if (disable2FACode.length !== 6) {
-      toast.error('Please enter the 6-digit code', '2FA');
+      toast.error(t('set.enterCode'), '2FA');
       return;
     }
     setDisabling2FA(true);
@@ -260,9 +260,9 @@ export default function Settings() {
       setTwoFactorEnabled(false);
       setShowDisable2FAModal(false);
       setDisable2FACode('');
-      toast.success('Two-factor authentication has been disabled', '2FA Disabled');
+      toast.success(t('set.twoFADisabled'), t('set.twoFADisabledTitle'));
     } catch (err) {
-      toast.error(err.message || 'Invalid code. Please try again.', 'Error');
+      toast.error(err.message || t('set.invalidCode'), t('common.error'));
     } finally {
       setDisabling2FA(false);
     }
@@ -272,10 +272,10 @@ export default function Settings() {
     try {
       await api.request(`/devices/${deviceId}`, { method: 'DELETE' });
       setConnectedDevices(prev => prev.filter(device => device.id !== deviceId));
-      toast.success('Device removed successfully');
+      toast.success(t('set.deviceRemoved'));
     } catch (error) {
       console.error('Failed to remove device:', error);
-      toast.error('Failed to remove device');
+      toast.error(t('set.deviceRemoveError'));
     }
   };
 
@@ -426,7 +426,7 @@ export default function Settings() {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
+                    {t('common.saving')}
                   </>
                 ) : (
                   <>
@@ -455,10 +455,10 @@ export default function Settings() {
               </div>
               <div className="space-y-4">
                 {[
-                  { key: "email", label: "Email Notifications", description: "Receive updates via email", icon: MailIcon },
-                  { key: "push", label: "Push Notifications", description: "Get browser push notifications", icon: Bell },
-                  { key: "voice", label: "Voice Alerts", description: "Phone call alerts for important events", icon: Volume2 },
-                  { key: "weeklyDigest", label: "Weekly Digest", description: "Weekly summary of your activity", icon: Calendar },
+                  { key: "email", label: t('set.emailNotif'), description: t('set.emailNotifDesc'), icon: MailIcon },
+                  { key: "push", label: t('set.pushNotif'), description: t('set.pushNotifDesc'), icon: Bell },
+                  { key: "voice", label: t('set.voiceAlerts'), description: t('set.voiceAlertsDesc'), icon: Volume2 },
+                  { key: "weeklyDigest", label: t('set.weeklyDigest'), description: t('set.weeklyDigestDesc'), icon: Calendar },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -498,8 +498,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Eye className="w-5 h-5 text-gray-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Profile Visibility</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Allow others to see your profile</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.profileVisibility')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.profileVisibilityDesc')}</p>
                     </div>
                   </div>
                   <button
@@ -520,8 +520,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Activity className="w-5 h-5 text-gray-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Activity Visibility</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Show your activity to others</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.activityVisibility')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.activityVisibilityDesc')}</p>
                     </div>
                   </div>
                   <button
@@ -541,10 +541,10 @@ export default function Settings() {
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <Trash2 className="w-5 h-5 text-gray-500" />
-                    <h3 className="font-medium text-gray-800 dark:text-white">Auto-delete Old Messages</h3>
+                    <h3 className="font-medium text-gray-800 dark:text-white">{t('set.autoDelete')}</h3>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Automatically delete voice messages older than:
+                    {t('set.autoDeleteDesc')}
                   </p>
                   <div className="flex gap-2">
                     {[30, 90, 180, 365].map((days) => (
@@ -557,7 +557,7 @@ export default function Settings() {
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {days} days
+                        {t('set.days', { count: days })}
                       </button>
                     ))}
                   </div>
@@ -575,12 +575,12 @@ export default function Settings() {
               </div>
               <div className="space-y-6">
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">Theme</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">{t('set.theme')}</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { id: 'light', label: 'Light', icon: Sun },
-                      { id: 'dark', label: 'Dark', icon: Moon },
-                      { id: 'system', label: 'System', icon: SettingsIcon },
+                      { id: 'light', label: t('set.themeLight'), icon: Sun },
+                      { id: 'dark', label: t('set.themeDark'), icon: Moon },
+                      { id: 'system', label: t('set.themeSystem'), icon: SettingsIcon },
                     ].map((themeOption) => (
                       <button
                         key={themeOption.id}
@@ -601,12 +601,12 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">Font Size</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">{t('set.fontSize')}</h3>
                   <div className="flex gap-2">
                     {[
-                      { id: 'small', label: 'Small' },
-                      { id: 'medium', label: 'Medium' },
-                      { id: 'large', label: 'Large' },
+                      { id: 'small', label: t('set.small') },
+                      { id: 'medium', label: t('set.medium') },
+                      { id: 'large', label: t('set.large') },
                     ].map((size) => (
                       <button
                         key={size.id}
@@ -624,12 +624,12 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">Density</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white mb-3">{t('set.density')}</h3>
                   <div className="flex gap-2">
                     {[
-                      { id: 'compact', label: 'Compact' },
-                      { id: 'comfortable', label: 'Comfortable' },
-                      { id: 'spacious', label: 'Spacious' },
+                      { id: 'compact', label: t('set.compact') },
+                      { id: 'comfortable', label: t('set.comfortable') },
+                      { id: 'spacious', label: t('set.spacious') },
                     ].map((density) => (
                       <button
                         key={density.id}
@@ -663,15 +663,15 @@ export default function Settings() {
                     <div className="flex items-center gap-3">
                       <KeyRound className="w-5 h-5 text-gray-500" />
                       <div>
-                        <h3 className="font-medium text-gray-800 dark:text-white">Password</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Last changed: 2 weeks ago</p>
+                        <h3 className="font-medium text-gray-800 dark:text-white">{t('set.password')}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.passwordLastChanged')}</p>
                       </div>
                     </div>
                     <button
                       onClick={handleChangePassword}
                       className="px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg"
                     >
-                      Change
+                      {t('set.change')}
                     </button>
                   </div>
                 </div>
@@ -681,9 +681,9 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-gray-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Two-Factor Authentication</h3>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.twoFA')}</h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {twoFactorEnabled ? 'Enabled — your account is protected' : 'Add an extra layer of security'}
+                        {twoFactorEnabled ? t('set.twoFAOn') : t('set.twoFAOff')}
                       </p>
                     </div>
                   </div>
@@ -710,8 +710,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Bell className="w-5 h-5 text-gray-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Login Alerts</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Get notified of new logins</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.loginAlerts')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.loginAlertsDesc')}</p>
                     </div>
                   </div>
                   <button
@@ -732,10 +732,10 @@ export default function Settings() {
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <Clock className="w-5 h-5 text-gray-500" />
-                    <h3 className="font-medium text-gray-800 dark:text-white">Session Timeout</h3>
+                    <h3 className="font-medium text-gray-800 dark:text-white">{t('set.sessionTimeout')}</h3>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Automatically log out after inactivity:
+                    {t('set.sessionTimeoutDesc')}
                   </p>
                   <div className="flex gap-2">
                     {[15, 30, 60, 120].map((minutes) => (
@@ -758,7 +758,7 @@ export default function Settings() {
                 <div>
                   <div className="flex items-center gap-3 mb-3">
                     <SmartphoneIcon className="w-5 h-5 text-gray-500" />
-                    <h3 className="font-medium text-gray-800 dark:text-white">Connected Devices</h3>
+                    <h3 className="font-medium text-gray-800 dark:text-white">{t('set.devices')}</h3>
                   </div>
                   <div className="space-y-3">
                     {connectedDevices.map((device) => (
@@ -768,8 +768,8 @@ export default function Settings() {
                           <div>
                             <h4 className="font-medium text-gray-800 dark:text-white">{device.name}</h4>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {device.location} • Last active: {new Date(device.lastActive).toLocaleDateString()}
-                              {device.current && " • Current device"}
+                              {device.location} • {t('set.lastActive')}: {new Date(device.lastActive).toLocaleDateString(locale)}
+                              {device.current && ` • ${t('set.currentDevice')}`}
                             </p>
                           </div>
                         </div>
@@ -801,7 +801,7 @@ export default function Settings() {
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium text-gray-800 dark:text-white">Personal Information</h3>
+                        <h3 className="font-medium text-gray-800 dark:text-white">{t('set.personalInfo')}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {user.full_name} • {user.email} {/* ✅ Use user from context */}
                         </p>
@@ -810,14 +810,14 @@ export default function Settings() {
                         onClick={handleUpdateProfile}
                         className="px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg"
                       >
-                        Edit Profile
+                        {t('set.editProfile')}
                       </button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">Subscription Tier</h3>
+                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">{t('set.subscriptionTier')}</h3>
                       <div className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${
                         user.subscription_tier === 'LEGACY_VAULT_PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
                         user.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
@@ -828,21 +828,21 @@ export default function Settings() {
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">Account Created</h3>
+                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">{t('set.accountCreated')}</h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString(locale) : t('schedd.na')}
                       </p>
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">Last Login</h3>
+                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">{t('set.lastLogin')}</h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {user.last_login ? new Date(user.last_login).toLocaleString() : 'N/A'}
+                        {user.last_login ? new Date(user.last_login).toLocaleString(locale) : t('schedd.na')}
                       </p>
                     </div>
 
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">Storage Limit</h3>
+                      <h3 className="font-medium text-gray-800 dark:text-white mb-2">{t('set.storageLimit')}</h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {user.storage_limit_gb || 5} GB
                       </p>
@@ -852,7 +852,7 @@ export default function Settings() {
               ) : (
                 <div className="text-center py-8">
                   <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">Loading profile information...</p>
+                  <p className="text-gray-600 dark:text-gray-400">{t('set.loadingProfile')}</p>
                 </div>
               )}
             </div>
@@ -874,8 +874,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-blue-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Manage Subscription</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Upgrade, downgrade, or cancel your plan</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.manageSubscription')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.manageSubscriptionDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -889,8 +889,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <FileText className="w-5 h-5 text-green-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Billing History</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">View and download past invoices</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.billingHistory')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.billingHistoryDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -904,8 +904,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-purple-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Payment Methods</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Manage your saved payment methods</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.paymentMethods')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.paymentMethodsDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -930,8 +930,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <Download className="w-5 h-5 text-blue-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Export All Data</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Download all your voice notes and data</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.exportAll')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.exportAllDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -945,8 +945,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <DatabaseBackup className="w-5 h-5 text-green-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Backup Settings</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Configure automatic data backups</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.backupSettings')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.backupSettingsDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -960,8 +960,8 @@ export default function Settings() {
                   <div className="flex items-center gap-3">
                     <UserX className="w-5 h-5 text-red-500" />
                     <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">Delete Account</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Permanently delete your account and all data</p>
+                      <h3 className="font-medium text-gray-800 dark:text-white">{t('set.deleteAccount')}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('set.deleteAccountDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -984,17 +984,17 @@ export default function Settings() {
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <Download className="w-6 h-6 text-blue-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Export Data</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('set.exportData')}</h3>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              This will download a ZIP archive with your profile, voice notes (including audio download links), contacts, scheduled messages, and activity history. The download may take a moment.
+              {t('set.exportDataDesc')}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmModal(null)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleExportData}
@@ -1004,10 +1004,10 @@ export default function Settings() {
                 {exportLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Exporting...
+                    {t('set.exporting')}
                   </>
                 ) : (
-                  'Export Data'
+                  t('set.exportData')
                 )}
               </button>
             </div>
@@ -1024,10 +1024,10 @@ export default function Settings() {
               <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/30">
                 <ShieldCheck className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Disable 2FA</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('set.disable2FA')}</h3>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-              Enter the 6-digit code from your authenticator app to confirm you want to disable two-factor authentication.
+              {t('set.disable2FADesc')}
             </p>
             <input
               type="text"
@@ -1046,7 +1046,7 @@ export default function Settings() {
                 className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 disabled={disabling2FA}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDisable2FA}
@@ -1054,7 +1054,7 @@ export default function Settings() {
                 className="flex-1 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {disabling2FA ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {disabling2FA ? 'Disabling…' : 'Disable 2FA'}
+                {disabling2FA ? t('set.disabling') : t('set.disable2FA')}
               </button>
             </div>
           </div>
@@ -1071,26 +1071,24 @@ export default function Settings() {
                 <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Account</h3>
-                <p className="text-sm text-red-600">This action cannot be undone</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{t('set.deleteAccount')}</h3>
+                <p className="text-sm text-red-600">{t('set.cannotUndo')}</p>
               </div>
             </div>
 
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              This will permanently delete your account, cancel any active subscriptions,
-              and remove access to all your data. Your voice notes and vault items will be
-              retained for 30 days before permanent deletion.
+              {t('set.deleteAccountWarning')}
             </p>
 
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Type <span className="font-mono font-bold text-red-600">DELETE</span> to confirm:
+              {t('set.typePrefix')} <span className="font-mono font-bold text-red-600">DELETE</span> {t('set.typeSuffix')}
             </p>
 
             <input
               type="text"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE here"
+              placeholder={t('set.typeDeletePlaceholder')}
               className="w-full px-3 py-2.5 rounded-xl border border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
             />
 
@@ -1099,14 +1097,14 @@ export default function Settings() {
                 onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={deleteConfirmText !== 'DELETE' || deleting}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-40"
               >
-                {deleting ? 'Deleting...' : 'Delete My Account'}
+                {deleting ? t('common.deleting') : t('set.deleteMyAccount')}
               </button>
             </div>
           </div>

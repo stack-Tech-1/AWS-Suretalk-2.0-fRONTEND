@@ -15,9 +15,11 @@ import {
 import { api } from "@/utils/api";
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ChangePassword() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -35,12 +37,12 @@ export default function ChangePassword() {
 
     // Validation
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('New passwords do not match');
+      setError(t('pwd.noMatch'));
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      setError('New password must be at least 8 characters long');
+      setError(t('pwd.tooShort'));
       return;
     }
 
@@ -53,7 +55,7 @@ export default function ChangePassword() {
       });
 
       if (response.success) {
-        toast.success('Password changed successfully');
+        toast.success(t('pwd.success'));
         
         // Clear form
         setFormData({
@@ -69,8 +71,8 @@ export default function ChangePassword() {
       }
     } catch (error) {
       console.error('Failed to change password:', error);
-      setError(error.message || 'Failed to change password');
-      toast.error(error.message || 'Failed to change password');
+      setError(error.message || t('pwd.error'));
+      toast.error(error.message || t('pwd.error'));
     } finally {
       setLoading(false);
     }
@@ -89,10 +91,10 @@ export default function ChangePassword() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Change Password
+              {t('pwd.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Update your account password
+              {t('pwd.subtitle')}
             </p>
           </div>
         </div>
@@ -112,7 +114,7 @@ export default function ChangePassword() {
         {/* Current Password */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Current Password
+            {t('pwd.current')}
           </label>
           <div className="relative">
             <input
@@ -123,7 +125,7 @@ export default function ChangePassword() {
               className="w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                        focus:border-transparent transition-all"
-              placeholder="Enter current password"
+              placeholder={t('pwd.currentPlaceholder')}
             />
             <button
               type="button"
@@ -142,7 +144,7 @@ export default function ChangePassword() {
         {/* New Password */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            New Password
+            {t('pwd.new')}
           </label>
           <div className="relative">
             <input
@@ -153,7 +155,7 @@ export default function ChangePassword() {
               className="w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                        focus:border-transparent transition-all"
-              placeholder="Enter new password"
+              placeholder={t('pwd.newPlaceholder')}
             />
             <button
               type="button"
@@ -168,14 +170,14 @@ export default function ChangePassword() {
             </button>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Password must be at least 8 characters long
+            {t('pwd.minHint')}
           </p>
         </div>
 
         {/* Confirm Password */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Confirm New Password
+            {t('pwd.confirm')}
           </label>
           <div className="relative">
             <input
@@ -186,7 +188,7 @@ export default function ChangePassword() {
               className="w-full px-4 py-3 pr-10 rounded-xl border border-gray-300 dark:border-gray-600 
                        bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                        focus:border-transparent transition-all"
-              placeholder="Confirm new password"
+              placeholder={t('pwd.confirmPlaceholder')}
             />
             <button
               type="button"
@@ -207,27 +209,27 @@ export default function ChangePassword() {
                 : 'text-red-600 dark:text-red-400'
             }`}>
               {formData.newPassword === formData.confirmPassword 
-                ? '✓ Passwords match' 
-                : '✗ Passwords do not match'}
+                ? `✓ ${t('pwd.match')}` 
+                : `✗ ${t('pwd.noMatchShort')}`}
             </p>
           )}
         </div>
 
         {/* Password Requirements */}
         <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-          <h3 className="font-medium text-gray-800 dark:text-white mb-2">Password Requirements</h3>
+          <h3 className="font-medium text-gray-800 dark:text-white mb-2">{t('pwd.requirements')}</h3>
           <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
             <li className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              At least 8 characters long
+              {t('pwd.req1')}
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Use a mix of letters, numbers, and symbols
+              {t('pwd.req2')}
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Avoid common words and patterns
+              {t('pwd.req3')}
             </li>
           </ul>
         </div>
@@ -238,7 +240,7 @@ export default function ChangePassword() {
             href="/usersDashboard/settings"
             className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-center transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </Link>
           <button
             type="submit"
@@ -248,12 +250,12 @@ export default function ChangePassword() {
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Changing...
+                {t('pwd.changing')}
               </>
             ) : (
               <>
                 <Key className="w-5 h-5" />
-                Change Password
+                {t('pwd.title')}
               </>
             )}
           </button>

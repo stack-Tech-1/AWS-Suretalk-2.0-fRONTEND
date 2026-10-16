@@ -9,8 +9,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DataExport() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   const handleExportData = async () => {
@@ -35,9 +37,9 @@ export default function DataExport() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast.success('Your data has been exported successfully', 'Export Complete');
+      toast.success(t('set.exportSuccess'), t('set.exportComplete'));
     } catch (err) {
-      toast.error('Failed to export data. Please try again.', 'Export Failed');
+      toast.error(t('set.exportError'), t('set.exportFailed'));
     } finally {
       setLoading(false);
     }
@@ -51,8 +53,8 @@ export default function DataExport() {
           <ArrowLeft className="w-5 h-5 text-gray-500" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Data Export</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Download a copy of your SureTalk data</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('exp.title')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('exp.subtitle')}</p>
         </div>
       </div>
 
@@ -63,14 +65,12 @@ export default function DataExport() {
             <Download className="w-6 h-6 text-brand-600 dark:text-brand-400" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Export All Your Data</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{t('exp.cardTitle')}</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Download a complete copy of your SureTalk data as a ZIP archive. Includes your profile,
-              voice notes with direct audio download links, contacts, scheduled messages, and activity history.
-              Audio download links are valid for 7 days from export date.
+              {t('exp.cardDesc')}
             </p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {['Profile & Settings', 'Voice Notes + Audio Links', 'Contacts', 'Scheduled Messages', 'Activity Log'].map(item => (
+              {[t('exp.itemProfile'), t('exp.itemVoiceNotes'), t('contacts.title'), t('scheduled.title'), t('exp.itemActivity')].map(item => (
                 <span key={item} className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400">
                   {item}
                 </span>
@@ -84,12 +84,12 @@ export default function DataExport() {
               {loading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Preparing Export...
+                  {t('exp.preparing')}
                 </>
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  Export My Data
+                  {t('exp.exportMyData')}
                 </>
               )}
             </button>
@@ -101,11 +101,9 @@ export default function DataExport() {
       <div className="card p-4 flex items-start gap-3">
         <Info className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-gray-900 dark:text-white">About your data</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">{t('exp.aboutTitle')}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Your export is a ZIP archive containing JSON files and presigned audio download links.
-            Audio links expire 7 days after export — generate a new export for fresh links.
-            Exports are available at any time.
+            {t('exp.aboutDesc')}
           </p>
         </div>
       </div>

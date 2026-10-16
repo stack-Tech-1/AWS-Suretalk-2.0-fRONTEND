@@ -15,9 +15,11 @@ import Image from 'next/image';
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ProfileSettings() {
   const { user, loading: authLoading, refreshProfile } = useAuth(); // ✅ Use AuthContext
+  const { t, locale } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,14 +73,14 @@ export default function ProfileSettings() {
       const response = await api.updateProfile(formData);
       
       if (response.success) {
-        toast.success('Profile updated successfully');
+        toast.success(t('prof.updated'));
         // ✅ Use refreshProfile from AuthContext to update user data
         await refreshProfile();
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      setError(error.message || 'Failed to update profile');
-      toast.error(error.message || 'Failed to update profile');
+      setError(error.message || t('prof.updateError'));
+      toast.error(error.message || t('prof.updateError'));
     } finally {
       setSaving(false);
     }
@@ -89,12 +91,12 @@ export default function ProfileSettings() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+      toast.error(t('prof.selectImage'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+      toast.error(t('prof.imageTooLarge'));
       return;
     }
 
@@ -112,7 +114,7 @@ export default function ProfileSettings() {
       });
 
       if (!presignResponse.success) {
-        throw new Error(presignResponse.error || 'Failed to get upload URL');
+        throw new Error(presignResponse.error || t('prof.uploadUrlError'));
       }
 
       const { presignedUrl, publicUrl } = presignResponse.data;
@@ -125,7 +127,7 @@ export default function ProfileSettings() {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload image to storage');
+        throw new Error(t('prof.uploadStorageError'));
       }
 
       // Step 3 — Confirm and save URL to database
@@ -145,11 +147,11 @@ export default function ProfileSettings() {
           }
         } catch {}
         await refreshProfile();
-        toast.success('Profile photo updated successfully');
+        toast.success(t('prof.photoUpdated'));
       }
 
     } catch (err) {
-      toast.error('Failed to upload profile photo');
+      toast.error(t('prof.photoError'));
       setFormData(prev => ({
         ...prev,
         profileImageUrl: user?.profile_image_url || ''
@@ -181,10 +183,10 @@ export default function ProfileSettings() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-              Profile Settings
+              {t('settings.profileSettings')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Update your personal information
+              {t('prof.subtitle')}
             </p>
           </div>
         </div>
@@ -210,7 +212,7 @@ export default function ProfileSettings() {
                   <Image
                     unoptimized
                     src={profileImageDisplayUrl || formData.profileImageUrl}
-                    alt="Profile"
+                    alt={t('common.profile')}
                     width={128}
                     height={128}
                     className="w-full h-full object-cover"
@@ -239,7 +241,7 @@ export default function ProfileSettings() {
               </label>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Click the camera icon to upload a new profile picture
+              {t('prof.photoHint')}
             </p>
           </div>
         </div>
@@ -247,28 +249,28 @@ export default function ProfileSettings() {
         {/* Personal Information */}
         <div className="glass rounded-2xl p-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
-            Personal Information
+            {t('set.personalInfo')}
           </h2>
           
           <div className="space-y-6">
             {/* Email (Read-only) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
+                {t('contacts.emailAddress')}
               </label>
               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                 <Mail className="w-5 h-5 text-gray-500" />
                 <span className="text-gray-800 dark:text-white">{user?.email}</span> {/* ✅ Use user from context */}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Email cannot be changed. Contact support for assistance.
+                {t('prof.emailLocked')}
               </p>
             </div>
 
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Full Name
+                {t('prof.fullName')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -279,7 +281,7 @@ export default function ProfileSettings() {
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                            focus:border-transparent transition-all"
-                  placeholder="Enter your full name"
+                  placeholder={t('prof.fullNamePlaceholder')}
                 />
               </div>
             </div>
@@ -287,7 +289,7 @@ export default function ProfileSettings() {
             {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
+                {t('schedc.phoneNumber')}
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -298,11 +300,11 @@ export default function ProfileSettings() {
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                            focus:border-transparent transition-all"
-                  placeholder="Enter your phone number"
+                  placeholder={t('prof.phonePlaceholder')}
                 />
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Used for voice message delivery and account recovery
+                {t('prof.phoneHint')}
               </p>
             </div>
           </div>
@@ -311,37 +313,37 @@ export default function ProfileSettings() {
         {/* Account Information - UPDATED to use AuthContext */}
         <div className="glass rounded-2xl p-6">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">
-            Account Information
+            {t('prof.accountInfo')}
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <h3 className="font-medium text-gray-800 dark:text-white mb-1">Subscription Tier</h3>
+              <h3 className="font-medium text-gray-800 dark:text-white mb-1">{t('set.subscriptionTier')}</h3>
               <div className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${
                 user?.subscription_tier === 'LEGACY_VAULT_PREMIUM' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
                 user?.subscription_tier === 'ESSENTIAL' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' :
                 'bg-gradient-to-r from-gray-500 to-gray-700 text-white'
               }`}>
-                {user?.subscription_tier || 'Loading...'}
+                {user?.subscription_tier || t('common.loading')}
               </div>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <h3 className="font-medium text-gray-800 dark:text-white mb-1">Storage Limit</h3>
+              <h3 className="font-medium text-gray-800 dark:text-white mb-1">{t('set.storageLimit')}</h3>
               <p className="text-gray-600 dark:text-gray-400">{user?.storage_limit_gb || 5} GB</p>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <h3 className="font-medium text-gray-800 dark:text-white mb-1">Account Created</h3>
+              <h3 className="font-medium text-gray-800 dark:text-white mb-1">{t('set.accountCreated')}</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Loading...'}
+                {user?.created_at ? new Date(user.created_at).toLocaleDateString(locale) : t('common.loading')}
               </p>
             </div>
 
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-              <h3 className="font-medium text-gray-800 dark:text-white mb-1">Last Login</h3>
+              <h3 className="font-medium text-gray-800 dark:text-white mb-1">{t('set.lastLogin')}</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                {user?.last_login ? new Date(user.last_login).toLocaleString() : 'Loading...'}
+                {user?.last_login ? new Date(user.last_login).toLocaleString(locale) : t('common.loading')}
               </p>
             </div>
           </div>
@@ -353,7 +355,7 @@ export default function ProfileSettings() {
             href="/usersDashboard/settings"
             className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-center transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </Link>
           <button
             type="submit"
@@ -363,12 +365,12 @@ export default function ProfileSettings() {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
+                {t('common.saving')}
               </>
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                Save Changes
+                {t('vnd.saveChanges')}
               </>
             )}
           </button>
