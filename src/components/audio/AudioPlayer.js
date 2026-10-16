@@ -9,8 +9,10 @@ import {
   SkipForward,
   RotateCcw
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false, compact = false }) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -44,7 +46,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
         const url = typeof audioUrl === 'function' ? await audioUrl() : audioUrl;
 
         if (!url) {
-          throw new Error('No audio URL provided');
+          throw new Error(t('audio.noUrl'));
         }
         
         // Create a new Audio element
@@ -88,14 +90,14 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
           });
           
           const errorCode = e.target.error?.code;
-          let errorMessage = 'Failed to load audio';
+          let errorMessage = t('audio.loadError');
           
           if (errorCode === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
-            errorMessage = 'Audio format not supported or URL is invalid';
+            errorMessage = t('audio.unsupported');
           } else if (errorCode === 3) { // MEDIA_ERR_DECODE
-            errorMessage = 'Audio file is corrupted or unsupported format';
+            errorMessage = t('audio.corrupted');
           } else if (errorCode === 2) { // MEDIA_ERR_NETWORK
-            errorMessage = 'Network error loading audio file';
+            errorMessage = t('audio.network');
           }
           
           setError(errorMessage);
@@ -116,7 +118,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
       } catch (err) {
         if (!isMounted) return;
         console.error('Failed to initialize audio:', err);
-        setError(err.message || 'Failed to load audio');
+        setError(err.message || t('audio.loadError'));
         setIsLoading(false);
       }
     };
@@ -165,7 +167,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
         })
         .catch(err => {
           console.error('Play failed:', err);
-          setError('Failed to play audio: ' + err.message);
+          setError(t('audio.playError', { error: err.message }));
         });
     }
   };
@@ -281,14 +283,14 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
         });
         
         newAudio.addEventListener('error', () => {
-          setError('Failed to load audio');
+          setError(t('audio.loadError'));
           setIsLoading(false);
         });
         
         audioRef.current = newAudio;
         isInitializedRef.current = true;
       } catch (err) {
-        setError('Failed to load audio');
+        setError(t('audio.loadError'));
         setIsLoading(false);
       }
     };
@@ -299,14 +301,14 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
         <div className="text-center">
-          <div className="text-red-500 text-lg mb-2">Audio Error</div>
+          <div className="text-red-500 text-lg mb-2">{t('audio.errorTitle')}</div>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={handleRetry}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         </div>
@@ -336,7 +338,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
               onClick={skipBackward}
               disabled={isLoading || !audioRef.current}
               className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
-              title="Back 10s"
+              title={t('audio.back10')}
             >
               <SkipBack className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -353,7 +355,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
               onClick={skipForward}
               disabled={isLoading || !audioRef.current}
               className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-40"
-              title="Forward 10s"
+              title={t('audio.forward10')}
             >
               <SkipForward className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -391,7 +393,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
           </button>
         </div>
         {isLoading && (
-          <p className="text-xs text-center text-gray-400 mt-2">Loading audio…</p>
+          <p className="text-xs text-center text-gray-400 mt-2">{t('audio.loading')}</p>
         )}
       </div>
     );
@@ -408,7 +410,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {playbackRate}x Speed
+            {t('audio.speed', { rate: playbackRate })}
           </span>
         </div>
       </div>
@@ -439,7 +441,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
             onClick={skipBackward}
             className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             disabled={isLoading || !audioRef.current}
-            title="Skip backward 10 seconds"
+            title={t('audio.skipBack')}
           >
             <SkipBack className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
@@ -449,7 +451,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
             disabled={isLoading || !audioRef.current}
             className="p-4 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 
                      text-white hover:shadow-lg transition-all disabled:opacity-50"
-            title={isPlaying ? 'Pause' : 'Play'}
+            title={isPlaying ? t('common.pause') : t('common.play')}
           >
             {isLoading ? (
               <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -464,7 +466,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
             onClick={skipForward}
             className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             disabled={isLoading || !audioRef.current}
-            title="Skip forward 10 seconds"
+            title={t('audio.skipForward')}
           >
             <SkipForward className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
@@ -478,7 +480,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
               onClick={toggleMute}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               disabled={!audioRef.current}
-              title={isMuted ? 'Unmute' : 'Mute'}
+              title={isMuted ? t('audio.unmute') : t('audio.mute')}
             >
               {isMuted ? (
                 <VolumeX className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -510,7 +512,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
               onClick={resetPlayback}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
               disabled={!audioRef.current}
-              title="Reset to beginning"
+              title={t('audio.reset')}
             >
               <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -520,7 +522,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
               className="px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-600 
                        hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
               disabled={!audioRef.current}
-              title="Change playback speed"
+              title={t('audio.changeSpeed')}
             >
               {playbackRate}x
             </button>
@@ -536,7 +538,7 @@ export default function AudioPlayer({ audioUrl, title, onPlay, autoPlay = false,
                  style={{ width: '50%' }} />
           </div>
           <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Loading audio...
+            {t('audio.loading')}
           </p>
         </div>
       )}

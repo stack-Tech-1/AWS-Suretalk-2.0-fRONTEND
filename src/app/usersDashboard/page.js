@@ -31,7 +31,7 @@ export default function DashboardHome() {
   
   // ✅ Use AuthContext instead of separate user state
   const { user, hasLegacyVault, loading: authLoading, refreshProfile } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   // State for all dashboard data
   // ✅ Remove userData state - use AuthContext user instead
@@ -45,8 +45,8 @@ export default function DashboardHome() {
   const [quickStats, setQuickStats] = useState({
     voiceNotes: { value: "0", change: "+0%" },
     contacts: { value: "0/0", change: "+0" },
-    vaultItems: { value: "0", change: "None yet" },
-    scheduled: { value: "0", change: "None yet" }
+    vaultItems: { value: "0", change: t('dash.noneYet') },
+    scheduled: { value: "0", change: t('dash.noneYet') }
   });
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function DashboardHome() {
       // Process voice notes
       const notesWithFormattedData = (notesResponse.data.voiceNotes || notesResponse.data.notes || []).map((note) => ({
         id: note.id,
-        title: note.title || 'Untitled Recording',
+        title: note.title || t('voice.untitled'),
         duration: formatDuration(note.duration_seconds || 0),
         date: formatDate(note.created_at),
         size: formatFileSize(note.file_size_bytes || 0),
@@ -112,11 +112,11 @@ export default function DashboardHome() {
         },
         vaultItems: {
           value: (parseInt(actualStats.wills_total) || 0).toString(),
-          change: (parseInt(actualStats.wills_total) || 0) === 0 ? "None yet" : "Protected"
+          change: (parseInt(actualStats.wills_total) || 0) === 0 ? t('dash.noneYet') : t('dash.protected')
         },
         scheduled: {
           value: scheduledTotal.toString(),
-          change: scheduledTotal === 0 ? "None yet" : `${scheduledTotal} pending`
+          change: scheduledTotal === 0 ? t('dash.noneYet') : t('dash.pendingCount', { count: scheduledTotal })
         }
       });
 
@@ -128,7 +128,7 @@ export default function DashboardHome() {
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      setError('Failed to load dashboard data. Please try again.');
+      setError(t('dash.loadError'));
       
       // Fallback to basic data if analytics fails
       await loadFallbackData();
@@ -161,7 +161,7 @@ export default function DashboardHome() {
       const notesResponse = await api.getVoiceNotes({ page: 1, limit: 4 });
       const notesWithFormattedData = (notesResponse.data.voiceNotes || notesResponse.data.notes || []).map((note) => ({
         id: note.id,
-        title: note.title || 'Untitled Recording',
+        title: note.title || t('voice.untitled'),
         duration: formatDuration(note.duration_seconds || 0),
         date: formatDate(note.created_at),
         size: formatFileSize(note.file_size_bytes || 0),
@@ -204,19 +204,19 @@ export default function DashboardHome() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
+    if (!dateString) return t('voice.unknownDate');
     try {
       const date = new Date(dateString);
       const now = new Date();
       const diffTime = Math.abs(now - date);
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays === 0) return 'Today';
-      if (diffDays === 1) return 'Yesterday';
-      if (diffDays < 7) return `${diffDays} days ago`;
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (diffDays === 0) return t('common.today');
+      if (diffDays === 1) return t('common.yesterday');
+      if (diffDays < 7) return t('voice.daysAgo', { count: diffDays });
+      return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
     } catch {
-      return 'Unknown date';
+      return t('voice.unknownDate');
     }
   };
 
@@ -247,7 +247,7 @@ export default function DashboardHome() {
     
     if (regularBytes > 0) {
       distribution.push({ 
-        name: 'Voice Notes', 
+        name: t('dash.voiceNotes'), 
         value: Math.round((regularBytes / totalBytes) * 100), 
         color: '#3b82f6' 
       });
@@ -255,7 +255,7 @@ export default function DashboardHome() {
     
     if (vaultBytes > 0) {
       distribution.push({ 
-        name: 'Vault Storage', 
+        name: t('dash.vaultStorage'), 
         value: Math.round((vaultBytes / totalBytes) * 100), 
         color: '#8b5cf6' 
       });
@@ -348,13 +348,13 @@ export default function DashboardHome() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="text-red-500 text-lg mb-2">Error</div>
+          <div className="text-red-500 text-lg mb-2">{t('common.error')}</div>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <button
             onClick={fetchDashboardData}
             className="mt-4 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -400,6 +400,10 @@ export default function DashboardHome() {
   // Activity Overview totals — same 7-day window as the chart
   const weekNotesCreated = activityData.reduce((sum, d) => sum + (d.notes || 0), 0);
   const weekListens = activityData.reduce((sum, d) => sum + (d.listens || 0), 0);
+  const chartData = activityData.map(d => ({
+    ...d,
+    day: d.date ? new Date(`${d.date}T00:00:00`).toLocaleDateString(locale, { weekday: 'short' }) : d.day
+  }));
 
   // KPI cards link to their pages. On touch screens (no hover) the arrow is always shown;
   // on mouse devices it appears on hover or keyboard focus.
@@ -438,7 +442,7 @@ export default function DashboardHome() {
 
   // Use real storage data from stats API — not approximated from 4 recent notes
   const storageUsedBytes = dashboardStats?.storage?.used_bytes || dashboardStats?.storageUsed || 0;
-  const userName = user?.full_name?.split(' ')[0] || 'User';
+  const userName = user?.full_name?.split(' ')[0] || t('dash.user');
   const storageLimitGB = user?.storage_limit_gb || 5;
   const storageLimitBytes = storageLimitGB * 1024 * 1024 * 1024;
   const storageUsedPercentage = Math.min((storageUsedBytes / storageLimitBytes) * 100, 100);
@@ -467,8 +471,8 @@ export default function DashboardHome() {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             {parseInt(quickStats.voiceNotes.value) > 0
-              ? `You have ${quickStats.voiceNotes.value} voice ${parseInt(quickStats.voiceNotes.value) === 1 ? 'note' : 'notes'} — keep building your story.`
-              : `Welcome! Start by recording your first voice message.`
+              ? t(parseInt(quickStats.voiceNotes.value) === 1 ? 'dash.youHaveOne' : 'dash.youHave', { count: quickStats.voiceNotes.value })
+              : t('dash.welcomeFirst')
             }
           </p>
         </div>
@@ -550,7 +554,7 @@ export default function DashboardHome() {
               <Calendar className="w-4 h-4 text-orange-500" />
             </div>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full text-orange-600 bg-orange-50 dark:bg-orange-500/10 dark:text-orange-400">
-              {quickStats.scheduled.change}
+              {quickStats.scheduled.value === '0' ? t('dash.noneYet') : t('dash.pendingCount', { count: quickStats.scheduled.value })}
             </span>
           </div>
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
@@ -574,7 +578,7 @@ export default function DashboardHome() {
                 <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number">
                   {quickStats.vaultItems.value}
                 </h3>
-                <span className="text-sm text-gray-500 dark:text-gray-400">Voice Wills protected</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{t('dash.willsProtected')}</span>
               </div>
             </div>
             <Link href="/usersDashboard/vault" className="ml-auto btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
@@ -607,11 +611,11 @@ export default function DashboardHome() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Notes Created</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('dash.chartCreated')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Notes Played</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('dash.chartPlayed')}</span>
                 </div>
               </div>
             </div>
@@ -619,7 +623,7 @@ export default function DashboardHome() {
             <div className="h-72">
               {weekNotesCreated + weekListens > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={activityData}>
+                  <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis 
                       dataKey="day" 
@@ -638,7 +642,7 @@ export default function DashboardHome() {
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                       }}
                       formatter={(value, name) => {
-                        const label = name === 'notes' ? 'Notes Created' : 'Notes Played';
+                        const label = name === 'notes' ? t('dash.chartCreated') : t('dash.chartPlayed');
                         return [value, label];
                       }}
                     />
@@ -750,7 +754,7 @@ export default function DashboardHome() {
                             recording.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                             'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                           }`}>
-                            {recording.type}
+                            {t({ legacy: 'voice.filterLegacy', work: 'voice.filterWork' }[recording.type] || 'voice.filterPersonal')}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -773,7 +777,7 @@ export default function DashboardHome() {
                         <button 
                           onClick={() => handleToggleFavorite(recording.id, recording.favorite, recording.title)}
                           className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          title={recording.favorite ? "Remove from favorites" : "Add to favorites"}
+                          title={recording.favorite ? t('voice.removeFromFavorites') : t('voice.addToFavorites')}
                         >
                           {recording.favorite ? 
                             <Star className="w-4 h-4 text-yellow-500 fill-current" /> : 
@@ -889,7 +893,7 @@ export default function DashboardHome() {
                   <Volume2 className="w-6 h-6 text-gray-400" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Start recording to see your storage usage here.
+                  {t('dash.storageEmpty')}
                 </p>
               </div>
             )}
@@ -900,7 +904,7 @@ export default function DashboardHome() {
                        rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors font-medium block text-center"
               onClick={() => analytics.recordEvent('cta_click', { cta: 'view_storage' })}
             >
-              {storageUsedPercentage >= 80 ? 'Upgrade Storage' : 'View Storage Details'}
+              {storageUsedPercentage >= 80 ? t('dash.upgradeStorage') : t('dash.viewStorage')}
             </Link>
           </div>
 
@@ -931,13 +935,13 @@ export default function DashboardHome() {
           {/* Recent Activity */}
           <div className="glass rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white">Recent Activity</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('sched.recentActivity')}</h3>
               <Link 
-                href="/usersDashboard/activity"
+                href="/usersDashboard/voice-notes"
                 className="text-sm text-brand-600 hover:text-brand-700"
                 onClick={() => analytics.recordEvent('cta_click', { cta: 'view_all_activity' })}
               >
-                View all
+                {t('common.viewAll')}
               </Link>
             </div>
             
@@ -948,14 +952,14 @@ export default function DashboardHome() {
                     <div className="w-2 h-2 mt-2 rounded-full bg-blue-500" />
                     <div className="flex-1">
                       <p className="text-sm text-gray-800 dark:text-white">
-                        Played "{stat.title}"
+                        {t('dash.played', { title: stat.title })}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDate(stat.last_played) || 'Recently'}
+                          {formatDate(stat.last_played) || t('dash.recently')}
                         </span>
                         <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                          {stat.recent_plays || stat.play_count} plays
+                          {stat.recent_plays || stat.play_count} {t('voice.plays')}
                         </span>
                       </div>
                     </div>
@@ -973,12 +977,12 @@ export default function DashboardHome() {
                     }`} />
                     <div className="flex-1">
                       <p className="text-sm text-gray-800 dark:text-white">
-                        Recorded "{recording.title}"
+                        {t('dash.recorded', { title: recording.title })}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500 dark:text-gray-400">{recording.date}</span>
                         <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                          You
+                          {t('tick.you')}
                         </span>
                       </div>
                     </div>
@@ -987,9 +991,9 @@ export default function DashboardHome() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Nothing yet</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('dash.nothingYet')}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  Your activity will appear here as you record and listen.
+                  {t('dash.activityEmpty')}
                 </p>
               </div>
             )}
@@ -1011,20 +1015,20 @@ export default function DashboardHome() {
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-medium">Legacy Vault Premium</span>
-                  <span className="text-white/80 text-sm">$12.99/mo</span>
+                  <span className="text-white/80 text-sm">$12.99/{t('dash.mo')}</span>
                 </div>
                 <ul className="text-white/80 text-sm space-y-1">
                   <li className="flex items-center gap-2">
                     <Shield className="w-3 h-3" />
-                    Permanent storage
+                    {t('bill.f.permanentStorage')}
                   </li>
                   <li className="flex items-center gap-2">
                     <Clock className="w-3 h-3" />
-                    Voice Wills
+                    {t('vault.title')}
                   </li>
                   <li className="flex items-center gap-2">
                     <Calendar className="w-3 h-3" />
-                    Scheduled legacy messages
+                    {t('bill.f.legacyMessages')}
                   </li>
                 </ul>
               </div>

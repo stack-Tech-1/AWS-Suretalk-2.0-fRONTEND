@@ -249,7 +249,7 @@ export default function Sidebar({
                   SureTalk
                 </h2>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {type === "admin" ? "Admin Console" : "User Dashboard"}
+                  {type === "admin" ? "Admin Console" : t('dash.topbar.userDash')}
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function Sidebar({
                       <Image
                         unoptimized
                         src={profileImageUrl}
-                        alt="Profile"
+                        alt={t('common.profile')}
                         width={40}
                         height={40}
                         className="w-full h-full object-cover"
@@ -330,7 +330,7 @@ export default function Sidebar({
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                    {currentUser?.full_name || 'User'}
+                    {currentUser?.full_name || t('dash.user')}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${
@@ -377,14 +377,14 @@ export default function Sidebar({
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-800 dark:text-white leading-tight">
-                  Unlock Voice Wills
+                  {t('dash.unlockWills')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-snug">
-                  Preserve your voice legacy forever
+                  {t('dash.unlockWillsDesc')}
                 </p>
                 <Link href="/usersDashboard/billing" className="mt-2.5 block">
                   <button className="btn-primary w-full text-xs py-1.5 px-3 rounded-lg">
-                    Upgrade Now
+                    {t('dash.upgradeNow')}
                   </button>
                 </Link>
               </div>
@@ -421,7 +421,7 @@ export default function Sidebar({
           {!collapsed && (
             <div className="pt-4 border-t border-white/20 dark:border-white/5">
               <p className="text-xs text-center text-gray-400 dark:text-gray-500">
-                v2.0.0 • {type === "admin" ? "Admin" : "User"} Mode
+                v2.0.0 • {type === "admin" ? "Admin Mode" : t('dash.userMode')}
               </p>
             </div>
           )}

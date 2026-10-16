@@ -2,17 +2,19 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Mic, Users, Shield, Calendar } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const navItems = [
-  { href: '/usersDashboard', icon: Home, label: 'Home', exact: true },
-  { href: '/usersDashboard/voice-notes', icon: Mic, label: 'Notes' },
-  { href: '/usersDashboard/contacts', icon: Users, label: 'Contacts' },
-  { href: '/usersDashboard/vault', icon: Shield, label: 'Wills' },
-  { href: '/usersDashboard/scheduled', icon: Calendar, label: 'Schedule' },
+  { href: '/usersDashboard', icon: Home, labelKey: 'nav.bottom.home', exact: true },
+  { href: '/usersDashboard/voice-notes', icon: Mic, labelKey: 'nav.bottom.notes' },
+  { href: '/usersDashboard/contacts', icon: Users, labelKey: 'nav.bottom.contacts' },
+  { href: '/usersDashboard/vault', icon: Shield, labelKey: 'nav.bottom.wills' },
+  { href: '/usersDashboard/scheduled', icon: Calendar, labelKey: 'nav.bottom.schedule' },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
@@ -55,7 +57,7 @@ export default function BottomNav() {
                 )}
               </div>
               <span className={`text-[10px] font-medium transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-60'}`}>
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           );

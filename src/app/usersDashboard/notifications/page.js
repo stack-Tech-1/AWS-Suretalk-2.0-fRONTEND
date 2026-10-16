@@ -36,7 +36,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function NotificationsPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
   
@@ -88,7 +88,7 @@ export default function NotificationsPage() {
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
-      toast.error('Failed to load notifications');
+      toast.error(t('notif.loadError'));
     } finally {
       setLoading(false);
     }
@@ -112,9 +112,9 @@ export default function NotificationsPage() {
       setNotifications(prev => prev.map(n => 
         n.id === id ? { ...n, is_read: true } : n
       ));
-      toast.success('Marked as read');
+      toast.success(t('notif.markedRead'));
     } catch (error) {
-      toast.error('Failed to mark as read');
+      toast.error(t('notif.markReadError'));
     }
   };
 
@@ -122,9 +122,9 @@ export default function NotificationsPage() {
     try {
       await api.request('/notifications/mark-all-read', { method: 'POST' });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      toast.success('All notifications marked as read');
+      toast.success(t('notif.allMarkedRead'));
     } catch (error) {
-      toast.error('Failed to mark all as read');
+      toast.error(t('notif.markAllError'));
     }
   };
 
@@ -133,15 +133,15 @@ export default function NotificationsPage() {
       await api.request(`/notifications/${id}`, { method: 'DELETE' });
       setNotifications(prev => prev.filter(n => n.id !== id));
       setSelectedNotifications(prev => prev.filter(selectedId => selectedId !== id));
-      toast.success('Notification deleted');
+      toast.success(t('notif.deleted'));
     } catch (error) {
-      toast.error('Failed to delete notification');
+      toast.error(t('notif.deleteError'));
     }
   };
 
   const handleBulkAction = async (action) => {
     if (selectedNotifications.length === 0) {
-      toast.error('No notifications selected');
+      toast.error(t('notif.noneSelected'));
       return;
     }
 
@@ -155,7 +155,7 @@ export default function NotificationsPage() {
         setNotifications(prev => prev.map(n => 
           selectedNotifications.includes(n.id) ? { ...n, is_read: true } : n
         ));
-        toast.success(`${selectedNotifications.length} notifications marked as read`);
+        toast.success(t('notif.bulkMarkedRead', { count: selectedNotifications.length }));
       } else if (action === 'delete') {
         await Promise.all(
           selectedNotifications.map(id => 
@@ -163,17 +163,17 @@ export default function NotificationsPage() {
           )
         );
         setNotifications(prev => prev.filter(n => !selectedNotifications.includes(n.id)));
-        toast.success(`${selectedNotifications.length} notifications deleted`);
+        toast.success(t('notif.bulkDeleted', { count: selectedNotifications.length }));
       }
       
       setSelectedNotifications([]);
     } catch (error) {
-      toast.error(`Failed to ${action} notifications`);
+      toast.error(t('notif.bulkError'));
     }
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm('Are you sure you want to clear all notifications? This cannot be undone.')) {
+    if (!window.confirm(t('notif.confirmClear'))) {
       return;
     }
 
@@ -181,9 +181,9 @@ export default function NotificationsPage() {
       await api.request('/notifications', { method: 'DELETE' });
       setNotifications([]);
       setSelectedNotifications([]);
-      toast.success('All notifications cleared');
+      toast.success(t('notif.cleared'));
     } catch (error) {
-      toast.error('Failed to clear notifications');
+      toast.error(t('notif.clearError'));
     }
   };
 
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
     
     return (
       <span className={`text-xs px-2 py-0.5 rounded-full text-white ${colors[priority] || colors.normal}`}>
-        {priority}
+        {t(`notif.priority.${priority || 'normal'}`)}
       </span>
     );
   };
@@ -306,7 +306,7 @@ export default function NotificationsPage() {
             <button
               onClick={loadNotifications}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title="Refresh"
+              title={t('common.refresh')}
             >
               <RefreshCw className="w-5 h-5" />
             </button>
@@ -315,7 +315,7 @@ export default function NotificationsPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:shadow-lg"
             >
               <Filter className="w-4 h-4" />
-              Filter
+              {t('common.filter')}
             </button>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function NotificationsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                  {stat.replace('_', ' ')}
+                  {t(`notif.stat.${stat}`)}
                 </p>
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-white mt-1">
                   {notifStats[stat] ?? 0}
@@ -356,7 +356,7 @@ export default function NotificationsPage() {
           className="glass rounded-2xl p-6 mb-8"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-800 dark:text-white">Filters</h3>
+            <h3 className="font-bold text-gray-800 dark:text-white">{t('notif.filters')}</h3>
             <button
               onClick={() => setShowFilterMenu(false)}
               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
@@ -369,7 +369,7 @@ export default function NotificationsPage() {
             {/* Status Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Status
+                {t('common.status')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {['all', 'unread', 'read'].map((status) => (
@@ -382,7 +382,7 @@ export default function NotificationsPage() {
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {status}
+                    {t(`notif.filter.${status}`)}
                   </button>
                 ))}
               </div>
@@ -391,7 +391,7 @@ export default function NotificationsPage() {
             {/* Type Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Type
+                {t('notif.type')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {['all', 'voice_note', 'message', 'legacy_vault', 'system'].map((type) => (
@@ -404,7 +404,7 @@ export default function NotificationsPage() {
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {type.replace('_', ' ')}
+                    {t(`notif.typeName.${type}`)}
                   </button>
                 ))}
               </div>
@@ -413,7 +413,7 @@ export default function NotificationsPage() {
             {/* Priority Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Priority
+                {t('help.priority')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {['all', 'urgent', 'high', 'normal', 'low'].map((priority) => (
@@ -426,7 +426,7 @@ export default function NotificationsPage() {
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {priority}
+                    {t(`notif.priority.${priority}`)}
                   </button>
                 ))}
               </div>
@@ -458,7 +458,7 @@ export default function NotificationsPage() {
               onClick={handleSelectAll}
               className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              {selectedNotifications.length === notifications.length ? 'Deselect All' : 'Select All'}
+              {selectedNotifications.length === notifications.length ? t('notif.deselectAll') : t('notif.selectAll')}
             </button>
             
             {selectedNotifications.length > 0 && (
@@ -468,14 +468,14 @@ export default function NotificationsPage() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-lg"
                 >
                   <Check className="w-4 h-4" />
-                  Mark Read
+                  {t('notif.markRead')}
                 </button>
                 <button
                   onClick={() => handleBulkAction('delete')}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white hover:shadow-lg"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t('common.delete')}
                 </button>
               </>
             )}
@@ -568,7 +568,7 @@ export default function NotificationsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {formatTime(notification.created_at)}
+                        {formatTime(notification.created_at, t, locale)}
                       </span>
                       {!notification.is_read && (
                         <span className="w-2 h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 animate-pulse" />
@@ -596,14 +596,14 @@ export default function NotificationsPage() {
                       className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm hover:shadow-md"
                     >
                       <Trash2 className="w-3 h-3" />
-                      Delete
+                      {t('common.delete')}
                     </button>
                     {notification.data?.url && (
                       <a
                         href={notification.data.url}
                         className="flex items-center gap-2 px-3 py-1 rounded-lg border border-brand-500 text-brand-600 dark:text-brand-400 text-sm hover:bg-brand-50 dark:hover:bg-brand-900/20"
                       >
-                        View Details
+                        {t('sched.viewDetails')}
                         <ChevronRight className="w-3 h-3" />
                       </a>
                     )}
@@ -626,19 +626,19 @@ export default function NotificationsPage() {
             <Bell className="w-12 h-12 text-brand-500" />
           </div>
           <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-            Welcome to Notifications
+            {t('notif.welcome')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            This is where you'll see updates about your voice notes, messages, and system alerts.
+            {t('notif.welcomeDesc1')}
             <br />
-            Notifications will appear here when you create voice notes, schedule messages, or when there are system updates.
+            {t('notif.welcomeDesc2')}
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <button className="px-6 py-2 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg">
-              Create First Voice Note
+              {t('notif.createFirst')}
             </button>
             <button className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
-              Explore Features
+              {t('notif.explore')}
             </button>
           </div>
         </motion.div>
@@ -656,8 +656,8 @@ export default function NotificationsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-800 dark:text-white">Push Notifications</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Receive notifications in your browser</p>
+                <h4 className="font-medium text-gray-800 dark:text-white">{t('set.pushNotif')}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('notif.pushDesc')}</p>
               </div>
               <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gradient-to-r from-brand-500 to-accent-500">
                 <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
@@ -665,8 +665,8 @@ export default function NotificationsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-800 dark:text-white">Email Notifications</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Receive notifications via email</p>
+                <h4 className="font-medium text-gray-800 dark:text-white">{t('set.emailNotif')}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('notif.emailDesc')}</p>
               </div>
               <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gradient-to-r from-brand-500 to-accent-500">
                 <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
@@ -676,8 +676,8 @@ export default function NotificationsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-800 dark:text-white">Sound Alerts</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Play sound for new notifications</p>
+                <h4 className="font-medium text-gray-800 dark:text-white">{t('notif.sound')}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('notif.soundDesc')}</p>
               </div>
               <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 dark:bg-gray-600">
                 <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-1" />
@@ -685,8 +685,8 @@ export default function NotificationsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-gray-800 dark:text-white">Desktop Notifications</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Show notifications on your desktop</p>
+                <h4 className="font-medium text-gray-800 dark:text-white">{t('notif.desktop')}</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('notif.desktopDesc')}</p>
               </div>
               <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gradient-to-r from-brand-500 to-accent-500">
                 <span className="inline-block h-4 w-4 transform rounded-full bg-white translate-x-6" />
@@ -696,7 +696,7 @@ export default function NotificationsPage() {
         </div>
         <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
           <button className="w-full px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg">
-            Save Notification Settings
+            {t('notif.saveSettings')}
           </button>
         </div>
       </motion.div>
@@ -705,16 +705,16 @@ export default function NotificationsPage() {
 }
 
 // Helper function to format time
-function formatTime(dateString) {
+function formatTime(dateString, t, locale) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
   
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-  return date.toLocaleDateString('en-US', { 
+  if (diffMins < 1) return t('help.justNow');
+  if (diffMins < 60) return t('help.minAgo', { count: diffMins });
+  if (diffMins < 1440) return t('help.hoursAgo', { count: Math.floor(diffMins / 60) });
+  return date.toLocaleDateString(locale, { 
     month: 'short', 
     day: 'numeric',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined

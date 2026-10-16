@@ -12,6 +12,7 @@ import { api } from '@/utils/api';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from "next/link";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const containerVariants = {
   hidden: {},
@@ -25,6 +26,7 @@ const itemVariants = {
 export default function CreateVoiceWill() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
+  const { t, locale } = useLanguage();
 
   // Recording state
   const [recording, setRecording] = useState(false);
@@ -64,30 +66,6 @@ export default function CreateVoiceWill() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const mimeTypeRef = useRef('audio/webm');
-
-  // ─── Access guard ────────────────────────────────────────────────────────────
-
-  if (!authLoading && !hasLegacyVault()) {
-    return (
-      <div className="max-w-2xl mx-auto py-20 text-center">
-        <div className="p-5 rounded-full bg-purple-100 dark:bg-purple-900/30 w-20 h-20 flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-10 h-10 text-purple-500" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Voice Wills Require Premium</h2>
-        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-          Upgrade to the Legacy Vault Premium plan to create voice wills — encrypted recordings that release to your beneficiaries under conditions you control.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Link href="/usersDashboard/vault" className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium">
-            Go Back
-          </Link>
-          <Link href="/usersDashboard/settings?tab=billing" className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-lg shadow-purple-600/25">
-            Upgrade Plan
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   // ─── Waveform ────────────────────────────────────────────────────────────────
 
@@ -150,8 +128,8 @@ export default function CreateVoiceWill() {
 
   useEffect(() => {
     if (!recording) {
-      const t = setTimeout(drawIdleWaveform, 50);
-      return () => clearTimeout(t);
+      const timer = setTimeout(drawIdleWaveform, 50);
+      return () => clearTimeout(timer);
     }
   }, [recording, drawIdleWaveform]);
 
@@ -180,7 +158,7 @@ export default function CreateVoiceWill() {
         const url = URL.createObjectURL(blob);
         setAudioBlob(blob);
         setAudioUrl(url);
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorderRef.current.start();
@@ -196,7 +174,7 @@ export default function CreateVoiceWill() {
       analyserRef.current = analyser;
       drawWaveform();
     } catch (err) {
-      setError('Failed to access microphone. Please check permissions.');
+      setError(t('rec.micError'));
     }
   };
 
@@ -221,7 +199,7 @@ export default function CreateVoiceWill() {
     } else {
       audioRef.current.play()
         .then(() => setIsPlaying(true))
-        .catch(() => setError('Failed to play recording'));
+        .catch(() => setError(t('rec.playError')));
     }
   };
 
@@ -242,8 +220,8 @@ export default function CreateVoiceWill() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('audio/')) { setError('Please select an audio file'); return; }
-    if (file.size > 100 * 1024 * 1024) { setError('File size must be less than 100MB'); return; }
+    if (!file.type.startsWith('audio/')) { setError(t('rec.selectAudioFile')); return; }
+    if (file.size > 100 * 1024 * 1024) { setError(t('rec.fileTooLarge')); return; }
     setFileUpload(file);
     if (audioUrl) URL.revokeObjectURL(audioUrl);
     const url = URL.createObjectURL(file);
@@ -264,9 +242,9 @@ export default function CreateVoiceWill() {
   // ─── Submit ───────────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
-    if (!audioBlob && !fileUpload) { setError('Please record or upload an audio file'); return; }
-    if (!title.trim()) { setError('Please enter a title for your voice will'); return; }
-    if (releaseCondition === 'date' && !releaseDate) { setError('Please select a release date'); return; }
+    if (!audioBlob && !fileUpload) { setError(t('rec.needAudio')); return; }
+    if (!title.trim()) { setError(t('willc.needTitle')); return; }
+    if (releaseCondition === 'date' && !releaseDate) { setError(t('willc.needDate')); return; }
 
     try {
       setUploading(true);
@@ -276,9 +254,9 @@ export default function CreateVoiceWill() {
       const fileName = fileUpload ? fileUpload.name : `will_${Date.now()}.webm`;
       const fileType = fileUpload ? fileUpload.type : mimeTypeRef.current;
 
-      setSaveStage('Uploading recording...');
+      setSaveStage(t('rec.stageUploading'));
       const uploadResponse = await api.getVaultUploadUrl(fileName, fileType, true);
-      if (!uploadResponse.success) throw new Error(uploadResponse.error || 'Failed to get upload URL');
+      if (!uploadResponse.success) throw new Error(uploadResponse.error || t('prof.uploadUrlError'));
       const { uploadUrl, key, bucket } = uploadResponse.data;
 
       const uploadResult = await fetch(uploadUrl, {
@@ -286,9 +264,9 @@ export default function CreateVoiceWill() {
         body: fileToUpload,
         headers: { 'Content-Type': fileType }
       });
-      if (!uploadResult.ok) throw new Error('Failed to upload audio to storage');
+      if (!uploadResult.ok) throw new Error(t('rec.uploadError'));
 
-      setSaveStage('Saving voice will...');
+      setSaveStage(t('willc.stageSaving'));
       const willData = {
         title: title.trim(),
         description: description.trim(),
@@ -302,14 +280,14 @@ export default function CreateVoiceWill() {
       };
 
       const createResponse = await api.createVoiceWill(willData);
-      if (!createResponse.success) throw new Error(createResponse.error || 'Failed to save voice will');
+      if (!createResponse.success) throw new Error(createResponse.error || t('willc.saveError'));
 
-      setSaveStage('Saved!');
+      setSaveStage(t('rec.stageSaved'));
       setSuccess(true);
-      toast.success('Voice will created successfully!', 'Will Saved');
+      toast.success(t('willc.success'), t('willc.savedTitle'));
       setTimeout(() => router.push('/usersDashboard/vault'), 1800);
     } catch (err) {
-      setError(err.message || 'Failed to save voice will. Please try again.');
+      setError(err.message || t('willc.saveErrorRetry'));
     } finally {
       setUploading(false);
       setSaveStage('');
@@ -352,6 +330,31 @@ export default function CreateVoiceWill() {
     return c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q));
   });
 
+  // ─── Access guard ────────────────────────────────────────────────────────────
+  // Placed after every hook: returning before them changed the hook count between renders and crashed the page.
+
+  if (!authLoading && !hasLegacyVault()) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 text-center">
+        <div className="p-5 rounded-full bg-purple-100 dark:bg-purple-900/30 w-20 h-20 flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-10 h-10 text-purple-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('willc.premiumTitle')}</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
+          {t('willc.premiumDesc')}
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Link href="/usersDashboard/vault" className="px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm font-medium">
+            {t('willc.goBack')}
+          </Link>
+          <Link href="/usersDashboard/billing" className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-lg shadow-purple-600/25">
+            {t('dash.upgradePlan')}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   // ─── JSX ─────────────────────────────────────────────────────────────────────
 
   return (
@@ -368,17 +371,17 @@ export default function CreateVoiceWill() {
           <Link
             href="/usersDashboard/vault"
             className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Back to Voice Wills"
+            title={t('willc.backToWills')}
           >
             <ArrowLeft className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </Link>
           <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-700 to-indigo-600 shadow-lg shadow-purple-700/20">
             <FileAudio className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold gradient-text">Create Voice Will</h1>
+          <h1 className="text-3xl font-bold gradient-text">{t('vault.createWill')}</h1>
         </div>
         <p className="text-gray-500 dark:text-gray-400 ml-24 text-sm">
-          Record your message and set release conditions for your beneficiaries
+          {t('willc.subtitle')}
         </p>
       </motion.div>
 
@@ -388,8 +391,8 @@ export default function CreateVoiceWill() {
           className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-green-800 dark:text-green-300">Voice Will Saved!</p>
-            <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">Redirecting to Voice Wills…</p>
+            <p className="font-medium text-green-800 dark:text-green-300">{t('willc.savedBanner')}</p>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('willc.redirecting')}</p>
           </div>
         </motion.div>
       )}
@@ -398,7 +401,7 @@ export default function CreateVoiceWill() {
           className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-medium text-red-800 dark:text-red-300">Error</p>
+            <p className="font-medium text-red-800 dark:text-red-300">{t('common.error')}</p>
             <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{error}</p>
           </div>
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
@@ -422,12 +425,12 @@ export default function CreateVoiceWill() {
             {/* Studio header */}
             <div className="w-full flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
-                Recording Studio
+                {t('rec.studio')}
               </span>
               {recording && (
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                  <span className="text-xs font-medium text-purple-500 uppercase tracking-widest">Live</span>
+                  <span className="text-xs font-medium text-purple-500 uppercase tracking-widest">{t('rec.live')}</span>
                 </div>
               )}
             </div>
@@ -474,7 +477,7 @@ export default function CreateVoiceWill() {
                 {formatTime(recording ? recordingTime : recordingDuration)}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.2em]">
-                {recording ? 'recording' : hasAudio ? 'duration' : 'ready'}
+                {recording ? t('rec.stateRecording') : hasAudio ? t('rec.stateDuration') : t('rec.stateReady')}
               </p>
             </div>
 
@@ -485,7 +488,7 @@ export default function CreateVoiceWill() {
                   onClick={startRecording}
                   className="flex items-center gap-2 px-6 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-semibold shadow-lg shadow-purple-700/25 transition-all"
                 >
-                  <Mic className="w-5 h-5" /> Start Recording
+                  <Mic className="w-5 h-5" /> {t('rec.start')}
                 </button>
               )}
               {recording && (
@@ -493,7 +496,7 @@ export default function CreateVoiceWill() {
                   onClick={stopRecording}
                   className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-lg shadow-red-600/25 transition-all"
                 >
-                  <Square className="w-5 h-5" /> Stop
+                  <Square className="w-5 h-5" /> {t('common.stop')}
                 </button>
               )}
               {hasAudio && !recording && (
@@ -502,13 +505,13 @@ export default function CreateVoiceWill() {
                     onClick={togglePlayback}
                     className="flex items-center gap-2 px-5 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-semibold shadow-lg shadow-purple-700/25 transition-all"
                   >
-                    {isPlaying ? <><Pause className="w-5 h-5" /> Pause</> : <><Play className="w-5 h-5" /> Play</>}
+                    {isPlaying ? <><Pause className="w-5 h-5" /> {t('common.pause')}</> : <><Play className="w-5 h-5" /> {t('common.play')}</>}
                   </button>
                   <button
                     onClick={resetRecording}
                     className="flex items-center gap-2 px-5 py-3 border-2 border-red-400 text-red-600 dark:text-red-400 rounded-xl font-semibold hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                   >
-                    <Trash2 className="w-5 h-5" /> Discard
+                    <Trash2 className="w-5 h-5" /> {t('voice.discardRecording')}
                   </button>
                 </>
               )}
@@ -546,9 +549,9 @@ export default function CreateVoiceWill() {
                   <div className="flex flex-col items-center gap-1">
                     <Upload className="w-7 h-7 text-gray-400" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      <span className="text-purple-600 dark:text-purple-400 font-medium">Upload audio</span> or drag & drop
+                      <span className="text-purple-600 dark:text-purple-400 font-medium">{t('rec.uploadAudio')}</span> {t('rec.orDragDrop')}
                     </p>
-                    <p className="text-xs text-gray-400">MP3, WAV, M4A, WEBM · max 100MB</p>
+                    <p className="text-xs text-gray-400">{t('rec.fileTypes')}</p>
                   </div>
                 )}
               </div>
@@ -569,32 +572,32 @@ export default function CreateVoiceWill() {
                   <FileAudio className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 dark:text-white">Will Details</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Give your voice will a title and description</p>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('willc.details')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('willc.detailsHint')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Title <span className="text-red-500">*</span>
+                    {t('voice.titleLabel')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white"
-                    placeholder="e.g. Final Message to Family"
+                    placeholder={t('willc.titlePlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('rec.description')}</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white resize-none"
-                    placeholder="Add context or instructions for your beneficiaries"
+                    placeholder={t('willc.descriptionPlaceholder')}
                   />
                 </div>
               </div>
@@ -609,24 +612,24 @@ export default function CreateVoiceWill() {
                   <Shield className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 dark:text-white">Release Conditions</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Control when this will becomes accessible</p>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('willc.conditions')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('willc.conditionsHint')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Release Condition <span className="text-red-500">*</span>
+                    {t('vault.releaseCondition')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={releaseCondition}
                     onChange={(e) => { setReleaseCondition(e.target.value); setReleaseDate(''); }}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white"
                   >
-                    <option value="manual">Manual — I release it myself</option>
-                    <option value="date">Date — Release on a specific date</option>
-                    <option value="event">Event — Released upon a triggering event</option>
+                    <option value="manual">{t('willc.optManual')}</option>
+                    <option value="date">{t('willc.optDate')}</option>
+                    <option value="event">{t('willc.optEvent')}</option>
                   </select>
                 </div>
 
@@ -638,7 +641,7 @@ export default function CreateVoiceWill() {
                     transition={{ duration: 0.2 }}
                   >
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                      Release Date <span className="text-red-500">*</span>
+                      {t('vault.releaseDate')} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -662,7 +665,7 @@ export default function CreateVoiceWill() {
                     className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl"
                   >
                     <p className="text-sm text-amber-700 dark:text-amber-400">
-                      Event-triggered wills are released manually by an administrator when a verified event occurs (e.g. passing verified by next-of-kin).
+                      {t('willc.eventNote')}
                     </p>
                   </motion.div>
                 )}
@@ -678,8 +681,8 @@ export default function CreateVoiceWill() {
                   <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 dark:text-white">Beneficiaries</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Select who should receive this will</p>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('contacts.beneficiaries')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('willc.beneficiariesHint')}</p>
                 </div>
               </div>
 
@@ -707,7 +710,7 @@ export default function CreateVoiceWill() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="search"
-                  placeholder="Search contacts…"
+                  placeholder={t('contacts.searchPlaceholder')}
                   value={contactSearch}
                   onChange={(e) => setContactSearch(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white text-sm"
@@ -718,13 +721,13 @@ export default function CreateVoiceWill() {
                 {loadingContacts ? (
                   <div className="flex items-center justify-center py-5 gap-2 text-gray-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Loading contacts…</span>
+                    <span className="text-sm">{t('rec.loadingContacts')}</span>
                   </div>
                 ) : filteredContacts.length === 0 ? (
                   <div className="text-center py-5">
                     <User className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-1" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {contactSearch ? 'No contacts match' : 'No contacts yet'}
+                      {contactSearch ? t('rec.noContactsMatch') : t('rec.noContactsYet')}
                     </p>
                   </div>
                 ) : filteredContacts.map(contact => {
@@ -766,23 +769,23 @@ export default function CreateVoiceWill() {
               {/* Summary */}
               <div className="space-y-2 mb-5 text-sm">
                 <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
-                  <span>Audio</span>
+                  <span>{t('willc.audio')}</span>
                   <span className={hasAudio ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-400'}>
-                    {hasAudio ? (fileUpload ? fileUpload.name : `Recorded · ${formatTime(recordingDuration)}`) : 'Not recorded'}
+                    {hasAudio ? (fileUpload ? fileUpload.name : t('willc.recorded', { duration: formatTime(recordingDuration) })) : t('willc.notRecorded')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
-                  <span>Release</span>
+                  <span>{t('willc.release')}</span>
                   <span className="font-medium text-gray-800 dark:text-white capitalize">
                     {releaseCondition === 'date' && releaseDate
-                      ? new Date(releaseDate).toLocaleDateString()
-                      : releaseCondition}
+                      ? new Date(releaseDate).toLocaleDateString(locale)
+                      : t(`vault.cond.${releaseCondition}`)}
                   </span>
                 </div>
                 {selectedBeneficiaries.length > 0 && (
                   <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
-                    <span>Beneficiaries</span>
-                    <span className="font-medium text-gray-800 dark:text-white">{selectedBeneficiaries.length} selected</span>
+                    <span>{t('contacts.beneficiaries')}</span>
+                    <span className="font-medium text-gray-800 dark:text-white">{t('willc.selectedCount', { count: selectedBeneficiaries.length })}</span>
                   </div>
                 )}
               </div>
@@ -793,9 +796,9 @@ export default function CreateVoiceWill() {
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-700 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg shadow-purple-700/25 hover:shadow-purple-700/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {uploading ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /><span>{saveStage || 'Saving…'}</span></>
+                  <><Loader2 className="w-4 h-4 animate-spin" /><span>{saveStage || t('common.saving')}</span></>
                 ) : (
-                  <><Shield className="w-5 h-5" /><span>Save Voice Will</span></>
+                  <><Shield className="w-5 h-5" /><span>{t('willc.save')}</span></>
                 )}
               </button>
 
@@ -805,8 +808,8 @@ export default function CreateVoiceWill() {
 
               <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
                 {hasAudio && title.trim()
-                  ? 'Ready to save — your will is encrypted end-to-end'
-                  : !hasAudio ? 'Record or upload audio to continue' : 'Enter a title to continue'}
+                  ? t('willc.ready')
+                  : !hasAudio ? t('rec.recordToContinue') : t('willc.enterTitle')}
               </p>
             </div>
           </motion.div>

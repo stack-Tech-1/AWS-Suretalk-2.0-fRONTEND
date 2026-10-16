@@ -208,7 +208,7 @@ export default function Topbar({
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      toast.error('Failed to mark notification as read');
+      toast.error(t('notif.markReadError'));
     }
   };
 
@@ -217,9 +217,9 @@ export default function Topbar({
       await api.request('/notifications/mark-all-read', { method: 'POST' });
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
-      toast.success('All notifications marked as read');
+      toast.success(t('notif.allMarkedRead'));
     } catch (error) {
-      toast.error('Failed to mark all as read');
+      toast.error(t('notif.markAllError'));
     }
   };
 
@@ -230,7 +230,7 @@ export default function Topbar({
       setNotifications(prev => prev.filter(n => n.id !== id));
       setUnreadCount(prev => prev - 1);
     } catch (error) {
-      toast.error('Failed to delete notification');
+      toast.error(t('notif.deleteError'));
     }
   };
 
@@ -274,13 +274,13 @@ export default function Topbar({
     { icon: <User className="w-4 h-4" />, label: t('dash.menu.adminProfile'), href: "/admin/profile" },
     { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.systemSettings'), href: "/admin/settings" },
     { icon: <Globe className="w-4 h-4" />, label: t('dash.menu.logs'), href: "/admin/logs" },
-    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/" },
+    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/", isLogout: true },
   ] : [
     { icon: <User className="w-4 h-4" />, label: t('dash.menu.profile'), href: "/usersDashboard/settings/profile" },
     { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.settings'), href: "/usersDashboard/settings" },
     { icon: <CreditCard className="w-4 h-4" />, label: t('dash.menu.billing'), href: "/usersDashboard/billing" },
     { icon: <Zap className="w-4 h-4" />, label: t('dash.menu.upgradePlan'), href: "/usersDashboard/billing" },
-    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/" },
+    { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/", isLogout: true },
   ];
 
   const toggleDarkMode = () => {
@@ -349,7 +349,7 @@ export default function Topbar({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search..."
+                placeholder={t('common.searchPlaceholder')}
                 className="pl-9 pr-4 py-2 w-60 rounded-xl border border-gray-200 dark:border-white/10
                          bg-gray-50/80 dark:bg-white/5 backdrop-blur-sm
                          focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-400/50
@@ -371,7 +371,7 @@ export default function Topbar({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="search"
-                      placeholder="Search..."
+                      placeholder={t('common.searchPlaceholder')}
                       value={mobileSearchQuery}
                       onChange={(e) => setMobileSearchQuery(e.target.value)}
                       onKeyDown={(e) => {
@@ -413,7 +413,7 @@ export default function Topbar({
           <button
             onClick={toggleDarkMode}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Toggle dark mode"
+            title={t('dash.topbar.darkMode')}
           >
             {darkMode ? (
               <Sun className="w-5 h-5 text-yellow-500" />
@@ -435,7 +435,7 @@ export default function Topbar({
           <Link
             href="/usersDashboard/helpandsupport"
             className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Help & Support"
+            title={t('support.title')}
           >
             <HelpCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </Link>
@@ -445,7 +445,7 @@ export default function Topbar({
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
-              title="Notifications"
+              title={t('dash.topbar.notifications')}
             >
               <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               {unreadCount > 0 && (
@@ -527,7 +527,7 @@ export default function Topbar({
                               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{notification.message}</p>
                               <div className="flex items-center justify-between mt-2">
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {notification.time || formatTime(notification.created_at)}
+                                  {notification.time || formatTime(notification.created_at, t)}
                                 </span>
                                 {!notification.is_read && (
                                   <span className="text-xs px-2 py-0.5 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-full">
@@ -557,7 +557,7 @@ export default function Topbar({
                   <Image
                     unoptimized
                     src={profileImageUrl}
-                    alt="Profile"
+                    alt={t('common.profile')}
                     width={32}
                     height={32}
                     className="w-full h-full object-cover"
@@ -579,10 +579,10 @@ export default function Topbar({
                     ) : (
                       <>
                         <p className="text-sm font-medium text-gray-800 dark:text-white">
-                          {currentUser?.full_name || (type === "admin" ? "Administrator" : "User")}
+                          {currentUser?.full_name || (type === "admin" ? "Administrator" : t('dash.user'))}
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {type === "admin" ? t('dash.topbar.systemAdmin') : currentUser?.subscription_tier || 'User'}
+                          {type === "admin" ? t('dash.topbar.systemAdmin') : currentUser?.subscription_tier || t('dash.user')}
                         </p>
                       </>
                     )}
@@ -609,7 +609,7 @@ export default function Topbar({
                     ) : (
                       <>
                         <p className="font-medium text-gray-800 dark:text-white">
-                          {currentUser?.full_name || 'User'}
+                          {currentUser?.full_name || t('dash.user')}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-full">
                           {currentUser?.email || (type === "admin" ? "admin@suretalk.com" : "user@example.com")}
@@ -619,7 +619,7 @@ export default function Topbar({
                   </div>
                   <div className="p-2">
                     {userMenuItems.map((item, index) =>
-                      item.label === 'Logout' ? (
+                      item.isLogout ? (
                         <button
                           key={index}
                           onClick={() => { setShowUserMenu(false); logout(); }}
@@ -666,14 +666,14 @@ export default function Topbar({
 }
 
 // Helper function to format time
-function formatTime(dateString) {
+function formatTime(dateString, t) {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
   
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
-  return `${Math.floor(diffMins / 1440)}d ago`;
+  if (diffMins < 1) return t('help.justNow');
+  if (diffMins < 60) return t('help.minAgo', { count: diffMins });
+  if (diffMins < 1440) return t('help.hoursAgo', { count: Math.floor(diffMins / 60) });
+  return t('voice.daysAgo', { count: Math.floor(diffMins / 1440) });
 }

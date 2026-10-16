@@ -31,11 +31,13 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateFnsLocale } from '@/utils/dateLocale';
 
 export default function VoiceWills() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const dateLocale = getDateFnsLocale(lang);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function VoiceWills() {
     } catch (error) {
       if (error.name === 'AbortError') return;
       if (isMountedRef.current) {
-        setError(error.message || 'Failed to load voice wills');
+        setError(error.message || t('vault.loadError'));
       }
     } finally {
       if (isMountedRef.current) {
@@ -166,11 +168,11 @@ export default function VoiceWills() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown';
+    if (!dateString) return t('common.unknown');
     try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true, locale: dateLocale });
     } catch {
-      return 'Unknown';
+      return t('common.unknown');
     }
   };
 
@@ -179,13 +181,13 @@ export default function VoiceWills() {
       return {
         icon: Clock,
         color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
-        label: 'Released'
+        label: t('vault.released')
       };
     }
     return {
       icon: CheckCircle,
       color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-      label: 'Active'
+      label: t('billing.subStatus.active')
     };
   };
 
@@ -207,7 +209,7 @@ export default function VoiceWills() {
       }
     } catch (error) {
       console.error('Download failed:', error);
-      setError('Failed to download file');
+      setError(t('vault.downloadError'));
     }
   };
 
@@ -218,7 +220,7 @@ export default function VoiceWills() {
       setShowDeleteConfirm(null);
     } catch (error) {
       console.error('Delete failed:', error);
-      setError('Failed to delete voice will');
+      setError(t('vault.deleteError'));
     }
   };
 
@@ -226,13 +228,13 @@ export default function VoiceWills() {
   const displayItems = voiceWills.map(will => ({
     ...will,
     type: 'will',
-    title: will.title || 'Voice Will',
-    description: will.description || 'Legacy voice will',
+    title: will.title || t('vault.voiceWill'),
+    description: will.description || t('vault.legacyVoiceWill'),
     size: formatFileSize(will.file_size_bytes || 0),
     createdAt: formatDate(will.created_at),
     expires: will.release_condition === 'date' && will.release_date
-      ? format(new Date(will.release_date), 'PPpp')
-      : 'Conditional',
+      ? format(new Date(will.release_date), 'PPpp', { locale: dateLocale })
+      : t('vault.conditional'),
     encrypted: true,
     status: will.is_released ? 'released' : 'active',
     tags: ['will', 'legacy', 'protected']
@@ -250,7 +252,7 @@ export default function VoiceWills() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying access...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('vault.verifying')}</p>
         </div>
       </div>
     );
@@ -280,7 +282,7 @@ export default function VoiceWills() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading voice wills...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('vault.loading')}</p>
         </div>
       </div>
     );
@@ -290,7 +292,7 @@ export default function VoiceWills() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Error Loading Voice Wills</h3>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">{t('vault.loadErrorTitle')}</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">{error}</p>
         <button
           onClick={() => fetchWillsData(1, true)}
@@ -302,7 +304,7 @@ export default function VoiceWills() {
           ) : (
             <RefreshCw className="w-4 h-4" />
           )}
-          Retry
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -328,7 +330,7 @@ export default function VoiceWills() {
                   {t('vault.title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  {stats.total_wills || 0} voice {stats.total_wills === 1 ? 'will' : 'wills'}
+                  {t(stats.total_wills === 1 ? 'vault.countOne' : 'vault.count', { count: stats.total_wills || 0 })}
                 </p>
               </div>
             </div>
@@ -386,7 +388,7 @@ export default function VoiceWills() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="search"
-            placeholder="Search voice wills..."
+            placeholder={t('vault.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600
@@ -480,7 +482,7 @@ export default function VoiceWills() {
                               className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300
                                        rounded-full text-xs"
                             >
-                              {tag}
+                              {t(`vault.tag.${tag}`)}
                             </span>
                           ))}
                         </div>
@@ -499,21 +501,21 @@ export default function VoiceWills() {
                               className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                             >
                               <Download className="w-4 h-4" />
-                              Download
+                              {t('common.download')}
                             </button>
                             <Link
                               href={`/usersDashboard/vault/wills/${item.id}`}
                               className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                             >
                               <Eye className="w-4 h-4" />
-                              View Details
+                              {t('sched.viewDetails')}
                             </Link>
                             <button
                               onClick={() => handleDelete(item.id)}
                               className="w-full px-4 py-2 text-left hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 flex items-center gap-2"
                             >
                               <Trash2 className="w-4 h-4" />
-                              Delete
+                              {t('common.delete')}
                             </button>
                           </div>
                         )}
@@ -534,11 +536,11 @@ export default function VoiceWills() {
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                         <Calendar className="w-4 h-4" />
-                        <span>Added {item.createdAt}</span>
+                        <span>{t('vault.added', { when: item.createdAt })}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                         <Clock className="w-4 h-4" />
-                        <span>Expires: {item.expires}</span>
+                        <span>{t('vault.releases', { when: item.expires })}</span>
                       </div>
                     </div>
 
@@ -551,18 +553,18 @@ export default function VoiceWills() {
                                  flex items-center justify-center gap-2"
                       >
                         <Eye className="w-4 h-4" />
-                        View Details
+                        {t('sched.viewDetails')}
                       </Link>
                       <button
                         onClick={() => handleDownload(item)}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-                        title="Download"
+                        title={t('common.download')}
                       >
                         <Download className="w-4 h-4" />
                       </button>
                       <button
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-                        title="Share"
+                        title={t('common.share')}
                       >
                         <Share2 className="w-4 h-4" />
                       </button>
@@ -581,7 +583,7 @@ export default function VoiceWills() {
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600
                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  Previous
+                  {t('common.previous')}
                 </button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
@@ -617,7 +619,7 @@ export default function VoiceWills() {
                   className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600
                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  Next
+                  {t('common.next')}
                 </button>
               </div>
             )}
@@ -640,18 +642,17 @@ export default function VoiceWills() {
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
-              Bank-Level Security
+              {t('vault.securityTitle')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Your voice wills are protected with AES-256 encryption, secure key management,
-              and automated backups. All data is encrypted at rest and in transit.
+              {t('vault.securityDesc')}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Lock, label: "AES-256 Encryption", color: "text-green-500" },
-                { icon: Shield, label: "Secure Key Mgmt", color: "text-blue-500" },
-                { icon: Archive, label: "Auto Backup", color: "text-purple-500" },
-                { icon: AlertTriangle, label: "Access Logs", color: "text-yellow-500" },
+                { icon: Lock, label: t('vault.featAes'), color: "text-green-500" },
+                { icon: Shield, label: t('vault.featKeys'), color: "text-blue-500" },
+                { icon: Archive, label: t('vault.featBackup'), color: "text-purple-500" },
+                { icon: AlertTriangle, label: t('vault.featLogs'), color: "text-yellow-500" },
               ].map((feature, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <feature.icon className={`w-4 h-4 ${feature.color}`} />
@@ -673,10 +674,10 @@ export default function VoiceWills() {
           >
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-800 dark:text-white text-center mb-2">
-              Delete Voice Will
+              {t('vault.deleteTitle')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-              Are you sure you want to delete this voice will? This action cannot be undone.
+              {t('vault.deleteConfirm')}
             </p>
             <div className="flex gap-3">
               <button
@@ -684,13 +685,13 @@ export default function VoiceWills() {
                 className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-gray-600
                          text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => handleDelete(showDeleteConfirm)}
                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </motion.div>

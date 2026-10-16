@@ -9,6 +9,8 @@ import {
 import Link from 'next/link';
 import { api } from '@/utils/api';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateFnsLocale } from '@/utils/dateLocale';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
@@ -23,6 +25,16 @@ function formatFileSize(bytes) {
 export default function VoiceWillDetail() {
   const { id } = useParams();
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const dateLocale = getDateFnsLocale(lang);
+
+  // Translated label for a release condition (manual / date / event); unknown values are shown as stored
+  const conditionLabel = (value) => {
+    if (!value) return t('vault.notSet');
+    const key = `vault.cond.${value}`;
+    const label = t(key);
+    return label === key ? value : label;
+  };
   const [will, setWill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,9 +45,9 @@ export default function VoiceWillDetail() {
       try {
         const response = await api.getVoiceWill(id);
         if (response?.success) setWill(response.data);
-        else throw new Error(response?.message || 'Failed to load voice will');
+        else throw new Error(response?.message || t('vault.loadOneError'));
       } catch (err) {
-        setError(err.message || 'Failed to load voice will');
+        setError(err.message || t('vault.loadOneError'));
       } finally {
         setLoading(false);
       }
@@ -44,13 +56,13 @@ export default function VoiceWillDetail() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this voice will? This cannot be undone.')) return;
+    if (!window.confirm(t('vault.deleteConfirm'))) return;
     try {
       setDeleting(true);
       await api.deleteVoiceWill(id);
       router.push('/usersDashboard/vault');
     } catch (err) {
-      setError(err.message || 'Failed to delete voice will');
+      setError(err.message || t('vault.deleteError'));
       setDeleting(false);
     }
   };
@@ -67,7 +79,7 @@ export default function VoiceWillDetail() {
       <p className="text-gray-600 dark:text-gray-400">{error}</p>
       <Link href="/usersDashboard/vault"
         className="px-4 py-2 bg-brand-500 text-white rounded-xl hover:bg-brand-600">
-        Back to Vault
+        {t('vault.backToVault')}
       </Link>
     </div>
   );
@@ -97,14 +109,14 @@ export default function VoiceWillDetail() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                {will.title || 'Voice Will'}
+                {will.title || t('vault.voiceWill')}
               </h1>
               <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                 will.source === 'ivr'
                   ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                   : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
               }`}>
-                {will.source === 'ivr' ? 'Recorded via IVR' : 'Recorded via App'}
+                {will.source === 'ivr' ? t('vault.viaIvr') : t('vault.viaApp')}
               </span>
             </div>
           </div>
@@ -112,7 +124,7 @@ export default function VoiceWillDetail() {
             className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl
                        hover:bg-red-600 transition-colors disabled:opacity-50">
             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            Delete
+            {t('common.delete')}
           </button>
         </div>
       </motion.div>
@@ -131,12 +143,12 @@ export default function VoiceWillDetail() {
           className="glass rounded-2xl p-6">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <Play className="w-5 h-5 text-purple-500" />
-            Play Recording
+            {t('vault.playRecording')}
           </h2>
           {audioSrc ? (
             <audio controls src={audioSrc} className="w-full" />
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">No audio available for this will</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('vault.noAudio')}</p>
           )}
         </motion.div>
 
@@ -144,69 +156,69 @@ export default function VoiceWillDetail() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="glass rounded-2xl p-6">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Details</h2>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('schedd.tabDetails')}</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Contact / Beneficiary</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('vault.contactBeneficiary')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white">
-                  {will.contact_phone || 'Not specified'}
+                  {will.contact_phone || t('vault.notSpecified')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Release Condition</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('vault.releaseCondition')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white capitalize">
-                  {will.release_condition || 'Not set'}
+                  {conditionLabel(will.release_condition)}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Release Date</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('vault.releaseDate')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white">
                   {will.release_date
-                    ? format(new Date(will.release_date), 'PPpp')
-                    : 'Not set'}
+                    ? format(new Date(will.release_date), 'PPpp', { locale: dateLocale })
+                    : t('vault.notSet')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <AlertCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('common.status')}</p>
                 <span className={`inline-flex items-center px-2 py-0.5 text-xs rounded-full font-medium ${
                   will.is_released
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                     : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                 }`}>
-                  {will.is_released ? 'Released' : 'Active'}
+                  {will.is_released ? t('vault.released') : t('billing.subStatus.active')}
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Created</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('schedd.created')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white">
                   {will.created_at
-                    ? formatDistanceToNow(new Date(will.created_at)) + ' ago'
-                    : 'Unknown'}
+                    ? formatDistanceToNow(new Date(will.created_at), { addSuffix: true, locale: dateLocale })
+                    : t('common.unknown')}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Download className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Storage</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('bill.storage')}</p>
                 <p className="text-sm font-medium text-gray-800 dark:text-white">
                   {will.file_size_bytes
                     ? formatFileSize(will.file_size_bytes)
-                    : '0 Bytes (IVR recording)'}
+                    : t('vault.ivrNoSize')}
                 </p>
               </div>
             </div>

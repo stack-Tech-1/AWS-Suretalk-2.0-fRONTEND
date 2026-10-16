@@ -15,6 +15,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function UserHelpSupport() {
   const { t } = useLanguage();
+
+  // Translated label for a value from the API (status, category, priority); unknown values are shown as-is
+  const valueLabel = (group, value) => {
+    if (!value) return '';
+    const key = `support.${group}.${value}`;
+    const label = t(key);
+    return label === key ? value.replace(/_/g, ' ') : label;
+  };
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('knowledge-base');
   const [loading, setLoading] = useState(true);
@@ -36,17 +44,17 @@ export default function UserHelpSupport() {
 
   // Breadcrumb items
   const breadcrumbs = [
-    { label: "Dashboard", href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "Help & Support", href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" />, current: true }
+    { label: t('help.dashboard'), href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
+    { label: t('support.title'), href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" />, current: true }
   ];
 
   // FAQ categories
   const categories = [
-    { id: 'getting-started', label: 'Getting Started', icon: <BookOpen className="w-5 h-5" /> },
-    { id: 'voice-notes', label: 'Voice Notes', icon: <Headphones className="w-5 h-5" /> },
-    { id: 'billing', label: 'Billing & Plans', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'security', label: 'Security & Privacy', icon: <Shield className="w-5 h-5" /> },
-    { id: 'account', label: 'Account Settings', icon: <Settings className="w-5 h-5" /> },
+    { id: 'getting-started', label: t('support.kbCat.getting-started'), icon: <BookOpen className="w-5 h-5" /> },
+    { id: 'voice-notes', label: t('support.kbCat.voice-notes'), icon: <Headphones className="w-5 h-5" /> },
+    { id: 'billing', label: t('support.kbCat.billing'), icon: <CreditCard className="w-5 h-5" /> },
+    { id: 'security', label: t('support.kbCat.security'), icon: <Shield className="w-5 h-5" /> },
+    { id: 'account', label: t('support.kbCat.account'), icon: <Settings className="w-5 h-5" /> },
   ];
 
   useEffect(() => {
@@ -56,8 +64,8 @@ export default function UserHelpSupport() {
   const getFallbackKnowledgeBase = () => [
     {
       id: "1",
-      title: "How to Record Your First Voice Note",
-      content: "Learn how to create and save your first voice note on SureTalk...",
+      title: t('help.fb1Title'),
+      content: t('help.fb1Content'),
       category: "getting-started",
       tags: ["recording", "beginner", "tutorial"],
       views: 1245,
@@ -67,8 +75,8 @@ export default function UserHelpSupport() {
     },
     {
       id: "2",
-      title: "Understanding Your Storage Limits",
-      content: "Learn about storage limits for each plan and how to manage your voice notes...",
+      title: t('help.fb2Title'),
+      content: t('help.fb2Content'),
       category: "billing",
       tags: ["storage", "limits", "plans"],
       views: 876,
@@ -115,12 +123,12 @@ export default function UserHelpSupport() {
   const handleCreateTicket = async () => {
     try {
       if (!newTicketData.subject || !newTicketData.description) {
-        toast.warning('Please fill in all required fields', 'Required Fields');
+        toast.warning(t('help.fillRequired'), t('help.requiredFields'));
         return;
       }
 
       await api.createSupportTicket(newTicketData);
-      toast.success('Support ticket created successfully! Our team will respond within 24 hours.', 'Ticket Created');
+      toast.success(t('help.ticketCreated'), t('help.ticketCreatedTitle'));
       
       setShowNewTicket(false);
       setNewTicketData({
@@ -135,17 +143,17 @@ export default function UserHelpSupport() {
       
     } catch (error) {
       console.error('Create ticket error:', error);
-      toast.error('Failed to create support ticket. Please try again.');
+      toast.error(t('help.ticketError'));
     }
   };
 
   const timeAgo = (date) => {
-    if (!date) return 'No responses yet';
+    if (!date) return t('help.noResponses');
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    return `${Math.floor(seconds / 86400)} days ago`;
+    if (seconds < 60) return t('help.justNow');
+    if (seconds < 3600) return t('help.minAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('help.hoursAgo', { count: Math.floor(seconds / 3600) });
+    return t('voice.daysAgo', { count: Math.floor(seconds / 86400) });
   };
 
   const getStatusColor = (status) => {
@@ -176,7 +184,7 @@ export default function UserHelpSupport() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <nav className="flex" aria-label="Breadcrumb">
+        <nav className="flex" aria-label={t('help.breadcrumb')}>
           <ol className="flex items-center space-x-2">
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center">
@@ -253,7 +261,7 @@ export default function UserHelpSupport() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Subject *
+                      {t('help.subjectRequired')}
                     </label>
                     <input
                       type="text"
@@ -262,14 +270,14 @@ export default function UserHelpSupport() {
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                                bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                                focus:border-transparent transition-all"
-                      placeholder="Briefly describe your issue"
+                      placeholder={t('help.subjectPlaceholder')}
                     />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Category
+                        {t('help.category')}
                       </label>
                       <select
                         value={newTicketData.category}
@@ -278,18 +286,18 @@ export default function UserHelpSupport() {
                                  bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                                  focus:border-transparent transition-all"
                       >
-                        <option value="general">General</option>
-                        <option value="technical">Technical</option>
-                        <option value="billing">Billing</option>
-                        <option value="account">Account</option>
-                        <option value="feature_request">Feature Request</option>
-                        <option value="bug">Bug Report</option>
+                        <option value="general">{t('support.ticketCat.general')}</option>
+                        <option value="technical">{t('support.ticketCat.technical')}</option>
+                        <option value="billing">{t('support.ticketCat.billing')}</option>
+                        <option value="account">{t('support.ticketCat.account')}</option>
+                        <option value="feature_request">{t('support.ticketCat.feature_request')}</option>
+                        <option value="bug">{t('support.ticketCat.bug')}</option>
                       </select>
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Priority
+                        {t('help.priority')}
                       </label>
                       <select
                         value={newTicketData.priority}
@@ -298,17 +306,17 @@ export default function UserHelpSupport() {
                                  bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                                  focus:border-transparent transition-all"
                       >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
+                        <option value="low">{t('support.priority.low')}</option>
+                        <option value="medium">{t('support.priority.medium')}</option>
+                        <option value="high">{t('support.priority.high')}</option>
+                        <option value="critical">{t('support.priority.critical')}</option>
                       </select>
                     </div>
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Description *
+                      {t('help.descriptionRequired')}
                     </label>
                     <textarea
                       value={newTicketData.description}
@@ -317,7 +325,7 @@ export default function UserHelpSupport() {
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                                bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                                focus:border-transparent transition-all resize-none"
-                      placeholder="Please provide detailed information about your issue..."
+                      placeholder={t('help.descriptionPlaceholder')}
                     />
                   </div>
                 </div>
@@ -468,9 +476,9 @@ export default function UserHelpSupport() {
                           {article.title}
                         </h3>
                         <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                          <span className="capitalize">{article.category}</span>
+                          <span className="capitalize">{valueLabel('kbCat', article.category)}</span>
                           <span>•</span>
-                          <span>{article.views?.toLocaleString() || 0} views</span>
+                          <span>{t('help.views', { count: article.views?.toLocaleString() || 0 })}</span>
                           <span>•</span>
                           <span>{timeAgo(article.created_at)}</span>
                         </div>
@@ -510,7 +518,7 @@ export default function UserHelpSupport() {
                     onClick={() => router.push(`/usersDashboard/helpandsupport/articles/${article.id}`)}
                     className="text-brand-600 dark:text-brand-400 hover:text-brand-700 font-medium"
                   >
-                    Read full article →
+                    {t('help.readFull')} →
                   </button>
                 </div>
               ))}
@@ -545,7 +553,7 @@ export default function UserHelpSupport() {
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
                           {getStatusIcon(ticket.status)}
-                          {ticket.status.replace('_', ' ')}
+                          {valueLabel('status', ticket.status)}
                         </div>
                         <div className="text-sm text-gray-500">
                           {ticket.ticket_number}
@@ -565,7 +573,7 @@ export default function UserHelpSupport() {
                         className="px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
                                  text-white rounded-lg hover:shadow-lg transition-all"
                       >
-                        View
+                        {t('help.view')}
                       </button>
                     </div>
                   </div>
@@ -573,17 +581,17 @@ export default function UserHelpSupport() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600 dark:text-gray-400">Category:</span>
-                      <span className="font-medium capitalize">{ticket.category}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('help.category')}:</span>
+                      <span className="font-medium capitalize">{valueLabel('ticketCat', ticket.category)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600 dark:text-gray-400">Responses:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('help.responses')}:</span>
                       <span className="font-medium">{ticket.response_count || 0}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('schedd.created')}:</span>
                       <span className="font-medium">{timeAgo(ticket.created_at)}</span>
                     </div>
                   </div>
@@ -624,9 +632,9 @@ export default function UserHelpSupport() {
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-white">
-            <h3 className="text-lg font-bold mb-2">Need more help?</h3>
+            <h3 className="text-lg font-bold mb-2">{t('help.needMore')}</h3>
             <p className="opacity-90">
-              Our support team is available 24/7 to assist you.
+              {t('help.needMoreDesc')}
             </p>
           </div>
           <div className="flex gap-3">
@@ -635,14 +643,14 @@ export default function UserHelpSupport() {
               className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl 
                        hover:bg-white/30 transition-all font-medium"
             >
-              Contact Support
+              {t('bill.contactSupport')}
             </button>
             <button 
               onClick={() => window.open('mailto:contact@suretalknow.com', '_blank')}
               className="px-6 py-3 bg-white text-brand-600 rounded-xl hover:bg-gray-100 
                        transition-all font-medium"
             >
-              Email Us
+              {t('help.emailUs')}
             </button>
           </div>
         </div>

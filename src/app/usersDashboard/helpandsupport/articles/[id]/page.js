@@ -10,11 +10,21 @@ import {
   Eye, ChevronRight, Home, HelpCircle, FileText, Share2,
   Copy, Printer, Download, MessageSquare, User, Clock
 } from "lucide-react";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function UserArticleDetail() {
   const router = useRouter();
   const params = useParams();
   const articleId = params.id;
+  const { t, locale } = useLanguage();
+
+  // Translated label for a value from the API (status, category, priority); unknown values are shown as-is
+  const valueLabel = (group, value) => {
+    if (!value) return '';
+    const key = `support.${group}.${value}`;
+    const label = t(key);
+    return label === key ? value.replace(/_/g, ' ') : label;
+  };
   
   const [loading, setLoading] = useState(true);
   const [article, setArticle] = useState(null);
@@ -24,10 +34,10 @@ export default function UserArticleDetail() {
 
   // Breadcrumb items
   const breadcrumbs = [
-    { label: "Dashboard", href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "Help & Support", href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" /> },
-    { label: "Knowledge Base", href: "/usersDashboard/helpandsupport", icon: <FileText className="w-4 h-4" /> },
-    { label: "Article", icon: <BookOpen className="w-4 h-4" />, current: true }
+    { label: t('help.dashboard'), href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
+    { label: t('support.title'), href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" /> },
+    { label: t('support.knowledgeBase'), href: "/usersDashboard/helpandsupport", icon: <FileText className="w-4 h-4" /> },
+    { label: t('art.article'), icon: <BookOpen className="w-4 h-4" />, current: true }
   ];
 
   useEffect(() => {
@@ -161,7 +171,7 @@ Need more help? Contact our support team for assistance.`,
         break;
       case 'copy':
         navigator.clipboard.writeText(url);
-        toast.success('Link copied to clipboard!', 'Copied');
+        toast.success(t('schedd.linkCopied'), t('common.copied'));
         return;
     }
     
@@ -170,7 +180,7 @@ Need more help? Contact our support team for assistance.`,
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString(locale, {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
@@ -179,10 +189,10 @@ Need more help? Contact our support team for assistance.`,
 
   const timeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 86400) return 'Today';
-    if (seconds < 172800) return 'Yesterday';
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-    if (seconds < 2592000) return `${Math.floor(seconds / 604800)} weeks ago`;
+    if (seconds < 86400) return t('common.today');
+    if (seconds < 172800) return t('common.yesterday');
+    if (seconds < 604800) return t('voice.daysAgo', { count: Math.floor(seconds / 86400) });
+    if (seconds < 2592000) return t('contacts.weeksAgo', { count: Math.floor(seconds / 604800) });
     return formatDate(date);
   };
 
@@ -191,7 +201,7 @@ Need more help? Contact our support team for assistance.`,
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading article...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('art.loading')}</p>
         </div>
       </div>
     );
@@ -201,13 +211,13 @@ Need more help? Contact our support team for assistance.`,
     return (
       <div className="text-center py-16">
         <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Article Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">The requested article could not be found.</p>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('art.notFound')}</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">{t('art.notFoundDesc')}</p>
         <button
           onClick={() => router.push('/usersDashboard/helpandsupport')}
           className="px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all"
         >
-          Back to Knowledge Base
+          {t('art.backToKb')}
         </button>
       </div>
     );
@@ -221,7 +231,7 @@ Need more help? Contact our support team for assistance.`,
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <nav className="flex" aria-label="Breadcrumb">
+        <nav className="flex" aria-label={t('help.breadcrumb')}>
           <ol className="flex items-center space-x-2">
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center">
@@ -273,15 +283,15 @@ Need more help? Contact our support team for assistance.`,
             <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Updated {timeAgo(article.updated_at)}
+                {t('art.updated', { when: timeAgo(article.updated_at) })}
               </div>
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
-                {article.views?.toLocaleString() || 0} views
+                {t('help.views', { count: article.views?.toLocaleString() || 0 })}
               </div>
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4" />
-                <span className="capitalize">{article.category}</span>
+                <span className="capitalize">{valueLabel('kbCat', article.category)}</span>
               </div>
             </div>
           </div>
@@ -335,7 +345,7 @@ Need more help? Contact our support team for assistance.`,
             className="mt-8 glass rounded-2xl p-6"
           >
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-              Was this article helpful?
+              {t('art.helpful')}
             </h3>
             
             <div className="flex items-center gap-4 mb-6">
@@ -349,7 +359,7 @@ Need more help? Contact our support team for assistance.`,
                 }`}
               >
                 <ThumbsUp className="w-4 h-4" />
-                Yes ({article.helpful_votes || 0})
+                {t('common.yes')} ({article.helpful_votes || 0})
               </button>
               
               <button
@@ -362,13 +372,13 @@ Need more help? Contact our support team for assistance.`,
                 }`}
               >
                 <ThumbsDown className="w-4 h-4" />
-                No ({article.not_helpful_votes || 0})
+                {t('common.no')} ({article.not_helpful_votes || 0})
               </button>
             </div>
             
             {voted && (
               <p className="text-green-600 dark:text-green-400 text-sm">
-                Thank you for your feedback!
+                {t('art.thanks')}
               </p>
             )}
           </motion.div>
@@ -383,7 +393,7 @@ Need more help? Contact our support team for assistance.`,
             transition={{ duration: 0.5, delay: 0.3 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Table of Contents</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('art.toc')}</h3>
             
             <nav className="space-y-2">
               {article.content
@@ -417,7 +427,7 @@ Need more help? Contact our support team for assistance.`,
             transition={{ duration: 0.5, delay: 0.4 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Share & Actions</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('art.shareActions')}</h3>
             
             <div className="space-y-3">
               <div className="relative">
@@ -428,7 +438,7 @@ Need more help? Contact our support team for assistance.`,
                            transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
-                  Share this article
+                  {t('art.share')}
                 </button>
                 
                 {showShareMenu && (
@@ -445,7 +455,7 @@ Need more help? Contact our support team for assistance.`,
                                  dark:hover:bg-gray-700 transition-colors"
                       >
                         <Copy className="w-4 h-4" />
-                        Copy link
+                        {t('vnd.copyLink')}
                       </button>
                       <button
                         onClick={() => handleShare('twitter')}
@@ -453,7 +463,7 @@ Need more help? Contact our support team for assistance.`,
                                  dark:hover:bg-gray-700 transition-colors"
                       >
                         <span className="text-blue-400">𝕏</span>
-                        Share on Twitter
+                        {t('art.shareTwitter')}
                       </button>
                       <button
                         onClick={() => handleShare('facebook')}
@@ -461,7 +471,7 @@ Need more help? Contact our support team for assistance.`,
                                  dark:hover:bg-gray-700 transition-colors"
                       >
                         <span className="text-blue-600">f</span>
-                        Share on Facebook
+                        {t('art.shareFacebook')}
                       </button>
                     </div>
                   </>
@@ -475,7 +485,7 @@ Need more help? Contact our support team for assistance.`,
                          transition-colors"
               >
                 <Printer className="w-4 h-4" />
-                Print this article
+                {t('art.print')}
               </button>
               
               <button
@@ -495,7 +505,7 @@ Need more help? Contact our support team for assistance.`,
                          transition-colors"
               >
                 <Download className="w-4 h-4" />
-                Download as Markdown
+                {t('art.downloadMd')}
               </button>
             </div>
           </motion.div>
@@ -508,7 +518,7 @@ Need more help? Contact our support team for assistance.`,
               transition={{ duration: 0.5, delay: 0.5 }}
               className="glass rounded-2xl p-6"
             >
-              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Related Articles</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('art.related')}</h3>
               
               <div className="space-y-3">
                 {relatedArticles.map((related) => (
@@ -543,9 +553,9 @@ Need more help? Contact our support team for assistance.`,
             className="p-6 bg-gradient-to-r from-brand-600 to-accent-500 rounded-2xl"
           >
             <div className="text-white">
-              <h3 className="font-bold mb-2">Still need help?</h3>
+              <h3 className="font-bold mb-2">{t('art.stillNeedHelp')}</h3>
               <p className="text-sm opacity-90 mb-4">
-                Can't find what you're looking for? Our support team is here to help.
+                {t('art.stillNeedHelpDesc')}
               </p>
               <div className="flex gap-3">
                 <button
@@ -553,14 +563,14 @@ Need more help? Contact our support team for assistance.`,
                   className="flex-1 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg 
                            hover:bg-white/30 transition-all text-sm"
                 >
-                  Contact Support
+                  {t('bill.contactSupport')}
                 </button>
                 <button
                   onClick={() => router.push('/usersDashboard/helpandsupport')}
                   className="flex-1 px-3 py-2 bg-white text-brand-600 rounded-lg 
                            hover:bg-gray-100 transition-all text-sm"
                 >
-                  Browse More Articles
+                  {t('art.browseMore')}
                 </button>
               </div>
             </div>

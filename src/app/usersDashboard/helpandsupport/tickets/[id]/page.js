@@ -11,11 +11,21 @@ import {
   ChevronRight, Home, HelpCircle, Send, Copy, ThumbsUp,
   ThumbsDown, RefreshCw
 } from "lucide-react";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function UserTicketDetail() {
   const router = useRouter();
   const params = useParams();
   const ticketId = params.id;
+  const { t, locale } = useLanguage();
+
+  // Translated label for a value from the API (status, category, priority); unknown values are shown as-is
+  const valueLabel = (group, value) => {
+    if (!value) return '';
+    const key = `support.${group}.${value}`;
+    const label = t(key);
+    return label === key ? value.replace(/_/g, ' ') : label;
+  };
   
   const [loading, setLoading] = useState(true);
   const [ticket, setTicket] = useState(null);
@@ -25,10 +35,10 @@ export default function UserTicketDetail() {
 
   // Breadcrumb items
   const breadcrumbs = [
-    { label: "Dashboard", href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "Help & Support", href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" /> },
-    { label: "My Tickets", href: "/usersDashboard/helpandsupport", icon: <MessageSquare className="w-4 h-4" /> },
-    { label: "Ticket Details", icon: <AlertCircle className="w-4 h-4" />, current: true }
+    { label: t('help.dashboard'), href: "/usersDashboard", icon: <Home className="w-4 h-4" /> },
+    { label: t('support.title'), href: "/usersDashboard/helpandsupport", icon: <HelpCircle className="w-4 h-4" /> },
+    { label: t('support.myTickets'), href: "/usersDashboard/helpandsupport", icon: <MessageSquare className="w-4 h-4" /> },
+    { label: t('tick.details'), icon: <AlertCircle className="w-4 h-4" />, current: true }
   ];
 
   useEffect(() => {
@@ -112,7 +122,7 @@ export default function UserTicketDetail() {
 
     } catch (error) {
       console.error("Send response error:", error);
-      toast.error('Failed to send response. Please try again.');
+      toast.error(t('tick.sendError'));
     }
   };
 
@@ -138,14 +148,14 @@ export default function UserTicketDetail() {
 
   const timeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    return `${Math.floor(seconds / 86400)} days ago`;
+    if (seconds < 60) return t('help.justNow');
+    if (seconds < 3600) return t('help.minAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('help.hoursAgo', { count: Math.floor(seconds / 3600) });
+    return t('voice.daysAgo', { count: Math.floor(seconds / 86400) });
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -159,7 +169,7 @@ export default function UserTicketDetail() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading ticket details...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('tick.loading')}</p>
         </div>
       </div>
     );
@@ -169,13 +179,13 @@ export default function UserTicketDetail() {
     return (
       <div className="text-center py-16">
         <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Ticket Not Found</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">The requested ticket could not be found.</p>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('tick.notFound')}</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">{t('tick.notFoundDesc')}</p>
         <button
           onClick={() => router.push('/usersDashboard/helpandsupport')}
           className="px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all"
         >
-          Back to Tickets
+          {t('support.backToTickets')}
         </button>
       </div>
     );
@@ -189,7 +199,7 @@ export default function UserTicketDetail() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <nav className="flex" aria-label="Breadcrumb">
+        <nav className="flex" aria-label={t('help.breadcrumb')}>
           <ol className="flex items-center space-x-2">
             {breadcrumbs.map((crumb, index) => (
               <li key={index} className="flex items-center">
@@ -240,7 +250,7 @@ export default function UserTicketDetail() {
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 ${getStatusColor(ticket.status)}`}>
                     {getStatusIcon(ticket.status)}
-                    {ticket.status.replace('_', ' ')}
+                    {valueLabel('status', ticket.status)}
                   </div>
                   <div className="text-sm text-gray-500">
                     {ticket.ticket_number}
@@ -248,10 +258,10 @@ export default function UserTicketDetail() {
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(ticket.ticket_number);
-                      toast.success('Ticket number copied to clipboard!', 'Copied');
+                      toast.success(t('tick.numberCopied'), t('common.copied'));
                     }}
                     className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                    title="Copy ticket number"
+                    title={t('tick.copyNumber')}
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -264,25 +274,25 @@ export default function UserTicketDetail() {
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <div>
-                <div className="text-sm text-gray-500 mb-1">Priority</div>
-                <div className="font-medium capitalize">{ticket.priority}</div>
+                <div className="text-sm text-gray-500 mb-1">{t('help.priority')}</div>
+                <div className="font-medium capitalize">{valueLabel('priority', ticket.priority)}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500 mb-1">Category</div>
+                <div className="text-sm text-gray-500 mb-1">{t('help.category')}</div>
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-gray-400" />
-                  <span className="font-medium capitalize">{ticket.category}</span>
+                  <span className="font-medium capitalize">{valueLabel('ticketCat', ticket.category)}</span>
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-500 mb-1">Created</div>
+                <div className="text-sm text-gray-500 mb-1">{t('schedd.created')}</div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <span className="font-medium">{formatDate(ticket.created_at)}</span>
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-500 mb-1">Last Updated</div>
+                <div className="text-sm text-gray-500 mb-1">{t('schedd.lastUpdated')}</div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-gray-400" />
                   <span className="font-medium">{timeAgo(ticket.updated_at)}</span>
@@ -298,7 +308,7 @@ export default function UserTicketDetail() {
                      transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('common.refresh')}
           </button>
         </div>
       </motion.div>
@@ -313,7 +323,7 @@ export default function UserTicketDetail() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="glass rounded-2xl p-6 mb-8"
           >
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Your Request</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('tick.yourRequest')}</h2>
             <div className="prose prose-gray dark:prose-invert max-w-none">
               <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                 {ticket.description}
@@ -328,7 +338,7 @@ export default function UserTicketDetail() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="glass rounded-2xl p-6"
           >
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Conversation</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('tick.conversation')}</h2>
             
             <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
               {/* User's initial message */}
@@ -338,7 +348,7 @@ export default function UserTicketDetail() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-gray-800 dark:text-white">You</span>
+                    <span className="font-semibold text-gray-800 dark:text-white">{t('tick.you')}</span>
                     <span className="text-sm text-gray-500">{formatDate(ticket.created_at)}</span>
                   </div>
                   <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-tl-none p-4">
@@ -364,7 +374,7 @@ export default function UserTicketDetail() {
                   <div className={`flex-1 ${response.user_name === 'You' ? 'text-right' : ''}`}>
                     <div className={`flex items-center gap-2 mb-2 ${response.user_name === 'You' ? 'justify-end' : ''}`}>
                       <span className="font-semibold text-gray-800 dark:text-white">
-                        {response.user_name}
+                        {response.user_name === 'You' ? t('tick.you') : response.user_name}
                       </span>
                       <span className="text-sm text-gray-500">
                         {formatDate(response.created_at)}
@@ -390,7 +400,7 @@ export default function UserTicketDetail() {
                 <textarea
                   value={newResponse}
                   onChange={(e) => setNewResponse(e.target.value)}
-                  placeholder="Type your response..."
+                  placeholder={t('tick.responsePlaceholder')}
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
@@ -410,7 +420,7 @@ export default function UserTicketDetail() {
                              disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <Send className="w-4 h-4" />
-                    Send Response
+                    {t('tick.send')}
                   </button>
                 </div>
               </div>
@@ -427,7 +437,7 @@ export default function UserTicketDetail() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Helpful Information</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('tick.helpfulInfo')}</h3>
             
             <div className="space-y-4">
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
@@ -436,9 +446,9 @@ export default function UserTicketDetail() {
                     <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-800 dark:text-white mb-1">Response Time</h4>
+                    <h4 className="font-medium text-gray-800 dark:text-white mb-1">{t('tick.responseTime')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Our team typically responds within 24 hours during business days.
+                      {t('tick.responseTimeDesc')}
                     </p>
                   </div>
                 </div>
@@ -450,9 +460,9 @@ export default function UserTicketDetail() {
                     <MessageSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-800 dark:text-white mb-1">Keep the Conversation Going</h4>
+                    <h4 className="font-medium text-gray-800 dark:text-white mb-1">{t('tick.keepGoing')}</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Please respond promptly to keep the conversation active and resolve your issue faster.
+                      {t('tick.keepGoingDesc')}
                     </p>
                   </div>
                 </div>
@@ -467,7 +477,7 @@ export default function UserTicketDetail() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('dash.quickActions')}</h3>
             
             <div className="space-y-3">
               <button
@@ -477,7 +487,7 @@ export default function UserTicketDetail() {
                          transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                Email Support
+                {t('tick.emailSupport')}
               </button>
               
               <button
@@ -487,7 +497,7 @@ export default function UserTicketDetail() {
                          transition-colors"
               >
                 <Copy className="w-4 h-4" />
-                Copy Ticket Number
+                {t('tick.copyNumberFull')}
               </button>
               
               <button
@@ -497,7 +507,7 @@ export default function UserTicketDetail() {
                          transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to My Tickets
+                {t('tick.backToMine')}
               </button>
             </div>
           </motion.div>
@@ -509,28 +519,28 @@ export default function UserTicketDetail() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Ticket Status</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">{t('tick.status')}</h3>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Current Status:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('schede.currentStatus')}:</span>
                 <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
-                  {ticket.status.replace('_', ' ')}
+                  {valueLabel('status', ticket.status)}
                 </div>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('schedd.created')}:</span>
                 <span className="font-medium">{timeAgo(ticket.created_at)}</span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Last Update:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('schedd.lastUpdated')}:</span>
                 <span className="font-medium">{timeAgo(ticket.updated_at)}</span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Responses:</span>
+                <span className="text-gray-600 dark:text-gray-400">{t('help.responses')}:</span>
                 <span className="font-medium">{responses.length}</span>
               </div>
             </div>
@@ -550,27 +560,26 @@ export default function UserTicketDetail() {
             <div className="text-white">
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle className="w-6 h-6" />
-                <h3 className="text-lg font-bold">Ticket Resolved</h3>
+                <h3 className="text-lg font-bold">{t('tick.resolved')}</h3>
               </div>
               <p className="opacity-90">
-                Your support ticket has been marked as resolved. If you need further assistance, 
-                please reply to this ticket or create a new one.
+                {t('tick.resolvedDesc')}
               </p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setNewResponse('I need more help with this issue.')}
+                onClick={() => setNewResponse(t('tick.moreHelpText'))}
                 className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-xl 
                          hover:bg-white/30 transition-all"
               >
-                Request More Help
+                {t('tick.requestMore')}
               </button>
               <button
                 onClick={() => router.push('/usersDashboard/helpandsupport?new=true')}
                 className="px-4 py-2 bg-white text-green-600 rounded-xl hover:bg-gray-100 
                          transition-all"
               >
-                Create New Ticket
+                {t('tick.createNew')}
               </button>
             </div>
           </div>
