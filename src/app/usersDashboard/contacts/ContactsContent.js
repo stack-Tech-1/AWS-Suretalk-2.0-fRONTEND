@@ -35,6 +35,13 @@ export default function Contacts() {
   const router = useRouter();
   const analytics = useAnalyticsContext();
   const { t } = useLanguage();
+
+  // Translated label for a relationship value; unknown values are shown capitalized as stored
+  const relationshipLabel = (value) => {
+    const key = `contacts.rel.${value}`;
+    const label = t(key);
+    return label === key ? value.charAt(0).toUpperCase() + value.slice(1) : label;
+  };
   
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -114,25 +121,25 @@ export default function Contacts() {
           }
 
           // Calculate last contact time
-          let lastContact = "Never";
+          let lastContact = t('common.never');
           if (contact.updated_at) {
             const updatedDate = new Date(contact.updated_at);
             const now = new Date();
             const diffTime = Math.abs(now - updatedDate);
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             
-            if (diffDays === 0) lastContact = "Today";
-            else if (diffDays === 1) lastContact = "Yesterday";
-            else if (diffDays < 7) lastContact = `${diffDays} days ago`;
-            else if (diffDays < 30) lastContact = `${Math.floor(diffDays / 7)} weeks ago`;
-            else lastContact = `${Math.floor(diffDays / 30)} months ago`;
+            if (diffDays === 0) lastContact = t('common.today');
+            else if (diffDays === 1) lastContact = t('common.yesterday');
+            else if (diffDays < 7) lastContact = t('voice.daysAgo', { count: diffDays });
+            else if (diffDays < 30) lastContact = t('contacts.weeksAgo', { count: Math.floor(diffDays / 7) });
+            else lastContact = t('contacts.monthsAgo', { count: Math.floor(diffDays / 30) });
           }
 
           return {
             id: contact.id,
             name: contact.name,
             phone: contact.phone,
-            email: contact.email || "No email",
+            email: contact.email || t('contacts.noEmail'),
             type: type,
             relationship: contact.relationship,
             isBeneficiary: contact.is_beneficiary || false,
@@ -178,7 +185,7 @@ export default function Contacts() {
 
     } catch (error) {
       console.error('Failed to fetch contacts:', error);
-      setError('Failed to load contacts. Please try again.');
+      setError(t('contacts.loadError'));
       setContacts([]);
     } finally {
       setLoading(false);
@@ -247,16 +254,16 @@ export default function Contacts() {
           isBeneficiary: response.data.is_beneficiary
         });
         
-        toast.success('Contact added successfully!', 'Contact Added');
+        toast.success(t('contacts.addSuccess'), t('contacts.contactAdded'));
       } else {
         if (response.errors) {
           throw new Error(response.errors.map(err => err.msg || err).join(', '));
         }
-        throw new Error(response.error || 'Unknown error');
+        throw new Error(response.error || t('common.unknown'));
       }
     } catch (error) {
       console.error('Failed to create contact:', error);
-      toast.error(`Failed to add contact: ${error.message}`);
+      toast.error(t('contacts.addError', { error: error.message }));
     } finally {
       setLoading(false);
     }
@@ -286,7 +293,7 @@ export default function Contacts() {
       }
     } catch (error) {
       console.error('Failed to update contact:', error);
-      toast.error(`Failed to update contact: ${error.message}`);
+      toast.error(t('contacts.updateError', { error: error.message }));
       return false;
     }
   };
@@ -311,13 +318,13 @@ export default function Contacts() {
         setShowDeleteModal(false);
         setContactToDelete(null);
         
-        toast.success('Contact deleted successfully!', 'Contact Deleted');
+        toast.success(t('contacts.deleteSuccess'), t('contacts.contactDeleted'));
       } else {
         throw new Error(response.error);
       }
     } catch (error) {
       console.error('Failed to delete contact:', error);
-      toast.error(`Failed to delete contact: ${error.message}`);
+      toast.error(t('contacts.deleteError', { error: error.message }));
     }
   };
 
@@ -328,7 +335,7 @@ export default function Contacts() {
     });
     
     if (success) {
-      toast.success(`Contact ${!contact.isBeneficiary ? 'added to' : 'removed from'} beneficiaries`, 'Updated');
+      toast.success(t(!contact.isBeneficiary ? 'contacts.beneficiaryAdded' : 'contacts.beneficiaryRemoved'), t('voice.updated'));
     }
   };
 
@@ -339,7 +346,7 @@ export default function Contacts() {
     });
     
     if (success) {
-      toast.success(`Contact ${!contact.canReceiveMessages ? 'can now' : 'cannot'} receive messages`, 'Updated');
+      toast.success(t(!contact.canReceiveMessages ? 'contacts.messagesEnabled' : 'contacts.messagesDisabled'), t('voice.updated'));
     }
   };
 
@@ -376,7 +383,7 @@ export default function Contacts() {
   const handleBulkDelete = async () => {
     if (selectedContacts.length === 0) return;
     
-    if (!confirm(`Are you sure you want to delete ${selectedContacts.length} selected contact(s)? This action cannot be undone.`)) {
+    if (!confirm(t('contacts.confirmBulkDelete', { count: selectedContacts.length }))) {
       return;
     }
 
@@ -399,11 +406,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      toast.success(`${selectedContacts.length} contact(s) deleted successfully`, 'Deleted');
+      toast.success(t('contacts.bulkDeleted', { count: selectedContacts.length }), t('voice.deleted'));
 
     } catch (error) {
       console.error('Bulk delete error:', error);
-      toast.error('Failed to delete contacts. Please try again.');
+      toast.error(t('contacts.bulkDeleteError'));
     }
   };
 
@@ -434,11 +441,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      toast.success(`${selectedContacts.length} contact(s) ${newBeneficiaryStatus ? 'added to' : 'removed from'} beneficiaries`, 'Updated');
+      toast.success(t(newBeneficiaryStatus ? 'contacts.bulkBeneficiaryAdded' : 'contacts.bulkBeneficiaryRemoved', { count: selectedContacts.length }), t('voice.updated'));
 
     } catch (error) {
       console.error('Bulk beneficiary update error:', error);
-      toast.error('Failed to update contacts. Please try again.');
+      toast.error(t('contacts.bulkUpdateError'));
     }
   };
 
@@ -469,11 +476,11 @@ export default function Contacts() {
       setSelectedContacts([]);
       setBulkMode(false);
 
-      toast.success(`${selectedContacts.length} contact(s) ${newMessageStatus ? 'can now' : 'cannot'} receive messages`, 'Updated');
+      toast.success(t(newMessageStatus ? 'contacts.bulkMessagesEnabled' : 'contacts.bulkMessagesDisabled', { count: selectedContacts.length }), t('voice.updated'));
 
     } catch (error) {
       console.error('Bulk message status update error:', error);
-      toast.error('Failed to update contacts. Please try again.');
+      toast.error(t('contacts.bulkUpdateError'));
     }
   };
 
@@ -499,7 +506,7 @@ export default function Contacts() {
     if (stats.remainingContacts > 0 || stats.totalContacts < stats.contactLimit) {
       setShowAddModal(true);
     } else {
-      toast.error(`Contact limit reached (${stats.contactLimit} max)`);
+      toast.error(t('contacts.limitReached', { max: stats.contactLimit }));
     }
     router.replace('/usersDashboard/contacts', { scroll: false });
   }, [openAddFromLink, addLinkHandled, loading, stats]);
@@ -510,7 +517,7 @@ export default function Contacts() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading contacts...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('contacts.loading')}</p>
         </div>
       </div>
     );
@@ -533,7 +540,7 @@ export default function Contacts() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               {stats.totalContacts === 0
                 ? t('contacts.subtitle')
-                : `Manage ${stats.totalContacts} contact${stats.totalContacts !== 1 ? 's' : ''}`
+                : t(stats.totalContacts === 1 ? 'contacts.manageOne' : 'contacts.manageCount', { count: stats.totalContacts })
               }
             </p>
           </div>
@@ -547,7 +554,7 @@ export default function Contacts() {
                          dark:hover:bg-brand-900/20 transition-colors"
               >
                 <Users className="w-4 h-4" />
-                Select Multiple
+                {t('voice.selectMultiple')}
               </button>
             )}
             
@@ -555,7 +562,7 @@ export default function Contacts() {
               onClick={() => setShowAddModal(true)}
               disabled={stats.remainingContacts <= 0}
               className="btn-primary brand-glow-hover flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={stats.remainingContacts <= 0 ? `Contact limit reached (${stats.contactLimit} max)` : ''}
+              title={stats.remainingContacts <= 0 ? t('contacts.limitReached', { max: stats.contactLimit }) : ''}
             >
               <UserPlus className="w-4 h-4" />
               {t('contacts.addContact')}
@@ -574,13 +581,13 @@ export default function Contacts() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-medium text-red-800 dark:text-red-300">Error Loading Contacts</h3>
+              <h3 className="font-medium text-red-800 dark:text-red-300">{t('contacts.loadErrorTitle')}</h3>
               <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
               <button
                 onClick={() => fetchContacts()}
                 className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
               >
-                Try Again
+                {t('common.retry')}
               </button>
             </div>
           </div>
@@ -600,8 +607,8 @@ export default function Contacts() {
                 <span className="text-white font-bold">{selectedContacts.length}</span>
               </div>
               <div className="text-white">
-                <p className="font-medium">{selectedContacts.length} contact(s) selected</p>
-                <p className="text-sm opacity-90">Perform actions on all selected contacts</p>
+                <p className="font-medium">{t('contacts.selectedCount', { count: selectedContacts.length })}</p>
+                <p className="text-sm opacity-90">{t('contacts.bulkHint')}</p>
               </div>
             </div>
             
@@ -612,7 +619,7 @@ export default function Contacts() {
                          transition-colors flex items-center gap-2 text-sm"
               >
                 <Shield className="w-3 h-3" />
-                Toggle Beneficiary
+                {t('contacts.toggleBeneficiary')}
               </button>
               
               <button
@@ -621,7 +628,7 @@ export default function Contacts() {
                          transition-colors flex items-center gap-2 text-sm"
               >
                 <MessageSquare className="w-3 h-3" />
-                Toggle Messages
+                {t('contacts.toggleMessages')}
               </button>
               
               <button
@@ -630,7 +637,7 @@ export default function Contacts() {
                          transition-colors flex items-center gap-2 text-sm"
               >
                 <Trash2 className="w-3 h-3" />
-                Delete Selected
+                {t('voice.deleteSelected')}
               </button>
               
               <button
@@ -638,7 +645,7 @@ export default function Contacts() {
                 className="px-3 py-2 bg-white text-brand-600 rounded-lg hover:bg-gray-100 
                          transition-colors text-sm"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -679,7 +686,7 @@ export default function Contacts() {
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Contact Limit</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('contacts.contactLimit')}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                     {stats.totalContacts}/{stats.contactLimit}
@@ -701,7 +708,7 @@ export default function Contacts() {
               <UserPlus className="w-8 h-8 text-blue-500" />
             </div>
             {stats.remainingContacts <= 0 && (
-              <p className="text-xs text-red-500 mt-2">Contact limit reached. Please upgrade to add more.</p>
+              <p className="text-xs text-red-500 mt-2">{t('contacts.limitReachedUpgrade')}</p>
             )}
           </div>
 
@@ -709,12 +716,12 @@ export default function Contacts() {
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Beneficiaries</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('contacts.beneficiaries')}</p>
                 <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                   {stats.beneficiaries}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  Can receive Legacy Vault messages
+                  {t('contacts.beneficiaryHint')}
                 </p>
               </div>
               <Shield className="w-8 h-8 text-purple-500" />
@@ -727,7 +734,7 @@ export default function Contacts() {
       {loading && contacts.length > 0 ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-brand-500 animate-spin mr-2" />
-          <span className="text-gray-600 dark:text-gray-400">Loading more contacts...</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('contacts.loadingMore')}</span>
         </div>
       ) : null}
 
@@ -776,10 +783,10 @@ export default function Contacts() {
                       {contact.name}
                     </h3>
                     {contact.isBeneficiary && (
-                      <Shield className="w-4 h-4 text-purple-500" title="Beneficiary" />
+                      <Shield className="w-4 h-4 text-purple-500" title={t('contacts.beneficiary')} />
                     )}
                     {!contact.canReceiveMessages && (
-                      <UserX className="w-4 h-4 text-red-500" title="Cannot receive messages" />
+                      <UserX className="w-4 h-4 text-red-500" title={t('contacts.cannotReceive')} />
                     )}
                   </div>
                   <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1
@@ -787,7 +794,7 @@ export default function Contacts() {
                       contact.type === 'work' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
                       contact.type === 'beneficiary' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
                       'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'}`}>
-                    {contact.type.charAt(0).toUpperCase() + contact.type.slice(1)}
+                    {relationshipLabel(contact.type)}
                   </span>
                 </div>
               </div>
@@ -795,7 +802,7 @@ export default function Contacts() {
                 <button 
                   onClick={() => handleViewContactDetails(contact)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="View details"
+                  title={t('contacts.viewDetails')}
                 >
                   <MoreVertical className="w-5 h-5" />
                 </button>
@@ -814,7 +821,7 @@ export default function Contacts() {
               </div>
               <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
                 <Calendar className="w-4 h-4" />
-                <span className="text-sm">Last updated: {contact.lastContact}</span>
+                <span className="text-sm">{t('contacts.lastUpdated', { when: contact.lastContact })}</span>
               </div>
               {contact.notes && (
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -832,10 +839,10 @@ export default function Contacts() {
                            rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors 
                            flex items-center justify-center gap-2"
                   disabled={!contact.canReceiveMessages}
-                  title={!contact.canReceiveMessages ? "This contact cannot receive messages" : ""}
+                  title={!contact.canReceiveMessages ? t('contacts.cannotReceiveLong') : ''}
                 >
                   <MessageSquare className="w-4 h-4" />
-                  Message
+                  {t('contacts.message')}
                 </button>
                 <button 
                   onClick={() => handleToggleBeneficiary(contact)}
@@ -844,7 +851,7 @@ export default function Contacts() {
                       ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
-                  title={contact.isBeneficiary ? "Remove from beneficiaries" : "Add as beneficiary"}
+                  title={contact.isBeneficiary ? t('contacts.removeBeneficiary') : t('contacts.addBeneficiary')}
                 >
                   <Shield className="w-4 h-4" />
                 </button>
@@ -855,7 +862,7 @@ export default function Contacts() {
                       ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
-                  title={contact.canReceiveMessages ? "Disable messages" : "Enable messages"}
+                  title={contact.canReceiveMessages ? t('contacts.disableMessages') : t('contacts.enableMessages')}
                 >
                   {contact.canReceiveMessages ? (
                     <UserCheck className="w-4 h-4" />
@@ -869,7 +876,7 @@ export default function Contacts() {
                     setShowDeleteModal(true);
                   }}
                   className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-lg"
-                  title="Delete contact"
+                  title={t('contacts.deleteContactTitle')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -895,7 +902,7 @@ export default function Contacts() {
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
+            {t('common.previous')}
           </button>
           
           <div className="flex items-center gap-2">
@@ -948,7 +955,7 @@ export default function Contacts() {
                      text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
+            {t('common.next')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
@@ -1006,7 +1013,7 @@ export default function Contacts() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Name *
+                  {t('contacts.nameRequired')}
                 </label>
                 <input
                   type="text"
@@ -1014,14 +1021,14 @@ export default function Contacts() {
                   onChange={(e) => setNewContact(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Full name"
+                  placeholder={t('contacts.fullName')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Phone Number *
+                  {t('contacts.phoneRequired')}
                 </label>
                 <input
                   type="tel"
@@ -1036,7 +1043,7 @@ export default function Contacts() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Email Address
+                  {t('contacts.emailAddress')}
                 </label>
                 <input
                   type="email"
@@ -1050,7 +1057,7 @@ export default function Contacts() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Relationship
+                  {t('contacts.relationship')}
                 </label>
                 <select
                   value={newContact.relationship}
@@ -1058,11 +1065,11 @@ export default function Contacts() {
                   className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
-                  <option value="">Select relationship</option>
-                  <option value="family">Family</option>
-                  <option value="friend">Friend</option>
-                  <option value="work">Work</option>
-                  <option value="other">Other</option>
+                  <option value="">{t('contacts.selectRelationship')}</option>
+                  <option value="family">{t('contacts.rel.family')}</option>
+                  <option value="friend">{t('contacts.rel.friend')}</option>
+                  <option value="work">{t('contacts.rel.work')}</option>
+                  <option value="other">{t('contacts.rel.other')}</option>
                 </select>
               </div>
 
@@ -1071,8 +1078,8 @@ export default function Contacts() {
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-purple-500" />
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white">Beneficiary</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500">Can receive Legacy Vault messages</p>
+                      <p className="font-medium text-gray-800 dark:text-white">{t('contacts.beneficiary')}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500">{t('contacts.beneficiaryHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -1094,8 +1101,8 @@ export default function Contacts() {
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-5 h-5 text-blue-500" />
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white">Can Receive Messages</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500">Allow voice messages to this contact</p>
+                      <p className="font-medium text-gray-800 dark:text-white">{t('contacts.canReceiveTitle')}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500">{t('contacts.canReceiveHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -1116,14 +1123,14 @@ export default function Contacts() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Notes (Optional)
+                  {t('contacts.notesOptional')}
                 </label>
                 <textarea
                   value={newContact.notes}
                   onChange={(e) => setNewContact(prev => ({ ...prev, notes: e.target.value }))}
                   className="w-full h-24 p-3 rounded-lg border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Add any notes about this contact..."
+                  placeholder={t('contacts.notesPlaceholder')}
                 />
               </div>
 
@@ -1137,10 +1144,10 @@ export default function Contacts() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-                      Adding...
+                      {t('contacts.adding')}
                     </>
                   ) : (
-                    'Add Contact'
+                    t('contacts.addContact')
                   )}
                 </button>
                 <button
@@ -1149,7 +1156,7 @@ export default function Contacts() {
                            text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 
                            dark:hover:bg-gray-800 transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -1185,7 +1192,7 @@ export default function Contacts() {
                   className="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 
                            transition-colors font-medium"
                 >
-                  Yes, Delete
+                  {t('contacts.yesDelete')}
                 </button>
                 <button
                   onClick={() => {
@@ -1196,7 +1203,7 @@ export default function Contacts() {
                            text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 
                            dark:hover:bg-gray-800 transition-colors font-medium"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>

@@ -2,14 +2,16 @@
 "use client";
 import { Suspense } from "react";
 import ContactsContent from "./ContactsContent";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Page() {
+  const { t } = useLanguage();
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading contacts...</p>
+          <p className="text-gray-600">{t('contacts.loading')}</p>
         </div>
       </div>
     }>
