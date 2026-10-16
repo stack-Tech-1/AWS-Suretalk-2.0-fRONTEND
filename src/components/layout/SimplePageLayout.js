@@ -13,24 +13,24 @@ export default function SimplePageLayout({
   showFooter = true
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-transparent dark:to-transparent">
       {/* Shared Navigation */}
       <PageNavigation showBackButton={showBackButton} />
-      
+
       {/* Hero Section */}
-      <section className={`relative overflow-hidden bg-gradient-to-br ${gradientFrom} ${gradientTo}`}>
+      <section className={`relative overflow-hidden bg-gradient-to-br ${gradientFrom} ${gradientTo} dark:from-brand-950/40 dark:to-transparent`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 md:pt-24 md:pb-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
               {title}
             </h1>
-            
+
             {subtitle && (
-              <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-10">
+              <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-10">
                 {subtitle}
               </p>
             )}
@@ -62,10 +62,10 @@ export default function SimplePageLayout({
               transition={{ duration: 0.6, delay: 0.4 }}
               className="glass rounded-2xl p-8 shadow-lg"
             >
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
                 Ready to Preserve Your Voice?
               </h3>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
                 Join thousands who trust SureTalk with their most important voice memories.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -87,10 +87,10 @@ export default function SimplePageLayout({
 
       {/* Simple Footer */}
       {showFooter && (
-        <footer className="border-t border-gray-200 py-8">
+        <footer className="border-t border-gray-200 dark:border-white/10 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 © {new Date().getFullYear()} SureTalk. All rights reserved.
               </p>
             </div>

@@ -463,7 +463,7 @@ function LoginInner() {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-500">
-          <p>{t('auth.copyright')}</p>
+          <p>© {new Date().getFullYear()} {t('auth.copyright')}</p>
           <p className="mt-1">
             <Link href="/privacy" className="hover:text-brand-600 transition-colors">{t('auth.privacy')}</Link>
             {" · "}

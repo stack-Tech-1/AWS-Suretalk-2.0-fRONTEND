@@ -167,7 +167,7 @@ const en = {
   "auth.accountActivated": "Account activated! Sign in with your new credentials.",
   "auth.privacy": "Privacy Policy",
   "auth.terms": "Terms of Service",
-  "auth.copyright": "© 2024 SureTalk. All rights reserved.",
+  "auth.copyright": "SureTalk. All rights reserved.",
 
   // ── Auth — Signup ──────────────────────────────────────────────────────────
   "auth.joinTitle": "Join SureTalk",

@@ -12,14 +12,14 @@ export default function PageNavigation({ showBackButton = true }) {
   return (
     <>
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 glass border-b border-white/20">
+      <nav className="sticky top-0 z-50 glass border-b border-white/20 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               {showBackButton && (
                 <Link
                   href="https://suretalknow.com"
-                  className="flex items-center text-gray-700 hover:text-brand-600 transition-colors"
+                  className="flex items-center text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
                   <span className="hidden sm:inline">Back to Home</span>
@@ -34,19 +34,19 @@ export default function PageNavigation({ showBackButton = true }) {
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              <Link href="/about" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
+              <Link href="/about" className="text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">
                 About
               </Link>
-              <Link href="/features" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
+              <Link href="/features" className="text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">
                 Features
               </Link>
-              <Link href="/pricing" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
+              <Link href="/pricing" className="text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">
                 Pricing
               </Link>
-              <Link href="/contact" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
+              <Link href="/contact" className="text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">
                 Contact
               </Link>
-              <Link href="/login" className="text-gray-700 hover:text-brand-600 font-medium transition-colors">
+              <Link href="/login" className="text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">
                 Sign In
               </Link>
               <Link href="/signup" className="btn-primary px-6 py-2.5">
@@ -57,7 +57,7 @@ export default function PageNavigation({ showBackButton = true }) {
             {/* Mobile Menu Button */}
             <button
               type="button"
-              className="md:hidden inline-flex items-center justify-center rounded-xl p-2.5 text-gray-700 hover:bg-gray-100/50 transition-colors"
+              className="md:hidden inline-flex items-center justify-center rounded-xl p-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors"
               onClick={() => setMobileMenuOpen(true)}
             >
               <span className="sr-only">Open main menu</span>
@@ -75,7 +75,7 @@ export default function PageNavigation({ showBackButton = true }) {
         >
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
           
-          <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gradient-to-b from-white/95 to-gray-50/95 backdrop-blur-xl px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10 shadow-2xl">
+          <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gradient-to-b from-white/95 to-gray-50/95 dark:from-[#0a0f1e]/95 dark:to-[#0f1428]/95 backdrop-blur-xl px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10 shadow-2xl">
             <div className="flex items-center justify-between">
               <Link href="https://suretalknow.com" className="-m-1.5 p-1.5 flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
                 <LogoIcon size={40} />
@@ -83,7 +83,7 @@ export default function PageNavigation({ showBackButton = true }) {
               </Link>
               <button
                 type="button"
-                className="rounded-lg p-2.5 text-gray-700 hover:bg-gray-100/50 transition-colors"
+                className="rounded-lg p-2.5 text-gray-700 dark:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-white/10 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="sr-only">Close menu</span>
@@ -92,39 +92,39 @@ export default function PageNavigation({ showBackButton = true }) {
             </div>
             
             <div className="mt-8 flow-root">
-              <div className="-my-6 divide-y divide-gray-200/50">
+              <div className="-my-6 divide-y divide-gray-200/50 dark:divide-white/10">
                 <div className="space-y-1 py-6">
                   <Link
                     href="/about"
-                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 hover:bg-white/50 hover:shadow-sm transition-all duration-200"
+                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 dark:text-white hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-sm transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     About
                   </Link>
                   <Link
                     href="/features"
-                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 hover:bg-white/50 hover:shadow-sm transition-all duration-200"
+                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 dark:text-white hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-sm transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Features
                   </Link>
                   <Link
                     href="/pricing"
-                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 hover:bg-white/50 hover:shadow-sm transition-all duration-200"
+                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 dark:text-white hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-sm transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Pricing
                   </Link>
                   <Link
                     href="/contact"
-                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 hover:bg-white/50 hover:shadow-sm transition-all duration-200"
+                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 dark:text-white hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-sm transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Contact
                   </Link>
                   <Link
                     href="/login"
-                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 hover:bg-white/50 hover:shadow-sm transition-all duration-200"
+                    className="-mx-3 block rounded-xl px-3 py-3 text-lg font-semibold text-gray-900 dark:text-white hover:bg-white/50 dark:hover:bg-white/10 hover:shadow-sm transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Sign In
