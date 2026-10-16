@@ -102,10 +102,7 @@ export default function ClaimAccount() {
 
   const sendOtp = async (phoneNumber) => {
     try {
-      await api.request('/auth/send-claim-otp', {
-        method: 'POST',
-        body: JSON.stringify({ phone: phoneNumber }),
-      });
+      await api.sendClaimOtp(phoneNumber);
       startOtpTimer();
     } catch (err) {
       setError(err.message || "Failed to send OTP. Please try again.");

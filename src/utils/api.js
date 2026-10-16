@@ -1,4 +1,6 @@
 // C:\Users\SMC\Documents\GitHub\AWS-Suretalk-2.0-fRONTEND\src\utils\api.js
+import { getTurnstileToken } from './turnstile';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 class ApiClient {
@@ -116,9 +118,10 @@ class ApiClient {
 
   // Auth endpoints
   async register(data) {
+    const turnstileToken = await getTurnstileToken('register');
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, turnstileToken }),
     });
   }
 
@@ -942,9 +945,10 @@ async changePassword({ currentPassword, newPassword }) {
 }
 
 async forgotPassword(email) {
+  const turnstileToken = await getTurnstileToken('forgot_password');
   return this.request('/auth/forgot-password', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, turnstileToken }),
   });
 }
 
@@ -1043,9 +1047,19 @@ async getAdminProfile  () {
 
 // Resend verification email
 async resendVerification(data) {
+  const turnstileToken = await getTurnstileToken('resend_verification');
   return this.request('/auth/resend-verification', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...data, turnstileToken }),
+  });
+}
+
+// Sends the SMS code used to claim an IVR-created account
+async sendClaimOtp(phone) {
+  const turnstileToken = await getTurnstileToken('send_claim_otp');
+  return this.request('/auth/send-claim-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone, turnstileToken }),
   });
 }
 
