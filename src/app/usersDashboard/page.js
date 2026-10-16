@@ -397,6 +397,11 @@ export default function DashboardHome() {
     },
   ];
 
+  // KPI cards link to their pages. On touch screens (no hover) the arrow is always shown;
+  // on mouse devices it appears on hover or keyboard focus.
+  const statCardLinkClass = "group block focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900";
+  const statCardArrowClass = "w-3.5 h-3.5 shrink-0 transition-all duration-200 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:-translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 group-focus-visible:translate-x-0";
+
   // Quick actions with proper links
   const quickActions = [
     {
@@ -489,7 +494,7 @@ export default function DashboardHome() {
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
         {/* Featured card — Voice Notes (col-span-2) */}
-        <div className="col-span-2 card card-audio card-hover p-6 relative overflow-hidden">
+        <Link href="/usersDashboard/voice-notes" className={`col-span-2 card card-audio card-hover p-6 relative overflow-hidden ${statCardLinkClass}`}>
           {/* Waveform decoration */}
           <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <div className="flex items-end gap-[3px] h-16 pr-4 pb-2">
@@ -509,11 +514,14 @@ export default function DashboardHome() {
           <h3 className="text-4xl font-display font-bold text-gray-900 dark:text-white stat-number mb-1 relative z-10">
             {quickStats.voiceNotes.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm relative z-10">{t('dash.voiceNotes')}</p>
-        </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm relative z-10 flex items-center gap-1">
+            {t('dash.voiceNotes')}
+            <ArrowUpRight className={`${statCardArrowClass} text-audio-500`} />
+          </p>
+        </Link>
 
         {/* Contacts */}
-        <div className="card card-hover p-5">
+        <Link href="/usersDashboard/contacts" className={`card card-hover p-5 ${statCardLinkClass}`}>
           <div className="flex items-start justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-green-500/10">
               <Users className="w-4 h-4 text-green-500" />
@@ -525,11 +533,14 @@ export default function DashboardHome() {
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
             {quickStats.contacts.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('dash.contacts')}</p>
-        </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
+            {t('dash.contacts')}
+            <ArrowUpRight className={`${statCardArrowClass} text-green-500`} />
+          </p>
+        </Link>
 
         {/* Scheduled */}
-        <div className="card card-hover p-5">
+        <Link href="/usersDashboard/scheduled" className={`card card-hover p-5 ${statCardLinkClass}`}>
           <div className="flex items-start justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-orange-500/10">
               <Calendar className="w-4 h-4 text-orange-500" />
@@ -541,8 +552,11 @@ export default function DashboardHome() {
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white stat-number mb-0.5">
             {quickStats.scheduled.value}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('dash.scheduled')}</p>
-        </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
+            {t('dash.scheduled')}
+            <ArrowUpRight className={`${statCardArrowClass} text-orange-500`} />
+          </p>
+        </Link>
 
         {/* Wills — full width on mobile, normal on desktop */}
         {hasLegacyVault() && (
