@@ -129,8 +129,8 @@ export default function PendingAdminStatus() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-500 text-center">
                 Need help? Contact{' '}
-                <a href="mailto:admin@suretalk.com" className="text-blue-600 hover:underline">
-                  admin@suretalk.com
+                <a href="mailto:Contact@SureTalkNow.com" className="text-blue-600 hover:underline">
+                  Contact@SureTalkNow.com
                 </a>
               </p>
             </div>

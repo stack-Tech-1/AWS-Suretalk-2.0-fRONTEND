@@ -127,7 +127,7 @@ export default function TermsPage() {
             <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
               <p className="text-gray-700 dark:text-gray-200">
                 Questions about these Terms? Contact us at:<br />
-                <strong>Email:</strong> legal@suretalk.com<br />
+                <strong>Email:</strong> Contact@SureTalkNow.com<br />
                 <strong>Mail:</strong> Legal Department, SureTalk Inc.
               </p>
             </div>
