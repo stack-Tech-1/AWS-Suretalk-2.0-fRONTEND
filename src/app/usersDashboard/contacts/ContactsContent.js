@@ -2,7 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   UserPlus, 
   Search, 
@@ -59,6 +59,9 @@ export default function Contacts() {
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [bulkMode, setBulkMode] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+  const openAddFromLink = searchParams.get('add') === '1';
+  const [addLinkHandled, setAddLinkHandled] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [contactToDelete, setContactToDelete] = useState(null);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -167,12 +170,6 @@ export default function Contacts() {
           page: 'contacts',
           search: search ? 'yes' : 'no',
           pageNumber: page
-        });
-
-        analytics.recordEvent('contact_added', {
-          contactName: response.data.name,
-          hasEmail: !!response.data.email,
-          isBeneficiary: response.data.is_beneficiary
         });
 
       } else {
@@ -493,6 +490,19 @@ export default function Contacts() {
   useEffect(() => {
     fetchContacts();
   }, []);
+
+  // Open the Add Contact form when arriving via /usersDashboard/contacts?add=1 (dashboard Quick Actions).
+  // Waits for stats so the contact limit is respected, then drops the param so refresh/back won't reopen it.
+  useEffect(() => {
+    if (!openAddFromLink || addLinkHandled || loading) return;
+    setAddLinkHandled(true);
+    if (stats.remainingContacts > 0 || stats.totalContacts < stats.contactLimit) {
+      setShowAddModal(true);
+    } else {
+      toast.error(`Contact limit reached (${stats.contactLimit} max)`);
+    }
+    router.replace('/usersDashboard/contacts', { scroll: false });
+  }, [openAddFromLink, addLinkHandled, loading, stats]);
 
   // Loading state
   if (loading && contacts.length === 0) {

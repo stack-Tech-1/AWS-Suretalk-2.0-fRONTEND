@@ -412,26 +412,26 @@ export default function DashboardHome() {
       icon: <Plus className="w-5 h-5" />,
       label: t('voice.record'),
       color: "bg-blue-500",
-      href: "/usersDashboard/voice-notes?record=new"
+      href: "/usersDashboard/voice-notes/record"
     },
     {
       icon: <Users className="w-5 h-5" />,
       label: t('contacts.addContact'),
       color: "bg-green-500",
-      href: "/usersDashboard/contacts"
+      href: "/usersDashboard/contacts?add=1"
     },
     {
       icon: <Calendar className="w-5 h-5" />,
-      label: t('scheduled.createNew'),
+      label: t('dash.scheduleMessage'),
       color: "bg-purple-500",
-      href: "/usersDashboard/scheduled",
+      href: "/usersDashboard/scheduled/create",
       availableFor: ['ESSENTIAL', 'LEGACY_VAULT_PREMIUM'],
     },
     {
       icon: <Shield className="w-5 h-5" />,
       label: t('vault.createWill'),
       color: "bg-red-500",
-      href: "/usersDashboard/vault",
+      href: "/usersDashboard/vault/wills/create",
       availableFor: ['LEGACY_VAULT_PREMIUM'],
     },
   ];
@@ -474,7 +474,7 @@ export default function DashboardHome() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/usersDashboard/voice-notes?record=new"
+            href="/usersDashboard/voice-notes/record"
             className="btn-audio flex items-center gap-2 text-sm py-2 px-4 rounded-xl"
           >
             <Mic className="w-4 h-4" />
@@ -687,7 +687,7 @@ export default function DashboardHome() {
                 <p className="text-gray-600 dark:text-gray-400">{t('voice.subtitle')}</p>
               </div>
               <Link
-                href="/usersDashboard/voice-notes?record=new"
+                href="/usersDashboard/voice-notes/record"
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
                          text-white rounded-xl hover:shadow-lg transition-all"
                 onClick={() => analytics.recordEvent('cta_click', { cta: 'new_recording' })}
@@ -814,7 +814,7 @@ export default function DashboardHome() {
                   {t('dash.createFirst')}
                 </p>
                 <Link
-                  href="/usersDashboard/voice-notes?record=new"
+                  href="/usersDashboard/voice-notes/record"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500
                            text-white rounded-xl hover:shadow-lg transition-all"
                   onClick={() => analytics.recordEvent('cta_click', { cta: 'record_first_note_empty' })}
@@ -906,7 +906,7 @@ export default function DashboardHome() {
 
           {/* Quick Actions */}
           <div className="glass rounded-2xl p-6">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('dash.quickStats')}</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('dash.quickActions')}</h3>
             <div className="grid grid-cols-2 gap-4">
               {quickActions
                 .filter(action => !action.availableFor || action.availableFor.includes(user?.subscription_tier))

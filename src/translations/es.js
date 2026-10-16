@@ -383,6 +383,8 @@ const es = {
   "dash.helpSupport": "Ayuda y Soporte",
   "dash.billing": "Facturación",
   "dash.quickStats": "Estadísticas Rápidas",
+  "dash.quickActions": "Acciones Rápidas",
+  "dash.scheduleMessage": "Programar Mensaje",
   "dash.recentRecordings": "Grabaciones Recientes",
   "dash.storageUsage": "Uso de Almacenamiento",
   "dash.activityOverview": "Resumen de Actividad",
