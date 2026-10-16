@@ -38,11 +38,13 @@ import { toast } from '@/components/ui/Toast';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
 import Link from 'next/link';
 import AudioPlayer from '@/components/audio/AudioPlayer';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function VoiceNoteDetail() {
   const { id } = useParams();
   const router = useRouter();
   const analytics = useAnalytics();
+  const { t, locale } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -116,11 +118,11 @@ export default function VoiceNoteDetail() {
         });
 
       } else {
-        throw new Error(noteResponse.error || 'Voice note not found');
+        throw new Error(noteResponse.error || t('vnd.notFound'));
       }
     } catch (error) {
       console.error('Failed to fetch voice note:', error);
-      setError(error.message || 'Failed to load voice note');
+      setError(error.message || t('vnd.loadError'));
     } finally {
       setLoading(false);
     }
@@ -134,10 +136,10 @@ export default function VoiceNoteDetail() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
+    if (!dateString) return t('voice.unknownDate');
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(locale, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -146,7 +148,7 @@ export default function VoiceNoteDetail() {
         minute: '2-digit'
       });
     } catch {
-      return 'Unknown date';
+      return t('voice.unknownDate');
     }
   };
 
@@ -178,12 +180,12 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to update favorite:', error);
-      toast.error('Failed to update favorite status. Please try again.');
+      toast.error(t('voice.favoriteError'));
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${note.title}"? This action cannot be undone.`)) {
+    if (!confirm(t('voice.confirmDeleteNamed', { title: note.title }))) {
       return;
     }
 
@@ -202,7 +204,7 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to delete note:', error);
-      toast.error('Failed to delete voice note. Please try again.');
+      toast.error(t('voice.deleteError'));
     }
   };
 
@@ -226,7 +228,7 @@ export default function VoiceNoteDetail() {
 
   } catch (error) {
     console.error('Failed to download note:', error);
-    toast.error('Failed to download voice note. Please try again.');
+    toast.error(t('voice.downloadError'));
   }
 };
 
@@ -256,7 +258,7 @@ export default function VoiceNoteDetail() {
 
     } catch (error) {
       console.error('Failed to update note:', error);
-      toast.error('Failed to update voice note. Please try again.');
+      toast.error(t('vnd.updateError'));
     }
   };
 
@@ -288,7 +290,7 @@ export default function VoiceNoteDetail() {
   };
 
   const handleMarkPermanent = async () => {
-    if (!confirm('Mark this voice note as permanent? This will move it to your Legacy Vault and cannot be undone.')) {
+    if (!confirm(t('vnd.confirmPermanent'))) {
       return;
     }
 
@@ -301,11 +303,11 @@ export default function VoiceNoteDetail() {
       // Record analytics
       analytics.recordEvent('voice_note_marked_permanent', { noteId: id });
 
-      toast.success('Voice note marked as permanent and moved to Legacy Vault.', 'Moved to Vault');
+      toast.success(t('vnd.permanentSuccess'), t('vnd.movedToVault'));
 
     } catch (error) {
       console.error('Failed to mark as permanent:', error);
-      toast.error('Failed to mark as permanent. You may need to upgrade to Legacy Vault Premium.');
+      toast.error(t('vnd.permanentError'));
     }
   };
 
@@ -314,7 +316,7 @@ export default function VoiceNoteDetail() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading voice note...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('vnd.loading')}</p>
         </div>
       </div>
     );
@@ -325,9 +327,9 @@ export default function VoiceNoteDetail() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Voice Note Not Found</h2>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('vnd.notFoundTitle')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {error || 'The voice note you\'re looking for doesn\'t exist or you don\'t have permission to view it.'}
+            {error || t('vnd.notFoundDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -335,14 +337,14 @@ export default function VoiceNoteDetail() {
               className="px-6 py-3 bg-brand-500 text-white rounded-xl hover:bg-brand-600 transition-colors font-medium"
             >
               <ChevronLeft className="w-4 h-4 inline mr-2" />
-              Back to Voice Notes
+              {t('vnd.backToList')}
             </Link>
             <button
               onClick={fetchVoiceNote}
               className="px-6 py-3 border-2 border-brand-500 text-brand-600 dark:text-brand-400 
                        rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors font-medium"
             >
-              Try Again
+              {t('common.retry')}
             </button>
           </div>
         </div>
@@ -364,7 +366,7 @@ export default function VoiceNoteDetail() {
                    dark:text-brand-400 dark:hover:text-brand-300 transition-colors font-medium"
         >
           <ChevronLeft className="w-5 h-5" />
-          Back to Voice Notes
+          {t('vnd.backToList')}
         </Link>
       </motion.div>
 
@@ -388,7 +390,7 @@ export default function VoiceNoteDetail() {
                     onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                     className="w-full text-2xl font-bold bg-transparent border-b-2 border-brand-500 
                              text-gray-800 dark:text-white focus:outline-none pb-2"
-                    placeholder="Note title"
+                    placeholder={t('vnd.titlePlaceholder')}
                   />
                 ) : (
                   <div className="flex items-start gap-3">
@@ -417,7 +419,7 @@ export default function VoiceNoteDetail() {
                   <span>{formatFileSize(note.file_size_bytes)}</span>
                   <span className="flex items-center gap-1">
                     <Headphones className="w-4 h-4" />
-                    {note.play_count || 0} plays
+                    {note.play_count || 0} {t('voice.plays')}
                   </span>
                 </div>
               </div>
@@ -427,7 +429,7 @@ export default function VoiceNoteDetail() {
                 <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-xl w-fit">
                   <Phone className="w-4 h-4 text-brand-600 dark:text-brand-400 flex-shrink-0" />
                   <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
-                    IVR Slot {note.ivr_slot_number} — Callers press <strong>{note.ivr_slot_number}</strong> to hear this message
+                    {t('vnd.ivrSlot', { slot: note.ivr_slot_number })} <strong>{note.ivr_slot_number}</strong> {t('vnd.ivrSlotSuffix')}
                   </span>
                 </div>
               )}
@@ -437,7 +439,7 @@ export default function VoiceNoteDetail() {
                 <button
                   onClick={handleToggleFavorite}
                   className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title={note.is_favorite ? "Remove from favorites" : "Add to favorites"}
+                  title={note.is_favorite ? t('voice.removeFromFavorites') : t('voice.addToFavorites')}
                 >
                   {note.is_favorite ? (
                     <Star className="w-5 h-5 text-yellow-500 fill-current" />
@@ -448,14 +450,14 @@ export default function VoiceNoteDetail() {
                 <button
                   onClick={() => setIsEditing(!isEditing)}
                   className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title={isEditing ? "Cancel edit" : "Edit note"}
+                  title={isEditing ? t('vnd.cancelEdit') : t('vnd.editNote')}
                 >
                   <Edit2 className="w-5 h-5 text-gray-500" />
                 </button>
                 <button
                   onClick={() => setShowShareModal(true)}
                   className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title="Share"
+                  title={t('common.share')}
                 >
                   <Share2 className="w-5 h-5 text-gray-500" />
                 </button>
@@ -464,7 +466,7 @@ export default function VoiceNoteDetail() {
 
             {/* Description */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Description</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">{t('rec.description')}</h3>
               {isEditing ? (
                 <textarea
                   value={editForm.description}
@@ -472,18 +474,18 @@ export default function VoiceNoteDetail() {
                   className="w-full h-32 p-3 rounded-lg border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
                            text-gray-800 dark:text-white"
-                  placeholder="Add a description..."
+                  placeholder={t('vnd.descriptionPlaceholder')}
                 />
               ) : (
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                  {note.description || 'No description provided.'}
+                  {note.description || t('vnd.noDescription')}
                 </p>
               )}
             </div>
 
             {/* Tags */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Tags</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">{t('voice.tags')}</h3>
               {isEditing ? (
                 <div>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -512,13 +514,13 @@ export default function VoiceNoteDetail() {
                       onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
                       className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                                bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      placeholder="Add a tag..."
+                      placeholder={t('vnd.tagPlaceholder')}
                     />
                     <button
                       onClick={handleAddTag}
                       className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                     >
-                      Add
+                      {t('common.add')}
                     </button>
                   </div>
                 </div>
@@ -536,7 +538,7 @@ export default function VoiceNoteDetail() {
                       </span>
                     ))
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-500">No tags</p>
+                    <p className="text-gray-500 dark:text-gray-500">{t('vnd.noTags')}</p>
                   )}
                 </div>
               )}
@@ -544,7 +546,7 @@ export default function VoiceNoteDetail() {
 
             {/* Audio Player */}
             <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Listen</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{t('vnd.listen')}</h3>
               <AudioPlayer
                 audioUrl={async () => {
                   try {
@@ -571,7 +573,7 @@ export default function VoiceNoteDetail() {
                   className="px-6 py-3 bg-brand-500 text-white rounded-xl hover:bg-brand-600 
                            transition-colors font-medium"
                 >
-                  Save Changes
+                  {t('vnd.saveChanges')}
                 </button>
                 <button
                   onClick={() => {
@@ -586,7 +588,7 @@ export default function VoiceNoteDetail() {
                            text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 
                            dark:hover:bg-gray-800 transition-colors font-medium"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             )}
@@ -600,7 +602,7 @@ export default function VoiceNoteDetail() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="glass rounded-2xl p-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Related Notes</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('vnd.relatedNotes')}</h2>
               <div className="space-y-4">
                 {relatedNotes.map((relatedNote) => (
                   <Link
@@ -640,7 +642,7 @@ export default function VoiceNoteDetail() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('dash.quickActions')}</h3>
             <div className="space-y-3">
               <button
                 onClick={handleDownload}
@@ -651,7 +653,7 @@ export default function VoiceNoteDetail() {
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
                     <Download className="w-4 h-4 text-blue-500" />
                   </div>
-                  <span className="font-medium text-gray-800 dark:text-white">Download</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{t('common.download')}</span>
                 </div>
                 <span className="text-sm text-gray-500">MP3</span>
               </button>
@@ -665,7 +667,7 @@ export default function VoiceNoteDetail() {
                   <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                     <Bell className="w-4 h-4 text-purple-500" />
                   </div>
-                  <span className="font-medium text-gray-800 dark:text-white">Schedule Message</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{t('dash.scheduleMessage')}</span>
                 </div>
               </button>
 
@@ -679,7 +681,7 @@ export default function VoiceNoteDetail() {
                     <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
                       <Shield className="w-4 h-4 text-red-500" />
                     </div>
-                    <span className="font-medium text-gray-800 dark:text-white">Move to Legacy Vault</span>
+                    <span className="font-medium text-gray-800 dark:text-white">{t('vnd.moveToVault')}</span>
                   </div>
                   <span className="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 
                                  dark:text-red-400 rounded-full">
@@ -702,7 +704,7 @@ export default function VoiceNoteDetail() {
                     )}
                   </div>
                   <span className="font-medium text-gray-800 dark:text-white">
-                    {copied ? 'Copied!' : 'Copy Link'}
+                    {copied ? t('common.copied') : t('vnd.copyLink')}
                   </span>
                 </div>
               </button>
@@ -716,33 +718,33 @@ export default function VoiceNoteDetail() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Note Information</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('vnd.noteInfo')}</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Storage Location</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('vnd.storageLocation')}</p>
                 <p className="font-medium text-gray-800 dark:text-white">
-                  {note.is_permanent ? 'Legacy Vault (Permanent)' : 'Standard Storage'}
+                  {note.is_permanent ? t('vnd.storageVault') : t('vnd.storageStandard')}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">File Format</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('vnd.fileFormat')}</p>
                 <p className="font-medium text-gray-800 dark:text-white">
                   {note.file_format?.toUpperCase() || 'MP3'}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Last Modified</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('vnd.lastModified')}</p>
                 <p className="font-medium text-gray-800 dark:text-white">
                   {formatDate(note.updated_at)}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Last Played</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{t('vnd.lastPlayed')}</p>
                 <p className="font-medium text-gray-800 dark:text-white">
-                  {note.last_played ? formatDate(note.last_played) : 'Never played'}
+                  {note.last_played ? formatDate(note.last_played) : t('vnd.neverPlayed')}
                 </p>
               </div>
             </div>
@@ -755,9 +757,9 @@ export default function VoiceNoteDetail() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="glass rounded-2xl p-6 border-2 border-red-200 dark:border-red-800"
           >
-            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-4">{t('vnd.dangerZone')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Once you delete a voice note, there is no going back. Please be certain.
+              {t('vnd.dangerZoneDesc')}
             </p>
             <button
               onClick={handleDelete}
@@ -765,7 +767,7 @@ export default function VoiceNoteDetail() {
                        text-white rounded-xl hover:bg-red-600 transition-colors font-medium"
             >
               <Trash2 className="w-4 h-4" />
-              Delete Voice Note
+              {t('vnd.deleteNote')}
             </button>
           </motion.div>
         </div>
@@ -780,7 +782,7 @@ export default function VoiceNoteDetail() {
             className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Share Voice Note</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('vnd.shareTitle')}</h3>
               <button
                 onClick={() => setShowShareModal(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
@@ -798,13 +800,13 @@ export default function VoiceNoteDetail() {
                     onChange={(e) => setShareOptions(prev => ({ ...prev, link: e.target.checked }))}
                     className="w-4 h-4 text-brand-500 rounded"
                   />
-                  <span className="font-medium text-gray-800 dark:text-white">Shareable Link</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{t('vnd.shareableLink')}</span>
                 </div>
                 <button
                   onClick={handleCopyLink}
                   className="px-3 py-1 text-sm bg-brand-500 text-white rounded-lg hover:bg-brand-600"
                 >
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('common.copied') : t('common.copy')}
                 </button>
               </div>
 
@@ -816,7 +818,7 @@ export default function VoiceNoteDetail() {
                     onChange={(e) => setShareOptions(prev => ({ ...prev, email: e.target.checked }))}
                     className="w-4 h-4 text-brand-500 rounded"
                   />
-                  <span className="font-medium text-gray-800 dark:text-white">Share via Email</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{t('vnd.shareEmail')}</span>
                 </div>
               </div>
 
@@ -826,12 +828,12 @@ export default function VoiceNoteDetail() {
                     type="email"
                     value={shareEmail}
                     onChange={(e) => setShareEmail(e.target.value)}
-                    placeholder="Enter email address"
+                    placeholder={t('vnd.enterEmail')}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                              bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <button className="w-full mt-3 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600">
-                    Send Email
+                    {t('vnd.sendEmail')}
                   </button>
                 </div>
               )}
@@ -844,7 +846,7 @@ export default function VoiceNoteDetail() {
                     onChange={(e) => setShareOptions(prev => ({ ...prev, sms: e.target.checked }))}
                     className="w-4 h-4 text-brand-500 rounded"
                   />
-                  <span className="font-medium text-gray-800 dark:text-white">Share via SMS</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{t('vnd.shareSms')}</span>
                 </div>
               </div>
 
@@ -854,12 +856,12 @@ export default function VoiceNoteDetail() {
                     type="tel"
                     value={sharePhone}
                     onChange={(e) => setSharePhone(e.target.value)}
-                    placeholder="Enter phone number"
+                    placeholder={t('vnd.enterPhone')}
                     className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                              bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                   <button className="w-full mt-3 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600">
-                    Send SMS
+                    {t('vnd.sendSms')}
                   </button>
                 </div>
               )}
@@ -877,7 +879,7 @@ export default function VoiceNoteDetail() {
             className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Schedule Message</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('dash.scheduleMessage')}</h3>
               <button
                 onClick={() => setScheduleModal(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
@@ -889,7 +891,7 @@ export default function VoiceNoteDetail() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Date & Time
+                  {t('vnd.selectDateTime')}
                 </label>
                 <input
                   type="datetime-local"
@@ -900,31 +902,31 @@ export default function VoiceNoteDetail() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Recipient
+                  {t('vnd.recipient')}
                 </label>
                 <select className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                          bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                  <option value="">Select a contact</option>
-                  <option value="email">Send via Email</option>
-                  <option value="sms">Send via SMS</option>
-                  <option value="both">Both Email & SMS</option>
+                  <option value="">{t('vnd.selectContact')}</option>
+                  <option value="email">{t('vnd.viaEmail')}</option>
+                  <option value="sms">{t('vnd.viaSms')}</option>
+                  <option value="both">{t('vnd.viaBoth')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Message (Optional)
+                  {t('vnd.messageOptional')}
                 </label>
                 <textarea
                   className="w-full h-24 p-3 rounded-lg border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  placeholder="Add a message to accompany the voice note..."
+                  placeholder={t('vnd.messagePlaceholder')}
                 />
               </div>
 
               <button className="w-full px-4 py-3 bg-brand-500 text-white rounded-xl hover:bg-brand-600 
                                transition-colors font-medium">
-                Schedule Message
+                {t('dash.scheduleMessage')}
               </button>
             </div>
           </motion.div>

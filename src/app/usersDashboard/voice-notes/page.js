@@ -35,7 +35,7 @@ import { toast } from '@/components/ui/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function VoiceNotes() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -63,9 +63,9 @@ export default function VoiceNotes() {
     { id: "all", label: t('voice.allNotes') },
     { id: "favorites", label: t('voice.favorites') },
     { id: "recent", label: t('voice.recent') },
-    { id: "permanent", label: "Legacy" },
-    { id: "work", label: "Work" },
-    { id: "personal", label: "Personal" },
+    { id: "permanent", label: t('voice.filterLegacy') },
+    { id: "work", label: t('voice.filterWork') },
+    { id: "personal", label: t('voice.filterPersonal') },
   ];
 
   // Fetch voice notes data
@@ -145,7 +145,7 @@ export default function VoiceNotes() {
 
               return {
                 id: note.id,
-                title: note.title || 'Untitled Recording',
+                title: note.title || t('voice.untitled'),
                 description: note.description || '',
                 duration: formatDuration(note.duration_seconds || 0),
                 date: formatDate(note.created_at),
@@ -212,7 +212,7 @@ export default function VoiceNotes() {
       }
     } catch (error) {
       console.error('Failed to fetch voice notes:', error);
-      setError('Failed to load voice notes. Please try again.');
+      setError(t('voice.loadError'));
       
       // Fallback to empty state
       setVoiceNotes([]);
@@ -264,23 +264,23 @@ export default function VoiceNotes() {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
+    if (!dateString) return t('voice.unknownDate');
     try {
       const date = new Date(dateString);
       const now = new Date();
       const diffTime = Math.abs(now - date);
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       
-      if (diffDays === 0) return 'Today';
-      if (diffDays === 1) return 'Yesterday';
-      if (diffDays < 7) return `${diffDays} days ago`;
-      return date.toLocaleDateString('en-US', { 
+      if (diffDays === 0) return t('common.today');
+      if (diffDays === 1) return t('common.yesterday');
+      if (diffDays < 7) return t('voice.daysAgo', { count: diffDays });
+      return date.toLocaleDateString(locale, { 
         month: 'short', 
         day: 'numeric',
         year: 'numeric'
       });
     } catch {
-      return 'Unknown date';
+      return t('voice.unknownDate');
     }
   };
 
@@ -360,18 +360,18 @@ const handleBulkFavorite = async () => {
     setSelectedNotes([]);
     setBulkMode(false);
     
-    toast.success(`${selectedNotes.length} note(s) ${newFavoriteStatus ? 'added to' : 'removed from'} favorites`, 'Updated');
+    toast.success(t(newFavoriteStatus ? 'voice.bulkFavAdded' : 'voice.bulkFavRemoved', { count: selectedNotes.length }), t('voice.updated'));
     
   } catch (error) {
     console.error('Bulk favorite error:', error);
-    toast.error('Failed to update favorites. Please try again.');
+    toast.error(t('voice.favoritesError'));
   }
 };
 
 const handleBulkDelete = async () => {
   if (selectedNotes.length === 0) return;
   
-  if (!confirm(`Are you sure you want to delete ${selectedNotes.length} selected note(s)? This action cannot be undone.`)) {
+  if (!confirm(t('voice.confirmBulkDelete', { count: selectedNotes.length }))) {
     return;
   }
   
@@ -405,11 +405,11 @@ const handleBulkDelete = async () => {
     setSelectedNotes([]);
     setBulkMode(false);
     
-    toast.success(`${selectedNotes.length} note(s) deleted successfully`, 'Deleted');
+    toast.success(t('voice.bulkDeleted', { count: selectedNotes.length }), t('voice.deleted'));
     
   } catch (error) {
     console.error('Bulk delete error:', error);
-    toast.error('Failed to delete notes. Please try again.');
+    toast.error(t('voice.bulkDeleteError'));
   }
 };
 
@@ -455,7 +455,7 @@ const selectAllNotes = () => {
     if (url) {
       setVoiceNotes(prev => prev.map(n => n.id === note.id ? { ...n, downloadUrl: url } : n));
     }
-    if (!url) throw new Error('No audio available for this recording');
+    if (!url) throw new Error(t('voice.noAudio'));
     return url;
   };
 
@@ -499,13 +499,13 @@ const selectAllNotes = () => {
 
     } catch (error) {
       console.error('Failed to update favorite:', error);
-      toast.error('Failed to update favorite status. Please try again.');
+      toast.error(t('voice.favoriteError'));
     }
   };
 
   // Handle delete note
   const handleDeleteNote = async (note) => {
-    if (!confirm(`Are you sure you want to delete "${note.title}"? This action cannot be undone.`)) {
+    if (!confirm(t('voice.confirmDeleteNamed', { title: note.title }))) {
       return;
     }
 
@@ -530,27 +530,27 @@ const selectAllNotes = () => {
         totalNotes: prev.totalNotes - 1
       }));
 
-      toast.success('Voice note deleted successfully.', 'Deleted');
+      toast.success(t('voice.deleteSuccess'), t('voice.deleted'));
 
     } catch (error) {
       console.error('Failed to delete note:', error);
-      toast.error('Failed to delete voice note. Please try again.');
+      toast.error(t('voice.deleteError'));
     }
   };
 
   // Handle converting a voice note into a voice will
   const handleConvertToWill = async (note) => {
-    if (!confirm(`Move "${note.title}" to Voice Wills? It will no longer appear in Voice Notes.`)) {
+    if (!confirm(t('voice.confirmMoveToWills', { title: note.title }))) {
       return;
     }
     try {
       const res = await api.convertNoteToWill(note.id);
       if (res.success) {
         setVoiceNotes(prevNotes => prevNotes.filter(n => n.id !== note.id));
-        toast.success('Recording moved to Voice Wills.', 'Converted');
+        toast.success(t('voice.movedToWills'), t('voice.converted'));
       }
     } catch (error) {
-      toast.error('Failed to convert recording. Make sure you have a Legacy Vault Premium plan.');
+      toast.error(t('voice.convertError'));
     }
   };
 
@@ -580,7 +580,7 @@ const selectAllNotes = () => {
 
     } catch (error) {
       console.error('Failed to download note:', error);
-      toast.error('Failed to download voice note. Please try again.');
+      toast.error(t('voice.downloadError'));
     }
   };
 
@@ -595,7 +595,7 @@ const selectAllNotes = () => {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading voice notes...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('voice.loading')}</p>
         </div>
       </div>
     );
@@ -618,7 +618,7 @@ const selectAllNotes = () => {
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               {stats.totalNotes === 0
                 ? t('voice.subtitle')
-                : `Manage and organize your ${stats.totalNotes} voice recordings`
+                : t('voice.manageCount', { count: stats.totalNotes })
               }
             </p>
           </div>
@@ -643,13 +643,13 @@ const selectAllNotes = () => {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h3 className="font-medium text-red-800 dark:text-red-300">Error Loading Voice Notes</h3>
+              <h3 className="font-medium text-red-800 dark:text-red-300">{t('voice.loadErrorTitle')}</h3>
               <p className="text-sm text-red-600 dark:text-red-400 mt-1">{error}</p>
               <button
                 onClick={() => fetchVoiceNotes()}
                 className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
               >
-                Try Again
+                {t('common.retry')}
               </button>
             </div>
           </div>
@@ -739,7 +739,7 @@ const selectAllNotes = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Duration</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('voice.totalDuration')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : formatTotalDuration(stats.totalDuration)}
               </p>
@@ -763,7 +763,7 @@ const selectAllNotes = () => {
         <div className="card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Legacy</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('voice.filterLegacy')}</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-white stat-number">
                 {loading ? '...' : stats.permanentNotes}
               </p>
@@ -786,8 +786,8 @@ const selectAllNotes = () => {
                   <span className="text-white font-bold">{selectedNotes.length}</span>
                 </div>
                 <div className="text-white">
-                  <p className="font-medium">{selectedNotes.length} note(s) selected</p>
-                  <p className="text-sm opacity-90">Perform actions on all selected notes</p>
+                  <p className="font-medium">{t('voice.selectedCount', { count: selectedNotes.length })}</p>
+                  <p className="text-sm opacity-90">{t('voice.bulkHint')}</p>
                 </div>
               </div>
               
@@ -799,8 +799,8 @@ const selectAllNotes = () => {
                 >
                   <Star className="w-4 h-4" />
                   {voiceNotes.find(n => n.id === selectedNotes[0])?.favorite 
-                    ? 'Remove from Favorites' 
-                    : 'Add to Favorites'
+                    ? t('voice.removeFromFavorites')
+                    : t('voice.addToFavorites')
                   }
                 </button>
                 
@@ -810,7 +810,7 @@ const selectAllNotes = () => {
                           transition-colors flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete Selected
+                  {t('voice.deleteSelected')}
                 </button>
                 
                 <button
@@ -818,7 +818,7 @@ const selectAllNotes = () => {
                   className="px-4 py-2 bg-white text-brand-600 rounded-xl hover:bg-gray-100 
                           transition-colors"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -835,7 +835,7 @@ const selectAllNotes = () => {
                       font-medium flex items-center gap-2"
             >
               <Users className="w-4 h-4" />
-              Select Multiple
+              {t('voice.selectMultiple')}
             </button>
           </div>
         )}
@@ -844,7 +844,7 @@ const selectAllNotes = () => {
       {loading && voiceNotes.length > 0 ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-brand-500 animate-spin mr-2" />
-          <span className="text-gray-600 dark:text-gray-400">Loading more notes...</span>
+          <span className="text-gray-600 dark:text-gray-400">{t('voice.loadingMore')}</span>
         </div>
       ) : null}
 
@@ -883,7 +883,7 @@ const selectAllNotes = () => {
                 <div className="flex items-center gap-2 mb-2">
                   {note.slotNumber && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 flex-shrink-0">
-                      Slot {note.slotNumber}
+                      {t('voice.slot', { number: note.slotNumber })}
                     </span>
                   )}
                   <Link
@@ -908,7 +908,7 @@ const selectAllNotes = () => {
                   </span>
                   <span>{note.size}</span>
                   {note.playCount > 0 && (
-                    <span className="flex items-center gap-1" title={`Played ${note.playCount} times`}>
+                    <span className="flex items-center gap-1" title={t('voice.playedTimes', { count: note.playCount })}>
                       <Play className="w-3 h-3" />
                       {note.playCount}
                     </span>
@@ -919,7 +919,7 @@ const selectAllNotes = () => {
                 onClick={() => handleToggleFavorite(note)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 disabled={loading}
-                title={note.favorite ? "Remove from favorites" : "Add to favorites"}
+                title={note.favorite ? t('voice.removeFromFavorites') : t('voice.addToFavorites')}
               >
                 {note.favorite ? (
                   <Star className="w-5 h-5 text-yellow-500 fill-current" />
@@ -964,12 +964,12 @@ const selectAllNotes = () => {
                 {expandedPlayer === note.id ? (
                   <>
                     <Pause className="w-4 h-4" />
-                    Pause
+                    {t('common.pause')}
                   </>
                 ) : (
                   <>
                     <Play className="w-4 h-4" />
-                    Play
+                    {t('common.play')}
                   </>
                 )}
               </button>
@@ -978,7 +978,7 @@ const selectAllNotes = () => {
                 <button 
                   onClick={() => handleDownload(note)}
                   className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  title="Download"
+                  title={t('common.download')}
                   disabled={loading || !note.downloadUrl}
                 >
                   <Download className="w-4 h-4" />
@@ -986,10 +986,10 @@ const selectAllNotes = () => {
                 <button 
                   onClick={() => {
                     analytics.recordEvent('voice_note_share_click', { noteId: note.id });
-                    toast.info('Share functionality coming soon!', 'Coming Soon');
+                    toast.info(t('voice.shareSoon'), t('voice.comingSoon'));
                   }}
                   className="p-3 md:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  title="Share"
+                  title={t('common.share')}
                   disabled={loading}
                 >
                   <Share2 className="w-4 h-4" />
@@ -997,15 +997,15 @@ const selectAllNotes = () => {
                 <button
                   onClick={() => handleConvertToWill(note)}
                   className="p-3 md:p-2 hover:bg-purple-100 dark:hover:bg-purple-900/20 text-purple-500 rounded-lg transition-colors text-xs font-medium"
-                  title="Move to Voice Wills"
+                  title={t('voice.moveToWillsTitle')}
                   disabled={loading}
                 >
-                  Move to Wills
+                  {t('voice.moveToWills')}
                 </button>
                 <button
                   onClick={() => handleDeleteNote(note)}
                   className="p-3 md:p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-lg transition-colors"
-                  title="Delete"
+                  title={t('common.delete')}
                   disabled={loading}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -1059,7 +1059,7 @@ const selectAllNotes = () => {
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
+            {t('common.previous')}
           </button>
           
           <div className="flex items-center gap-2">
@@ -1112,7 +1112,7 @@ const selectAllNotes = () => {
                      text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Next
+            {t('common.next')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>

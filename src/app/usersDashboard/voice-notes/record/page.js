@@ -10,6 +10,7 @@ import {
 import { api } from '@/utils/api';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const containerVariants = {
   hidden: {},
@@ -23,6 +24,7 @@ const itemVariants = {
 export default function RecordVoiceNote() {
   const router = useRouter();
   const analytics = useAnalytics();
+  const { t } = useLanguage();
 
   // Recording state
   const [recording, setRecording] = useState(false);
@@ -139,8 +141,8 @@ export default function RecordVoiceNote() {
   // Draw idle waveform on mount and when recording stops
   useEffect(() => {
     if (!recording) {
-      const t = setTimeout(drawIdleWaveform, 50);
-      return () => clearTimeout(t);
+      const timer = setTimeout(drawIdleWaveform, 50);
+      return () => clearTimeout(timer);
     }
   }, [recording, drawIdleWaveform]);
 
@@ -190,7 +192,7 @@ export default function RecordVoiceNote() {
       analytics.recordEvent('recording_started');
     } catch (err) {
       console.error('Recording error:', err);
-      setError('Failed to access microphone. Please check permissions.');
+      setError(t('rec.micError'));
       analytics.recordEvent('recording_error', { error: err.message });
     }
   };
@@ -219,7 +221,7 @@ export default function RecordVoiceNote() {
     } else {
       audioRef.current.play()
         .then(() => setIsPlaying(true))
-        .catch(err => { console.error('Playback error:', err); setError('Failed to play recording'); });
+        .catch(err => { console.error('Playback error:', err); setError(t('rec.playError')); });
     }
   };
 
@@ -244,8 +246,8 @@ export default function RecordVoiceNote() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('audio/')) { setError('Please select an audio file'); return; }
-    if (file.size > 100 * 1024 * 1024) { setError('File size must be less than 100MB'); return; }
+    if (!file.type.startsWith('audio/')) { setError(t('rec.selectAudioFile')); return; }
+    if (file.size > 100 * 1024 * 1024) { setError(t('rec.fileTooLarge')); return; }
     setFileUpload(file);
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
@@ -317,8 +319,8 @@ export default function RecordVoiceNote() {
   };
 
   const handleSubmit = async () => {
-    if (!audioBlob && !fileUpload) { setError('Please record or upload an audio file'); return; }
-    if (!formData.title.trim()) { setError('Please enter a title for your voice note'); return; }
+    if (!audioBlob && !fileUpload) { setError(t('rec.needAudio')); return; }
+    if (!formData.title.trim()) { setError(t('rec.needTitle')); return; }
 
     try {
       setUploading(true);
@@ -341,7 +343,7 @@ export default function RecordVoiceNote() {
           resolvedContactId = contactResp.data.id;
           setContacts(prev => [contactResp.data, ...prev]);
         } else {
-          throw new Error(contactResp.error || 'Failed to create contact');
+          throw new Error(contactResp.error || t('rec.contactCreateError'));
         }
       }
 
@@ -349,19 +351,19 @@ export default function RecordVoiceNote() {
       if (fileUpload) {
         fileToUpload = fileUpload; fileName = fileUpload.name; fileType = fileUpload.type;
       } else {
-        setSaveStage('Converting audio...');
+        setSaveStage(t('rec.stageConverting'));
         const mp3Blob = await convertToMp3(audioBlob);
         fileToUpload = mp3Blob;
         fileName = `recording_${Date.now()}.mp3`;
         fileType = 'audio/mpeg';
       }
 
-      setSaveStage('Uploading recording...');
+      setSaveStage(t('rec.stageUploading'));
       const uploadResponse = await api.getUploadUrl(fileName, fileType);
       const { uploadUrl, key, bucket } = uploadResponse.data;
 
       const uploadResult = await fetch(uploadUrl, { method: 'PUT', body: fileToUpload, headers: { 'Content-Type': fileType } });
-      if (!uploadResult.ok) throw new Error('Failed to upload to storage');
+      if (!uploadResult.ok) throw new Error(t('rec.uploadError'));
 
       const noteData = {
         title: formData.title,
@@ -377,27 +379,27 @@ export default function RecordVoiceNote() {
         ...(selectedSlot && { slotNumber: selectedSlot })
       };
 
-      setSaveStage('Saving note...');
+      setSaveStage(t('rec.stageSaving'));
       const createResponse = await createVoiceNoteWithRetry(noteData);
       if (createResponse.success) {
         if (formData.isFavorite) await api.updateVoiceNote(createResponse.data.id, { isFavorite: true });
         analytics.recordEvent('voice_note_created', { noteId: createResponse.data.id, title: formData.title, duration: recordingDuration, size: fileToUpload.size, isPermanent: formData.isPermanent, method: fileUpload ? 'upload' : 'record' });
-        setSaveStage('Saved!');
+        setSaveStage(t('rec.stageSaved'));
         const assignedSlot = createResponse.data?.ivr_slot_number;
         toast.success(
           assignedSlot
-            ? `Saved to IVR slot ${assignedSlot} — callers press ${assignedSlot} to hear this message`
-            : 'Your voice note has been saved successfully!',
-          'Recording Saved'
+            ? t('rec.savedToSlot', { slot: assignedSlot })
+            : t('rec.savedSuccess'),
+          t('rec.savedTitle')
         );
         setSuccess(true);
         setTimeout(() => router.push(`/usersDashboard/voice-notes/${createResponse.data.id}`), 2000);
       } else {
-        throw new Error(createResponse.error || 'Failed to create voice note');
+        throw new Error(createResponse.error || t('rec.createError'));
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to save voice note. Please try again.');
+      setError(err.message || t('rec.saveError'));
       analytics.recordEvent('voice_note_creation_failed', { error: err.message });
     } finally {
       setUploading(false);
@@ -414,14 +416,14 @@ export default function RecordVoiceNote() {
   };
 
   const addTag = () => {
-    const t = tagInput.trim();
-    if (t && !formData.tags.includes(t)) {
-      setFormData(prev => ({ ...prev, tags: [...prev.tags, t] }));
+    const newTag = tagInput.trim();
+    if (newTag && !formData.tags.includes(newTag)) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
       setTagInput('');
     }
   };
 
-  const removeTag = (tag) => setFormData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+  const removeTag = (tag) => setFormData(prev => ({ ...prev, tags: prev.tags.filter(existing => existing !== tag) }));
 
   // ─── Effects ─────────────────────────────────────────────────────────────────
 
@@ -484,10 +486,10 @@ export default function RecordVoiceNote() {
           <div className="p-2.5 rounded-xl bg-gradient-to-br from-brand-700 to-accent-600 shadow-lg shadow-brand-700/20">
             <Mic className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold gradient-text">Studio Recording</h1>
+          <h1 className="text-3xl font-bold gradient-text">{t('rec.title')}</h1>
         </div>
         <p className="text-gray-500 dark:text-gray-400 ml-14 text-sm">
-          Record a voice note or upload an existing audio file
+          {t('rec.subtitle')}
         </p>
       </motion.div>
 
@@ -497,8 +499,8 @@ export default function RecordVoiceNote() {
           className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-green-800 dark:text-green-300">Voice Note Saved Successfully!</p>
-            <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">Redirecting to your new voice note…</p>
+            <p className="font-medium text-green-800 dark:text-green-300">{t('rec.savedBanner')}</p>
+            <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">{t('rec.redirecting')}</p>
           </div>
         </motion.div>
       )}
@@ -507,7 +509,7 @@ export default function RecordVoiceNote() {
           className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-medium text-red-800 dark:text-red-300">Error</p>
+            <p className="font-medium text-red-800 dark:text-red-300">{t('common.error')}</p>
             <p className="text-sm text-red-600 dark:text-red-400 mt-0.5">{error}</p>
           </div>
           <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
@@ -532,13 +534,13 @@ export default function RecordVoiceNote() {
             <div className="w-full flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-widest">
-                  Recording Studio
+                  {t('rec.studio')}
                 </span>
               </div>
               {recording && (
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
-                  <span className="text-xs font-medium text-accent-500 uppercase tracking-widest">Live</span>
+                  <span className="text-xs font-medium text-accent-500 uppercase tracking-widest">{t('rec.live')}</span>
                 </div>
               )}
             </div>
@@ -604,7 +606,7 @@ export default function RecordVoiceNote() {
                 {formatTime(recording ? recordingTime : recordingDuration)}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.2em]">
-                {recording ? 'recording' : hasAudio ? 'duration' : 'ready'}
+                {recording ? t('rec.stateRecording') : hasAudio ? t('rec.stateDuration') : t('rec.stateReady')}
               </p>
             </div>
 
@@ -615,7 +617,7 @@ export default function RecordVoiceNote() {
                   onClick={startRecording}
                   className="flex items-center gap-2 px-6 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold shadow-lg shadow-brand-700/25 transition-all"
                 >
-                  <Mic className="w-5 h-5" /> Start Recording
+                  <Mic className="w-5 h-5" /> {t('rec.start')}
                 </button>
               )}
               {recording && (
@@ -623,7 +625,7 @@ export default function RecordVoiceNote() {
                   onClick={stopRecording}
                   className="flex items-center gap-2 px-6 py-3 bg-accent-600 hover:bg-accent-700 text-white rounded-xl font-semibold shadow-lg shadow-accent-600/25 transition-all"
                 >
-                  <Square className="w-5 h-5" /> Stop
+                  <Square className="w-5 h-5" /> {t('common.stop')}
                 </button>
               )}
               {hasAudio && !recording && (
@@ -632,13 +634,13 @@ export default function RecordVoiceNote() {
                     onClick={togglePlayback}
                     className="flex items-center gap-2 px-5 py-3 bg-brand-700 hover:bg-brand-800 text-white rounded-xl font-semibold shadow-lg shadow-brand-700/25 transition-all"
                   >
-                    {isPlaying ? <><Pause className="w-5 h-5" /> Pause</> : <><Play className="w-5 h-5" /> Play</>}
+                    {isPlaying ? <><Pause className="w-5 h-5" /> {t('common.pause')}</> : <><Play className="w-5 h-5" /> {t('common.play')}</>}
                   </button>
                   <button
                     onClick={resetRecording}
                     className="flex items-center gap-2 px-5 py-3 border-2 border-accent-500 text-accent-600 dark:text-accent-400 rounded-xl font-semibold hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-all"
                   >
-                    <Trash2 className="w-5 h-5" /> Discard
+                    <Trash2 className="w-5 h-5" /> {t('voice.discardRecording')}
                   </button>
                 </>
               )}
@@ -669,9 +671,9 @@ export default function RecordVoiceNote() {
                   <div className="flex flex-col items-center gap-1">
                     <Upload className="w-7 h-7 text-gray-400" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      <span className="text-brand-600 dark:text-brand-400 font-medium">Upload audio</span> or drag & drop
+                      <span className="text-brand-600 dark:text-brand-400 font-medium">{t('rec.uploadAudio')}</span> {t('rec.orDragDrop')}
                     </p>
-                    <p className="text-xs text-gray-400">MP3, WAV, M4A, WEBM · max 100MB</p>
+                    <p className="text-xs text-gray-400">{t('rec.fileTypes')}</p>
                   </div>
                 )}
               </div>
@@ -685,7 +687,7 @@ export default function RecordVoiceNote() {
                   {linkedContact.name?.[0]?.toUpperCase()}
                 </div>
                 <span className="text-sm text-brand-700 dark:text-brand-300 font-medium truncate flex-1">{linkedContact.name}</span>
-                <span className="text-xs text-brand-500 flex-shrink-0">Linked</span>
+                <span className="text-xs text-brand-500 flex-shrink-0">{t('rec.linked')}</span>
               </div>
             )}
           </div>
@@ -702,8 +704,8 @@ export default function RecordVoiceNote() {
                   <Users className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 dark:text-white">Linked Contact</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Associate this recording with a contact</p>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('rec.linkedContact')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('rec.linkedContactHint')}</p>
                 </div>
               </div>
 
@@ -718,7 +720,7 @@ export default function RecordVoiceNote() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-gray-800 dark:text-white truncate">{linkedContact?.name}</p>
                         {formData.newContact && (
-                          <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex-shrink-0">New</span>
+                          <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full flex-shrink-0">{t('common.new')}</span>
                         )}
                       </div>
                       {linkedContact?.phone && (
@@ -740,9 +742,9 @@ export default function RecordVoiceNote() {
                     <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-800 dark:text-white">Save contact later</p>
+                          <p className="text-sm font-medium text-gray-800 dark:text-white">{t('rec.saveContactLater')}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {formData.contactPending ? 'Contact saved with this note' : 'Contact created on save'}
+                            {formData.contactPending ? t('rec.contactSavedWithNote') : t('rec.contactCreatedOnSave')}
                           </p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -760,7 +762,7 @@ export default function RecordVoiceNote() {
                   {/* Search */}
                   <div className="relative mb-3">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type="search" placeholder="Search by name or phone…" value={contactSearch}
+                    <input type="search" placeholder={t('rec.searchContacts')} value={contactSearch}
                       onChange={(e) => setContactSearch(e.target.value)}
                       className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-800 dark:text-white text-sm" />
                   </div>
@@ -770,7 +772,7 @@ export default function RecordVoiceNote() {
                     {loadingContacts ? (
                       <div className="flex items-center justify-center py-5 gap-2 text-gray-500">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">Loading contacts…</span>
+                        <span className="text-sm">{t('rec.loadingContacts')}</span>
                       </div>
                     ) : (() => {
                       const q = contactSearch.toLowerCase();
@@ -779,7 +781,7 @@ export default function RecordVoiceNote() {
                         <div className="text-center py-5">
                           <User className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-1" />
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {contactSearch ? 'No contacts match' : 'No contacts yet'}
+                            {contactSearch ? t('rec.noContactsMatch') : t('rec.noContactsYet')}
                           </p>
                         </div>
                       ) : filtered.map(contact => (
@@ -805,11 +807,11 @@ export default function RecordVoiceNote() {
                   {/* Create new contact */}
                   {showNewContactForm ? (
                     <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">New Contact</p>
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('rec.newContact')}</p>
                       {[
-                        { placeholder: 'Full name *', field: 'name', type: 'text' },
-                        { placeholder: 'Phone number *', field: 'phone', type: 'tel' },
-                        { placeholder: 'Email (optional)', field: 'email', type: 'email' },
+                        { placeholder: t('rec.fullName'), field: 'name', type: 'text' },
+                        { placeholder: t('rec.phoneNumber'), field: 'phone', type: 'tel' },
+                        { placeholder: t('rec.emailOptional'), field: 'email', type: 'email' },
                       ].map(({ placeholder, field, type }) => (
                         <input key={field} type={type} placeholder={placeholder} value={newContactData[field]}
                           onChange={(e) => setNewContactData(prev => ({ ...prev, [field]: e.target.value }))}
@@ -818,30 +820,30 @@ export default function RecordVoiceNote() {
                       <select value={newContactData.relationship}
                         onChange={(e) => setNewContactData(prev => ({ ...prev, relationship: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-800 dark:text-white text-sm">
-                        <option value="">Relationship (optional)</option>
-                        <option value="family">Family</option>
-                        <option value="friend">Friend</option>
-                        <option value="work">Work</option>
-                        <option value="other">Other</option>
+                        <option value="">{t('rec.relationshipOptional')}</option>
+                        <option value="family">{t('rec.relFamily')}</option>
+                        <option value="friend">{t('rec.relFriend')}</option>
+                        <option value="work">{t('rec.relWork')}</option>
+                        <option value="other">{t('rec.relOther')}</option>
                       </select>
                       <div className="flex gap-2">
                         <button onClick={() => {
-                          if (!newContactData.name.trim() || !newContactData.phone.trim()) { setError('Contact name and phone are required'); return; }
+                          if (!newContactData.name.trim() || !newContactData.phone.trim()) { setError(t('rec.contactRequired')); return; }
                           setFormData(prev => ({ ...prev, newContact: { ...newContactData }, contactId: null }));
                           setShowNewContactForm(false);
                         }} className="flex-1 px-3 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-sm font-semibold transition-colors">
-                          Use this contact
+                          {t('rec.useContact')}
                         </button>
                         <button onClick={() => { setShowNewContactForm(false); setNewContactData({ name: '', phone: '', email: '', relationship: '' }); }}
                           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                          Cancel
+                          {t('common.cancel')}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <button onClick={() => setShowNewContactForm(true)}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:border-brand-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-600 dark:text-gray-400">
-                      <Plus className="w-4 h-4" /> Create new contact
+                      <Plus className="w-4 h-4" /> {t('rec.createContact')}
                     </button>
                   )}
                 </>
@@ -857,8 +859,8 @@ export default function RecordVoiceNote() {
                   <Phone className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-800 dark:text-white">IVR Slot</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Your universal slot number to hear this message</p>
+                  <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('rec.ivrSlot')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('rec.ivrSlotHint')}</p>
                 </div>
               </div>
 
@@ -871,21 +873,21 @@ export default function RecordVoiceNote() {
                     : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-brand-400'
                 }`}
               >
-                Auto-assign
+                {t('rec.autoAssign')}
               </button>
 
               {/* Slot grid */}
               {ivrSlots ? (
                 <div className="grid grid-cols-5 gap-2">
                   {Array.from({ length: ivrSlots.totalSlots || 9 }, (_, i) => i + 1).map(slot => {
-                    const takenEntry = ivrSlots.taken?.find(t => t.slot === slot);
+                    const takenEntry = ivrSlots.taken?.find(entry => entry.slot === slot);
                     const isTaken = !!takenEntry;
                     const isSelected = selectedSlot === slot;
                     return (
                       <button
                         key={slot}
                         disabled={isTaken}
-                        title={isTaken ? `Taken: "${takenEntry.title}"` : `Assign to slot ${slot}`}
+                        title={isTaken ? t('rec.slotTaken', { title: takenEntry.title }) : t('rec.assignSlot', { slot })}
                         onClick={() => setSelectedSlot(isSelected ? null : slot)}
                         className={`relative aspect-square rounded-xl text-sm font-bold transition-all ${
                           isSelected
@@ -906,24 +908,24 @@ export default function RecordVoiceNote() {
               ) : (
                 <div className="flex items-center justify-center py-4 gap-2 text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Loading slots…</span>
+                  <span className="text-sm">{t('rec.loadingSlots')}</span>
                 </div>
               )}
 
               {selectedSlot && (
                 <p className="mt-3 text-xs text-center text-brand-600 dark:text-brand-400 font-medium">
-                  Slot {selectedSlot} selected — callers will press {selectedSlot}
+                  {t('rec.slotSelected', { slot: selectedSlot })}
                 </p>
               )}
               {ivrSlots && ivrSlots.taken?.length > 0 && (
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-accent-500 mr-1" />
-                  = slot already in use
+                  {t('rec.slotInUse')}
                 </p>
               )}
               {ivrSlots && (
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 text-center">
-                  {ivrSlots.totalSlots} slot{ivrSlots.totalSlots !== 1 ? 's' : ''} available on your plan
+                  {t(ivrSlots.totalSlots === 1 ? 'rec.slotsAvailableOne' : 'rec.slotsAvailable', { count: ivrSlots.totalSlots })}
                 </p>
               )}
             </div>
@@ -936,43 +938,43 @@ export default function RecordVoiceNote() {
                 <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
                   <Tag className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </div>
-                <h2 className="text-base font-bold text-gray-800 dark:text-white">Note Details</h2>
+                <h2 className="text-base font-bold text-gray-800 dark:text-white">{t('rec.noteDetails')}</h2>
               </div>
 
               <div className="space-y-4">
                 {/* Title */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Title <span className="text-accent-500">*</span>
+                    {t('voice.titleLabel')} <span className="text-accent-500">*</span>
                   </label>
                   <input type="text" value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-800 dark:text-white"
-                    placeholder="Give your voice note a title" />
+                    placeholder={t('rec.titlePlaceholder')} />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('rec.description')}</label>
                   <textarea value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-800 dark:text-white resize-none"
-                    placeholder="Add context or notes about this recording" />
+                    placeholder={t('rec.descriptionPlaceholder')} />
                 </div>
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tags</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{t('voice.tags')}</label>
                   <div className="flex gap-2">
                     <input type="text" value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                       className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
-                      placeholder="Add tag, press Enter" />
+                      placeholder={t('rec.tagPlaceholder')} />
                     <button onClick={addTag}
                       className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium">
-                      Add
+                      {t('common.add')}
                     </button>
                   </div>
                   {formData.tags.length > 0 && (
@@ -1002,8 +1004,8 @@ export default function RecordVoiceNote() {
                       <Star className="w-5 h-5 text-yellow-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white text-sm">Add to Favorites</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Mark as a favorite note</p>
+                      <p className="font-medium text-gray-800 dark:text-white text-sm">{t('voice.addToFavorites')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('rec.favoriteHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -1021,8 +1023,8 @@ export default function RecordVoiceNote() {
                       <Shield className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white text-sm">Store in Legacy Vault</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Permanent bank-level encryption</p>
+                      <p className="font-medium text-gray-800 dark:text-white text-sm">{t('rec.storeInVault')}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('rec.storeInVaultHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -1039,10 +1041,10 @@ export default function RecordVoiceNote() {
                 <div className="flex items-center gap-2 px-3 py-2 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-xl mb-4">
                   <Users className="w-4 h-4 text-brand-600 dark:text-brand-400 flex-shrink-0" />
                   <span className="text-sm text-brand-700 dark:text-brand-300 font-medium truncate">
-                    Linked to: {linkedContact.name}
+                    {t('rec.linkedTo', { name: linkedContact.name })}
                   </span>
                   {formData.newContact && !formData.contactPending && (
-                    <span className="text-xs text-gray-500 flex-shrink-0">(will be created)</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{t('rec.willBeCreated')}</span>
                   )}
                 </div>
               )}
@@ -1056,15 +1058,15 @@ export default function RecordVoiceNote() {
                 {converting ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Converting to MP3...</span>
+                    <span>{t('rec.convertingMp3')}</span>
                   </div>
                 ) : uploading ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving...</span>
+                    <span>{t('common.saving')}</span>
                   </div>
                 ) : (
-                  <span>Save Recording</span>
+                  <span>{t('voice.saveRecording')}</span>
                 )}
               </button>
 
@@ -1076,8 +1078,8 @@ export default function RecordVoiceNote() {
 
               <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
                 {hasAudio
-                  ? `Ready to save · ${formatTime(recordingDuration)}`
-                  : 'Record or upload audio to continue'}
+                  ? t('rec.readyToSave', { duration: formatTime(recordingDuration) })
+                  : t('rec.recordToContinue')}
               </p>
             </div>
           </motion.div>
