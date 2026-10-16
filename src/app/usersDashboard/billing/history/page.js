@@ -4,8 +4,18 @@ import Link from 'next/link';
 import { ArrowLeft, Receipt, Download, ExternalLink, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { api } from '@/utils/api';
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const StatusBadge = ({ status }) => {
+  const { t } = useLanguage();
+
+  // Translated label for a status value from the API; unknown values are shown capitalized
+  const statusLabel = (value) => {
+    if (!value) return '';
+    const key = `billing.invoiceStatus.${value}`;
+    const label = t(key);
+    return label === key ? value.charAt(0).toUpperCase() + value.slice(1) : label;
+  };
   const styles = {
     paid: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     open: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -28,12 +38,13 @@ const StatusBadge = ({ status }) => {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || styles.pending}`}>
       {icons[status]}
-      {status?.charAt(0).toUpperCase() + status?.slice(1)}
+      {statusLabel(status)}
     </span>
   );
 };
 
 export default function BillingHistoryPage() {
+  const { t, locale } = useLanguage();
   const [invoices, setInvoices] = useState([]);
   const [localHistory, setLocalHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +61,7 @@ export default function BillingHistoryPage() {
         }
       } catch (err) {
         setError(err.message);
-        toast.error('Failed to load billing history', 'Error');
+        toast.error(t('bill.historyError'), t('common.error'));
       } finally {
         setLoading(false);
       }
@@ -59,13 +70,13 @@ export default function BillingHistoryPage() {
   }, []);
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return new Date(dateStr).toLocaleDateString(locale, {
       month: 'short', day: 'numeric', year: 'numeric'
     });
   };
 
   const formatAmount = (amount, currency = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency', currency
     }).format(amount);
   };
@@ -78,8 +89,8 @@ export default function BillingHistoryPage() {
           <ArrowLeft className="w-5 h-5 text-gray-500" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Billing History</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Your past invoices and payments</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('set.billingHistory')}</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('bill.historySubtitle')}</p>
         </div>
       </div>
 
@@ -92,18 +103,18 @@ export default function BillingHistoryPage() {
       ) : error ? (
         <div className="card p-8 text-center">
           <XCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-          <p className="text-gray-500">Failed to load billing history</p>
+          <p className="text-gray-500">{t('bill.historyError')}</p>
           <button onClick={() => window.location.reload()} className="mt-3 text-sm text-brand-600 hover:underline">
-            Try again
+            {t('common.retry')}
           </button>
         </div>
       ) : invoices.length === 0 && localHistory.length === 0 ? (
         <div className="card p-12 text-center">
           <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">No billing history yet</p>
-          <p className="text-sm text-gray-400 mt-1">Your invoices will appear here after your first payment</p>
+          <p className="font-medium text-gray-700 dark:text-gray-300">{t('bill.noHistory')}</p>
+          <p className="text-sm text-gray-400 mt-1">{t('bill.noHistoryDesc')}</p>
           <Link href="/usersDashboard/billing" className="mt-4 inline-block text-sm text-brand-600 hover:underline">
-            View plans →
+            {t('bill.viewPlans')} →
           </Link>
         </div>
       ) : (
@@ -135,7 +146,7 @@ export default function BillingHistoryPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                        title="Download PDF"
+                        title={t('bill.downloadPdf')}
                       >
                         <Download className="w-4 h-4 text-gray-400" />
                       </a>
@@ -146,7 +157,7 @@ export default function BillingHistoryPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                        title="View invoice"
+                        title={t('bill.viewInvoice')}
                       >
                         <ExternalLink className="w-4 h-4 text-gray-400" />
                       </a>
@@ -166,7 +177,7 @@ export default function BillingHistoryPage() {
                     <Receipt className="w-5 h-5 text-gray-500" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{record.description || 'Payment'}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{record.description || t('bill.payment')}</p>
                     <p className="text-xs text-gray-400">{formatDate(record.created_at)}</p>
                   </div>
                 </div>

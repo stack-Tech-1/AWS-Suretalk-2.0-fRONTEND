@@ -45,7 +45,7 @@ function BillingPageInner() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState(null);
+  const [currentPlanState, setCurrentPlan] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [billingHistory, setBillingHistory] = useState([]);
   const [processing, setProcessing] = useState(false);
@@ -56,54 +56,54 @@ function BillingPageInner() {
       id: "LITE",
       name: "SureTalk LITE",
       price: "$0",
-      period: "forever",
-      description: "Perfect for trying out voice messaging",
+      period: t('bill.periodForever'),
+      description: t('bill.liteDesc'),
       features: [
-        "Up to 3 contacts",
-        "Up to 3 voice notes",        
-        "Phone access",
-        "Web dashboard access",
-        "Basic IVR menu",
+        t('bill.f.contacts3'),
+        t('bill.f.notes3'),        
+        t('bill.f.phoneAccess'),
+        t('bill.f.webDashboard'),
+        t('bill.f.basicIvr'),
       ],
       stripePriceId: process.env.NEXT_PUBLIC_STRIPE_LITE_PRICE_ID,
       color: "blue",
       gradient: "from-blue-500 to-cyan-500",
-      badge: "Free Forever"
+      badge: t('bill.badgeFree')
     },
     {
       id: "ESSENTIAL",
       name: "SureTalk Essential",
       price: "$6.99",
-      period: "per month",
-      description: "Our most popular plan",
+      period: t('bill.periodMonth'),
+      description: t('bill.essentialDesc'),
       features: [
-        "Up to 9 contacts",
-        "Unlimited voice notes",
-        "Advanced IVR features",
-        "Web dashboard access",
-        "Voice note exports",
-        "90-day Standard-IA storage",
+        t('bill.f.contacts9'),
+        t('bill.f.unlimitedNotes'),
+        t('bill.f.advancedIvr'),
+        t('bill.f.webDashboard'),
+        t('bill.f.exports'),
+        t('bill.f.storage90'),
       ],
       stripePriceId: process.env.NEXT_PUBLIC_STRIPE_ESSENTIAL_PRICE_ID,
       color: "purple",
       gradient: "from-purple-500 to-pink-500",
       highlighted: true,
-      badge: "Most Popular"
+      badge: t('bill.mostPopular')
     },
     {
       id: "LEGACY_VAULT_PREMIUM",
       name: "Legacy Vault",
       price: "$12.99",
-      period: "per month",
-      description: "Permanent storage & legacy features",
+      period: t('bill.periodMonth'),
+      description: t('bill.premiumDesc'),
       features: [
-        "All Essential features",
-        "Permanent voice storage",
-        "Voice Wills creation",
-        "Scheduled legacy messages",
+        t('bill.f.allEssential'),
+        t('bill.f.permanentStorage'),
+        t('bill.f.voiceWills'),
+        t('bill.f.legacyMessages'),
         "Glacier Deep Archive",
-        "KMS encryption",
-        "Priority support",
+        t('bill.f.kms'),
+        t('bill.f.prioritySupport'),
       ],
       stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID,
       color: "amber",
@@ -111,6 +111,17 @@ function BillingPageInner() {
       badge: "Premium"
     },
   ];
+
+  // Re-read the current plan from the (translated) tiers so its text follows the UI language
+  const currentPlan = currentPlanState ? tiers.find(p => p.id === currentPlanState.id) || currentPlanState : null;
+
+  // Translated label for a status value from the API; unknown values are shown capitalized
+  const subscriptionStatusLabel = (value) => {
+    if (!value) return '';
+    const key = `billing.subStatus.${value}`;
+    const label = t(key);
+    return label === key ? value.charAt(0).toUpperCase() + value.slice(1) : label;
+  };
 
   useEffect(() => {
     fetchBillingData();
@@ -134,12 +145,12 @@ function BillingPageInner() {
           setBillingHistory(subscriptionResponse.data.billingHistory);
         }
       } else {
-        throw new Error(subscriptionResponse.error || 'Failed to fetch subscription');
+        throw new Error(subscriptionResponse.error || t('bill.fetchError'));
       }
 
     } catch (error) {
       console.error('Failed to fetch billing data:', error);
-      setError('Failed to load billing information. Please try again.');
+      setError(t('bill.loadError'));
     } finally {
       setLoading(false);
     }
@@ -181,11 +192,11 @@ function BillingPageInner() {
       if (portalResponse.success) {
         window.location.href = portalResponse.data.url;
       } else {
-        throw new Error(portalResponse.error || 'Failed to open billing portal');
+        throw new Error(portalResponse.error || t('bill.portalError'));
       }
     } catch (error) {
       console.error('❌ Upgrade error:', error);
-      toast.error(`Failed to upgrade: ${error.message}`);
+      toast.error(t('bill.upgradeError', { error: error.message }));
     } finally {
       setProcessing(false);
     }
@@ -203,7 +214,7 @@ function BillingPageInner() {
         // Direct change succeeded (IVR user with no Stripe subscription)
         const newPlan = tiers.find(p => p.id === newTier);
         setCurrentPlan(newPlan);
-        toast.success(`Successfully switched to ${newPlan?.name || newTier} plan!`, 'Plan Updated');
+        toast.success(t('bill.switched', { plan: newPlan?.name || newTier }), t('bill.planUpdated'));
         await fetchBillingData();
         window.location.reload();
         return;
@@ -212,8 +223,8 @@ function BillingPageInner() {
       // Backend says: cancel via Stripe portal (user has an active Stripe subscription)
       if (response.code === 'USE_PORTAL') {
         toast.info(
-          'To downgrade to the free plan, please cancel your current subscription from the billing portal.',
-          'Cancel via Portal'
+          t('bill.downgradeViaPortal'),
+          t('bill.cancelViaPortal')
         );
         const portalResponse = await api.request('/billing/create-portal-session', {
           method: 'POST',
@@ -222,16 +233,16 @@ function BillingPageInner() {
         if (portalResponse.success) {
           window.location.href = portalResponse.data.url;
         } else {
-          throw new Error(portalResponse.error || 'Failed to open billing portal');
+          throw new Error(portalResponse.error || t('bill.portalError'));
         }
         return;
       }
 
       // Any other failure (e.g. USE_CHECKOUT block — shouldn't be reachable from this path)
-      throw new Error(response.error || 'Failed to change plan');
+      throw new Error(response.error || t('bill.changeError'));
     } catch (error) {
       console.error('Plan change error:', error);
-      toast.error(`Failed to change plan: ${error.message}`);
+      toast.error(t('bill.changeErrorWithReason', { error: error.message }));
     } finally {
       setProcessing(false);
     }
@@ -251,7 +262,7 @@ function BillingPageInner() {
       if (response.success) {
         window.location.href = response.data.url;
       } else {
-        const err = new Error(response.error || 'Failed to create portal session');
+        const err = new Error(response.error || t('bill.portalError'));
         err.code = response.code;
         throw err;
       }
@@ -260,16 +271,16 @@ function BillingPageInner() {
 
       if (error.code === 'FREE_PLAN') {
         toast.info(
-          'You are on the free LITE plan. Use the upgrade options below to add a paid subscription.',
-          'Free Plan'
+          t('bill.onFreePlan'),
+          t('bill.freePlan')
         );
       } else if (error.code === 'NO_STRIPE_CUSTOMER' || error.message?.includes('No billing account')) {
         toast.warning(
-          'Your subscription was set up by phone. To manage billing online, please contact support at contact@suretalknow.com',
-          'Phone Subscription'
+          t('bill.phoneSubscriptionMsg'),
+          t('bill.phoneSubscription')
         );
       } else {
-        toast.error(error.message || 'Failed to open billing portal', 'Billing Error');
+        toast.error(error.message || t('bill.portalError'), t('bill.billingError'));
       }
     } finally {
       setProcessing(false);
@@ -292,14 +303,14 @@ function BillingPageInner() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Unable to Load Billing</h3>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{t('bill.unableToLoad')}</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={fetchBillingData}
             className="px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all"
           >
             <RefreshCw className="w-4 h-4 inline mr-2" />
-            Try Again
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -332,7 +343,7 @@ function BillingPageInner() {
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-brand-500" />
                   <span className="font-medium text-gray-800 dark:text-white">
-                    Current: {currentPlan.name}
+                    {t('bill.currentLabel', { plan: currentPlan.name })}
                   </span>
                 </div>
               </div>
@@ -366,7 +377,7 @@ function BillingPageInner() {
         >
           <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-green-700 dark:text-green-400 font-medium">
-            Payment successful! Your plan has been activated.
+            {t('bill.checkoutSuccess')}
           </div>
         </motion.div>
       )}
@@ -378,7 +389,7 @@ function BillingPageInner() {
         >
           <AlertCircle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
-            Checkout cancelled. Your plan was not changed.
+            {t('bill.checkoutCancelled')}
           </div>
         </motion.div>
       )}
@@ -411,7 +422,7 @@ function BillingPageInner() {
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Contacts</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('contacts.title')}</span>
                     </div>
                     <p className="text-2xl font-bold text-gray-800 dark:text-white">
                       {subscription.limits?.contacts || '0'}
@@ -421,7 +432,7 @@ function BillingPageInner() {
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Headphones className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Storage</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bill.storage')}</span>
                     </div>
                     <p className="text-2xl font-bold text-gray-800 dark:text-white">
                       {subscription.limits?.storageGb || '0'} GB
@@ -431,7 +442,7 @@ function BillingPageInner() {
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <MessageSquare className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes Limit</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('bill.notesLimit')}</span>
                     </div>
                     <p className="text-2xl font-bold text-gray-800 dark:text-white">
                       {subscription.limits?.voiceNotes || '0'}
@@ -441,10 +452,10 @@ function BillingPageInner() {
                   <div className="glass rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="w-4 h-4 text-amber-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('common.status')}</span>
                     </div>
                     <p className="text-lg font-bold capitalize text-gray-800 dark:text-white">
-                      {subscription.status || 'active'}
+                      {subscriptionStatusLabel(subscription.status || 'active')}
                     </p>
                   </div>
                 </div>
@@ -452,16 +463,16 @@ function BillingPageInner() {
               
               <div className="lg:col-span-1">
                 <div className="glass rounded-xl p-6 h-full">
-                  <h4 className="font-bold text-gray-800 dark:text-white mb-4">Billing Details</h4>
+                  <h4 className="font-bold text-gray-800 dark:text-white mb-4">{t('bill.billingDetails')}</h4>
                   
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">Current Plan</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('billing.currentPlan')}</span>
                       <span className="font-medium text-gray-800 dark:text-white">{currentPlan.name}</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 dark:text-gray-400">Price</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('bill.price')}</span>
                       <span className="font-medium text-gray-800 dark:text-white">
                         {currentPlan.price}
                         <span className="text-sm text-gray-500 ml-1">{currentPlan.period}</span>
@@ -471,16 +482,16 @@ function BillingPageInner() {
                     {subscription.stripeSubscription && (
                       <>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600 dark:text-gray-400">Next Billing</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bill.nextBilling')}</span>
                           <span className="font-medium text-gray-800 dark:text-white">
                             {/* Format Stripe timestamp if available */}
                           </span>
                         </div>
                         
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600 dark:text-gray-400">Payment Method</span>
+                          <span className="text-gray-600 dark:text-gray-400">{t('bill.paymentMethod')}</span>
                           <span className="font-medium text-gray-800 dark:text-white">
-                            Credit Card
+                            {t('bill.creditCard')}
                           </span>
                         </div>
                       </>
@@ -528,7 +539,7 @@ function BillingPageInner() {
           </div>
           <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Check className="w-4 h-4 text-green-500" />
-            <span>30-day money-back guarantee</span>
+            <span>{t('bill.moneyBack')}</span>
           </div>
         </div>
 
@@ -536,7 +547,7 @@ function BillingPageInner() {
           {tiers.map((plan, index) => {
             const isCurrentPlan = currentPlan?.id === plan.id;
             const isHighlighted = plan.highlighted;
-            const currentPlanIndex = currentPlan ? tiers.findIndex(t => t.id === currentPlan.id) : -1;
+            const currentPlanIndex = currentPlan ? tiers.findIndex(tier => tier.id === currentPlan.id) : -1;
             
             return (
               <motion.div
@@ -551,14 +562,14 @@ function BillingPageInner() {
                 {isHighlighted && (
                   <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 
                                 text-white px-4 py-1 rounded-bl-lg text-sm font-medium">
-                    Most Popular
+                    {t('bill.mostPopular')}
                   </div>
                 )}
                 
                 {isCurrentPlan && (
                   <div className="absolute top-0 left-0 bg-gradient-to-r from-brand-500 to-accent-500 
                                 text-white px-4 py-1 rounded-br-lg text-sm font-medium">
-                    Current Plan
+                    {t('billing.currentPlan')}
                   </div>
                 )}
                 
@@ -612,7 +623,7 @@ function BillingPageInner() {
                   
                   {plan.price !== "$0" && (
                     <p className="text-center text-xs text-gray-500 dark:text-gray-500 mt-3">
-                      Cancel anytime • 30-day money-back guarantee
+                      {t('bill.cancelAnytime')} • {t('bill.moneyBack')}
                     </p>
                   )}
                 </div>

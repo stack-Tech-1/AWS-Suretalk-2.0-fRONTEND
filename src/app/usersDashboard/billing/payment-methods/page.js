@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, CreditCard, Plus, Star, ExternalLink, Shield } from 'lucide-react';
 import { api } from '@/utils/api';
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const CardBrandIcon = ({ brand }) => {
   const colors = {
@@ -21,6 +22,7 @@ const CardBrandIcon = ({ brand }) => {
 };
 
 export default function PaymentMethodsPage() {
+  const { t } = useLanguage();
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [hasStripeCustomer, setHasStripeCustomer] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ export default function PaymentMethodsPage() {
           setHasStripeCustomer(response.data.hasStripeCustomer);
         }
       } catch (err) {
-        toast.error('Failed to load payment methods', 'Error');
+        toast.error(t('bill.pmLoadError'), t('common.error'));
       } finally {
         setLoading(false);
       }
@@ -59,11 +61,11 @@ export default function PaymentMethodsPage() {
     } catch (err) {
       if (err.message?.includes('No billing account')) {
         toast.warning(
-          'Your subscription was set up by phone. Contact contact@suretalknow.com to manage payment methods.',
-          'Phone Subscription'
+          t('bill.pmPhoneMsg'),
+          t('bill.phoneSubscription')
         );
       } else {
-        toast.error('Failed to open billing portal', 'Error');
+        toast.error(t('bill.portalError'), t('common.error'));
       }
     } finally {
       setOpeningPortal(false);
@@ -79,8 +81,8 @@ export default function PaymentMethodsPage() {
             <ArrowLeft className="w-5 h-5 text-gray-500" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Payment Methods</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Manage your cards and payment options</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('set.paymentMethods')}</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{t('bill.pmSubtitle')}</p>
           </div>
         </div>
         {hasStripeCustomer && (
@@ -90,7 +92,7 @@ export default function PaymentMethodsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold hover:shadow-brand transition-all disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            {openingPortal ? 'Opening...' : 'Add Card'}
+            {openingPortal ? t('bill.opening') : t('billing.addCard')}
           </button>
         )}
       </div>
@@ -104,29 +106,29 @@ export default function PaymentMethodsPage() {
       ) : !hasStripeCustomer ? (
         <div className="card p-8 text-center">
           <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">No billing account linked</p>
+          <p className="font-medium text-gray-700 dark:text-gray-300">{t('bill.noAccount')}</p>
           <p className="text-sm text-gray-400 mt-1 mb-4">
-            You subscribed via phone. To manage payment methods online, please contact support.
+            {t('bill.noAccountDesc')}
           </p>
           <a
             href="mailto:contact@suretalknow.com"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors"
           >
-            Contact Support
+            {t('bill.contactSupport')}
           </a>
         </div>
       ) : paymentMethods.length === 0 ? (
         <div className="card p-8 text-center">
           <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">No payment methods on file</p>
-          <p className="text-sm text-gray-400 mt-1 mb-4">Add a card to manage your subscription</p>
+          <p className="font-medium text-gray-700 dark:text-gray-300">{t('bill.noPm')}</p>
+          <p className="text-sm text-gray-400 mt-1 mb-4">{t('billing.noCardsDesc')}</p>
           <button
             onClick={handleManageInPortal}
             disabled={openingPortal}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            Add Payment Method
+            {t('bill.addPm')}
           </button>
         </div>
       ) : (
@@ -147,12 +149,12 @@ export default function PaymentMethodsPage() {
                         {pm.isDefault && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
                             <Star className="w-3 h-3 fill-current" />
-                            Default
+                            {t('bill.default')}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-gray-400">
-                        Expires {pm.expMonth}/{pm.expYear}
+                        {t('billing.expiresOn')} {pm.expMonth}/{pm.expYear}
                       </p>
                     </div>
                   </div>
@@ -162,7 +164,7 @@ export default function PaymentMethodsPage() {
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
                   >
                     <ExternalLink className="w-3 h-3" />
-                    Manage
+                    {t('bill.manage')}
                   </button>
                 </div>
               </div>
@@ -173,10 +175,9 @@ export default function PaymentMethodsPage() {
           <div className="card p-4 flex items-start gap-3">
             <Shield className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">Secure payments</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{t('bill.securePayments')}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Your payment information is encrypted and securely managed by Stripe.
-                SureTalk never stores your full card details.
+                {t('bill.securePaymentsDesc')}
               </p>
             </div>
           </div>

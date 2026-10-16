@@ -14,6 +14,7 @@ import Link from "next/link";
 import { api } from "@/utils/api";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function BillingSuccess() {
   const searchParams = useSearchParams();
@@ -23,11 +24,13 @@ export default function BillingSuccess() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
   const analytics = useAnalyticsContext();
+  const { t } = useLanguage();
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    // attempt counts webhook-polling retries (previously used an undefined retryCount variable)
+    const verifyPayment = async (attempt = 0) => {
       if (!sessionId) {
-        setError('No payment session found');
+        setError(t('bsucc.noSession'));
         setLoading(false);
         return;
       }
@@ -59,21 +62,20 @@ export default function BillingSuccess() {
             }, 10000);
           } else {
             // Subscription not updated yet - check if we should retry
-            if (retryCount < 5) { // Try up to 5 times
-              setRetryCount(prev => prev + 1);
+            if (attempt < 5) { // Try up to 5 times
               setTimeout(() => {
-                verifyPayment();
+                verifyPayment(attempt + 1);
               }, 3000); // Wait 3 seconds before retry
             } else {
-              setError('Payment processed but subscription update is taking longer than expected. Please check your account in a few minutes or contact support.');
+              setError(t('bsucc.slow'));
             }
           }
         } else {
-          setError('Failed to verify subscription status');
+          setError(t('bsucc.verifyStatusError'));
         }
       } catch (error) {
         console.error("Payment verification failed:", error);
-        setError(error.message || 'Payment verification failed');
+        setError(error.message || t('bsucc.verifyError'));
       } finally {
         setLoading(false);
       }
@@ -87,8 +89,8 @@ export default function BillingSuccess() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Verifying your payment...</p>
-          <p className="text-sm text-gray-500 mt-2">Session: {sessionId?.substring(0, 20)}...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('bsucc.verifying')}</p>
+          <p className="text-sm text-gray-500 mt-2">{t('bsucc.session')}: {sessionId?.substring(0, 20)}...</p>
         </div>
       </div>
     );
@@ -109,12 +111,11 @@ export default function BillingSuccess() {
             </div>
             
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">
-              Payment Successful!
+              {t('billing.successTitle')}
             </h1>
             
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Thank you for your purchase. Your subscription has been activated and 
-              you now have access to all premium features. A receipt has been sent to your email.
+              {t('bsucc.thankYou')}
             </p>
             
             <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 
@@ -122,28 +123,28 @@ export default function BillingSuccess() {
               <div className="flex items-center justify-center gap-3 mb-4">
                 <CreditCard className="w-6 h-6 text-green-500" />
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                  What happens next?
+                  {t('bsucc.next')}
                 </h3>
               </div>
               <ul className="space-y-3 text-left max-w-md mx-auto">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700 dark:text-gray-300">Immediate access to premium features</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('bsucc.next1')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700 dark:text-gray-300">Receipt sent to your email</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('bsucc.next2')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700 dark:text-gray-300">New limits applied immediately</span>
+                  <span className="text-gray-700 dark:text-gray-300">{t('bsucc.next3')}</span>
                 </li>
               </ul>
             </div>
             
             <div className="mb-4">
               <p className="text-sm text-gray-500">
-                Redirecting to dashboard in 10 seconds...
+                {t('bsucc.redirecting')}
               </p>
             </div>
             
@@ -155,7 +156,7 @@ export default function BillingSuccess() {
                          rounded-xl hover:shadow-lg transition-all font-medium"
               >
                 <Home className="w-4 h-4" />
-                Go to Dashboard Now
+                {t('bsucc.goToDashboard')}
               </Link>
               <Link
                 href="/usersDashboard/billing"
@@ -165,7 +166,7 @@ export default function BillingSuccess() {
                          dark:hover:bg-gray-800 transition-colors font-medium"
               >
                 <CreditCard className="w-4 h-4" />
-                View Billing Details
+                {t('bsucc.viewBilling')}
               </Link>
             </div>
           </>
@@ -176,19 +177,19 @@ export default function BillingSuccess() {
             </div>
             
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">
-              {error ? 'Payment Issue' : 'Payment Processing'}
+              {error ? t('bsucc.issue') : t('bsucc.processing')}
             </h1>
             
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              {error || 'Your payment is being processed. This may take a few moments.'}
+              {error || t('bsucc.processingDesc')}
             </p>
             
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
                            rounded-xl p-4 mb-6 text-left">
                 <p className="text-sm text-red-600 dark:text-red-400">
-                  <strong>Session ID:</strong> {sessionId}<br/>
-                  <strong>Error:</strong> {error}
+                  <strong>{t('bsucc.sessionId')}:</strong> {sessionId}<br/>
+                  <strong>{t('common.error')}:</strong> {error}
                 </p>
               </div>
             )}
@@ -201,7 +202,7 @@ export default function BillingSuccess() {
                          rounded-xl hover:shadow-lg transition-all font-medium"
               >
                 <RefreshCw className="w-4 h-4" />
-                Check Again
+                {t('bsucc.checkAgain')}
               </button>
               <Link
                 href="/usersDashboard/billing"
@@ -211,7 +212,7 @@ export default function BillingSuccess() {
                          dark:hover:bg-gray-800 transition-colors font-medium"
               >
                 <ArrowRight className="w-4 h-4" />
-                Back to Billing
+                {t('bsucc.backToBilling')}
               </Link>
             </div>
           </>
