@@ -92,7 +92,10 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Request failed');
+        const error = new Error(data.error || data.message || 'Request failed');
+        error.status = response.status;
+        error.data = data;
+        throw error;
       }
 
       // Store successful GET responses in cache

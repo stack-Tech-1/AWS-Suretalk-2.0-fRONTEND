@@ -1,649 +1,338 @@
-// Create new file: src/app/admin/secure-login/page.js
 "use client";
-import { useEffect, useState } from 'react'; 
-import { motion } from "framer-motion";
-import { 
-  Lock, Mail, Shield, Eye, EyeOff, AlertCircle, Key, 
-  Clock, Globe, Cpu, Fingerprint, QrCode, Smartphone, Users
-} from "lucide-react";
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { Lock, Mail, Eye, EyeOff, AlertCircle, Shield, ShieldCheck, KeyRound, ArrowLeft, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import LogoIcon from "@/components/common/LogoIcon";
 import { api } from "../../../utils/api";
 
-export default function SecureAdminLogin() {
+// Turns backend errors into plain messages for the admin
+function friendlyError(error) {
+  const message = error?.message || '';
+  if (error instanceof TypeError || /Failed to fetch|NetworkError/i.test(message)) {
+    return "Can't reach the server. Check your internet connection and try again.";
+  }
+  if (/locked/i.test(message)) {
+    const until = error?.data?.lockedUntil ? new Date(error.data.lockedUntil) : null;
+    const minutes = until ? Math.max(1, Math.ceil((until - Date.now()) / 60000)) : null;
+    if (minutes && minutes >= 60) {
+      const hours = Math.ceil(minutes / 60);
+      return `Too many failed attempts. This account is locked — try again in about ${hours} hour${hours === 1 ? '' : 's'}.`;
+    }
+    return `Too many failed attempts. This account is locked — try again in ${minutes ? `${minutes} minute${minutes === 1 ? '' : 's'}` : 'a little while'}.`;
+  }
+  if (/Too many failed attempts from this IP/i.test(message) || error?.status === 429) {
+    return 'Too many sign-in attempts from this network. Please wait 15 minutes and try again.';
+  }
+  if (/Invalid credentials/i.test(message)) return 'Incorrect email or password.';
+  if (/Admin access required/i.test(message)) return "This account doesn't have admin access.";
+  if (/not approved/i.test(message)) return 'Your admin request was not approved. Contact a super admin if you think this is a mistake.';
+  if (/Access denied from this IP/i.test(message)) return "Admin sign-in isn't allowed from this network.";
+  if (/Invalid code/i.test(message)) return "That code didn't work. Check your authenticator app and try again.";
+  return message || 'Sign-in failed. Please try again.';
+}
+
+export default function AdminLogin() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState(1); // 1: Credentials, 2: 2FA
-  const [requiresCaptcha, setRequiresCaptcha] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const [clientIP, setClientIP] = useState("");
-  const [twoFactorToken, setTwoFactorToken] = useState("");
-  const [tempAuthToken, setTempAuthToken] = useState("");
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberDevice: false
-  });
+  const [step, setStep] = useState(1); // 1: email + password, 2: 2FA code
+  const [tempToken, setTempToken] = useState("");
+  const [code, setCode] = useState("");
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [formData, setFormData] = useState({ email: "", password: "" });
 
-  // Get client IP
+  // Already signed in as an admin? Go straight to the dashboard
   useEffect(() => {
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => setClientIP(data.ip))
-      .catch(() => setClientIP("Unknown"));
-    
-    // Check if we're returning from 2FA step
-    const storedTempToken = sessionStorage.getItem('admin_temp_token');
-    if (storedTempToken) {
-      setTempAuthToken(storedTempToken);
-      setStep(2);
-    }
-  }, []);
+    if (!localStorage.getItem('token')) return;
+    api.getProfile()
+      .then(response => { if (response?.data?.is_admin) router.replace('/adminDashboard'); })
+      .catch(() => {});
+  }, [router]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCredentialsLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-  
-    try {
-      if (!formData.email || !formData.password) {
-        setError("Please fill in all fields");
-        setLoading(false);
-        return;
-      }
-  
-      // Enhanced validation - SET ERROR instead of THROWING
-      if (formData.password.length < 10) {
-        setError("Admin password must be at least 12 characters");
-        setLoading(false);
-        return;
-      }
-  
-      // Optional: Add password strength validation
-      const passwordStrength = checkPasswordStrength(formData.password);
-      if (!passwordStrength.isStrong) {
-        setError(passwordStrength.message);
-        setLoading(false);
-        return;
-      }
-  
-      // FIX: Build loginData conditionally
-    const loginData = {
-      email: formData.email,
-      password: formData.password,
-      // Only add captchaToken if requiresCaptcha is true AND captchaToken has value
-      ...(requiresCaptcha && captchaToken && { captchaToken }),
-      clientIP: clientIP
-    };
-
-      const response = await api.request('/auth/admin-login', {
-        method: 'POST',
-        body: JSON.stringify(loginData)
-      });
-  
-      if (response.requiresTwoFactor) {
-        // Store temp token and proceed to 2FA
-        sessionStorage.setItem('admin_temp_token', response.tempToken);
-        setTempAuthToken(response.tempToken);
-        setStep(2);
-      } else {
-        // Complete login
-        handleCompleteLogin(response);
-      }
-  
-    } catch (error) {
-      console.error("Admin login error:", error);
-
-      // Check for pending admin error
-      if (error.message && error.message.includes('Admin access pending approval')) {
-        // Redirect to pending approval page
-        localStorage.setItem('pending_admin_email', formData.email);
-        router.push('/admin/pending');
-        setLoading(false);
-        return;
-      }
-      
-      // User-friendly error messages
-      let userMessage = error.message || "Authentication failed";
-      
-      // Map backend errors to user-friendly messages
-      const errorMap = {
-        'Invalid credentials': 'Invalid email or password',
-        'User not found': 'Account not found',
-        'Account locked': 'Account temporarily locked. Try again later.',
-        'Too many attempts': 'Too many login attempts. Please wait and try again.',
-        'Network Error': 'Connection error. Please check your internet.',
-        'Timeout': 'Request timeout. Please try again.',
-      };
-      
-      // Check if error matches any in our map
-      for (const [key, value] of Object.entries(errorMap)) {
-        if (error.message.includes(key)) {
-          userMessage = value;
-          break;
-        }
-      }
-      
-      setError(userMessage);
-      
-      // Show captcha after 3 failed attempts
-      if (error.message.includes('attempt') || error.message.includes('failed')) {
-        setRequiresCaptcha(true);
-      }
-      
-      setLoading(false);
-    }
-  };
-  
-  // Optional helper function for password strength
-  const checkPasswordStrength = (password) => {
-    const requirements = {
-      minLength: password.length >= 12,
-      hasUpperCase: /[A-Z]/.test(password),
-      hasLowerCase: /[a-z]/.test(password),
-      hasNumbers: /\d/.test(password),
-      hasSpecialChars: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    };
-    
-    const passed = Object.values(requirements).filter(Boolean).length;
-    
-    if (passed === 5) {
-      return { isStrong: true, message: "Strong password" };
-    }
-    
-    const missing = [];
-    if (!requirements.minLength) missing.push("at least 12 characters");
-    if (!requirements.hasUpperCase) missing.push("an uppercase letter");
-    if (!requirements.hasLowerCase) missing.push("a lowercase letter");
-    if (!requirements.hasNumbers) missing.push("a number");
-    if (!requirements.hasSpecialChars) missing.push("a special character");
-    
-    return {
-      isStrong: false,
-      message: `Password must contain: ${missing.join(", ")}`
-    };
-  };
-
-  const handle2FALogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      if (!twoFactorToken || twoFactorToken.length !== 6) {
-        throw new Error("Please enter a valid 6-digit 2FA code");
-      }
-
-      const response = await api.request('/auth/verify-2fa', {
-        method: 'POST',
-        body: JSON.stringify({
-          tempToken: tempAuthToken,
-          twoFactorToken: twoFactorToken
-        })
-      });
-
-      handleCompleteLogin(response);
-
-    } catch (error) {
-      console.error("2FA verification error:", error);
-      setError(error.message || "2FA verification failed");
-      setLoading(false);
-    }
-  };
-
-  const handleCompleteLogin = (response) => {
-    // Store session info
-    const sessionData = {
+  const completeLogin = (response) => {
+    localStorage.setItem('admin_session', JSON.stringify({
       token: response.data.token,
       refreshToken: response.data.refreshToken,
       sessionToken: response.data.sessionToken,
       user: response.data.user,
-      loginTime: new Date().toISOString(),
-      loginIP: clientIP,
-      deviceFingerprint: generateDeviceFingerprint()
-    };
-  
-    // CRITICAL: Store the token in BOTH places
-    localStorage.setItem('admin_session', JSON.stringify(sessionData));
-    
-    // ADD THIS LINE - Store token for API requests
+      loginTime: new Date().toISOString()
+    }));
     localStorage.setItem('token', response.data.token);
-    
-    // Set session cookie with HttpOnly flag (would be done server-side in production)
-    document.cookie = `admin_token=${response.data.token}; path=/; secure; samesite=strict`;
-    
-    // Clear temp token
-    sessionStorage.removeItem('admin_temp_token');
-
-    // Redirect to admin dashboard
     router.replace('/adminDashboard');
   };
 
-  const generateDeviceFingerprint = () => {
-    const fingerprint = {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      language: navigator.language,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      screen: `${window.screen.width}x${window.screen.height}`,
-      cookiesEnabled: navigator.cookieEnabled,
-      doNotTrack: navigator.doNotTrack || 'unspecified'
-    };
-    
-    return btoa(JSON.stringify(fingerprint));
+  const handleCredentials = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!formData.email || !formData.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.request('/auth/admin-login', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+      if (response.requiresTwoFactor) {
+        setTempToken(response.tempToken);
+        setCode("");
+        setUseBackupCode(false);
+        setStep(2);
+        setLoading(false);
+        return;
+      }
+      completeLogin(response);
+    } catch (err) {
+      if (/pending approval/i.test(err.message || '')) {
+        localStorage.setItem('pending_admin_email', formData.email);
+        router.push('/admin/pending');
+        return;
+      }
+      setError(friendlyError(err));
+      setLoading(false);
+    }
   };
 
-  const resetLogin = () => {
+  const handleCode = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const response = await api.request('/auth/admin-login/2fa', {
+        method: 'POST',
+        body: JSON.stringify({ tempToken, code })
+      });
+      completeLogin(response);
+    } catch (err) {
+      if (/Session expired/i.test(err.message || '')) {
+        backToCredentials();
+        setError('That took too long, so the sign-in expired. Please enter your password again.');
+      } else {
+        setError(friendlyError(err));
+      }
+      setLoading(false);
+    }
+  };
+
+  const backToCredentials = () => {
     setStep(1);
-    setTwoFactorToken("");
-    setTempAuthToken("");
-    setRequiresCaptcha(false);
-    sessionStorage.removeItem('admin_temp_token');
+    setTempToken("");
+    setCode("");
+    setError("");
+    setFormData(prev => ({ ...prev, password: "" }));
   };
 
-  const handleEmergencyAccess = () => {
-    // Implement emergency access request
-    router.push('/admin/emergency-access');
-  };
+  const codeReady = useBackupCode ? code.replace(/\s/g, '').length >= 8 : code.length === 6;
+  const inputClass = "w-full py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all disabled:opacity-60";
+  const primaryButton = "w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-accent-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-950 flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-red-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand-500/15 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-accent-500/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
       </div>
-      
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 w-full max-w-md bg-gray-800/40 backdrop-blur-2xl 
-                  rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden"
-      >
-        {/* Security header */}
-        <div className="p-6 border-b border-gray-700/50 bg-gradient-to-r from-gray-800/50 to-gray-900/50">
-          <div className="flex items-center justify-between">
+      <div className="relative z-10 w-full max-w-md">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="glass rounded-3xl shadow-2xl px-6 sm:px-8 py-8 sm:py-10"
+        >
+          {/* Brand */}
+          <div className="flex flex-col items-center text-center mb-8">
             <div className="flex items-center gap-3">
-            <Image
-              unoptimized
-              src="https://i.postimg.cc/9MbyJVL4/cropped-fulllogo-edited.webp"
-              alt="SureTalk Logo"
-              width={40}
-              height={40}
-              className="object-contain"
-            />
-              <div>
-                <h1 className="text-xl font-bold text-white">SureTalk Admin</h1>
-                <p className="text-sm text-gray-400">Secure Gateway v2.0</p>
-              </div>
+              <LogoIcon size={40} />
+              <span className="font-display text-2xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">
+                SureTalk
+              </span>
             </div>
-            
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/50 rounded-full border border-gray-700">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-medium text-gray-300">SECURE</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Security context */}
-          <div className="mb-6 grid grid-cols-3 gap-3">
-            <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700/30">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span className="text-xs text-gray-400">IP:</span>
-              </div>
-              <p className="text-sm text-white font-mono mt-1 truncate" title={clientIP}>
-                {clientIP?.substring(0, 15) || 'Detecting...'}
-              </p>
-            </div>
-            
-            <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700/30">
-              <div className="flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-gray-400">Level:</span>
-              </div>
-              <p className="text-sm text-white font-medium mt-1">Admin Only</p>
-            </div>
-            
-            <div className="p-3 bg-gray-900/30 rounded-lg border border-gray-700/30">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs text-gray-400">Step:</span>
-              </div>
-              <p className="text-sm text-white font-medium mt-1">{step}/2</p>
-            </div>
+            <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+                             bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+              <Shield className="w-3.5 h-3.5" />
+              Admin Console
+            </span>
           </div>
 
-          {/* ADD ERROR DISPLAY HERE */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-xl"
+              role="alert"
+              className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3"
             >
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-red-300">
-                  {error}
-                </div>
-              </div>
+              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
             </motion.div>
           )}
 
-          {/* Step 1: Credentials */}
-          {step === 1 && (
-            <form onSubmit={handleCredentialsLogin} className="space-y-5">
-              {requiresCaptcha && (
-                <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl">
-                  <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-400" />
-                    <span className="text-sm font-medium text-yellow-300">Security Check Required</span>
-                  </div>
-                  <div className="bg-gray-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-300 mb-2">Complete the security check:</p>
-                    <div className="text-center">
-                      <div className="text-lg font-mono bg-gray-800 p-3 rounded-lg mb-3">
-                        {Math.floor(Math.random() * 90 + 10)} + {Math.floor(Math.random() * 90 + 10)} = ?
-                      </div>
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.div key="credentials" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white text-center">Admin sign in</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1 mb-6">
+                  For approved SureTalk administrators only.
+                </p>
+
+                <form onSubmit={handleCredentials} className="space-y-5">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                       <input
-                        type="text"
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center"
-                        placeholder="Enter sum"
-                        onChange={(e) => setCaptchaToken(e.target.value)}
+                        id="email"
+                        type="email"
+                        name="email"
+                        autoComplete="username"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`${inputClass} pl-11 pr-4`}
+                        placeholder="you@suretalknow.com"
                         required
+                        disabled={loading}
                       />
                     </div>
                   </div>
-                </div>
-              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Admin Email
-                    <span className="text-xs text-red-400 ml-auto">*Restricted</span>
-                  </div>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl
-                           text-white placeholder-gray-500 focus:outline-none focus:ring-2 
-                           focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="admin@suretalk.com"
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-300">
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-4 h-4" />
-                      Master Password
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        autoComplete="current-password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className={`${inputClass} pl-11 pr-12`}
+                        placeholder="Your password"
+                        required
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
-                    disabled={loading}
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
+                  </div>
+
+                  <motion.button type="submit" disabled={loading} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className={primaryButton}>
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <><Lock className="w-5 h-5" /> Sign in</>
+                    )}
+                  </motion.button>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Need admin access?{" "}
+                    <Link href="/admin/register" className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 inline-flex items-center gap-1">
+                      <UserPlus className="w-4 h-4" /> Request it
+                    </Link>
+                  </p>
                 </div>
-                <div className="relative">
+              </motion.div>
+            ) : (
+              <motion.div key="2fa" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.25 }}>
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    {useBackupCode ? <KeyRound className="w-7 h-7 text-white" /> : <ShieldCheck className="w-7 h-7 text-white" />}
+                  </div>
+                  <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white">
+                    {useBackupCode ? 'Use a backup code' : 'Two-step verification'}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {useBackupCode
+                      ? 'Enter one of the backup codes you saved when you set up 2FA. Each code works once.'
+                      : 'Enter the 6-digit code from your authenticator app.'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleCode} className="space-y-4">
                   <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl
-                             text-white placeholder-gray-500 focus:outline-none focus:ring-2 
-                             focus:ring-blue-500 focus:border-transparent transition-all pr-12"
-                    placeholder="••••••••••••"
-                    required
-                    minLength={12}
+                    key={useBackupCode ? 'backup' : 'totp'}
+                    type="text"
+                    inputMode={useBackupCode ? 'text' : 'numeric'}
+                    autoComplete="one-time-code"
+                    aria-label={useBackupCode ? 'Backup code' : '6-digit code'}
+                    value={code}
+                    onChange={e => setCode(useBackupCode
+                      ? e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, '').slice(0, 12)
+                      : e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className={`${inputClass} px-4 text-center text-2xl tracking-[0.4em] font-mono`}
+                    placeholder={useBackupCode ? 'XXXXXXXX' : '000000'}
+                    autoFocus
                     disabled={loading}
                   />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <Key className="w-5 h-5 text-gray-500" />
+
+                  <motion.button type="submit" disabled={loading || !codeReady} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className={primaryButton}>
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <><ShieldCheck className="w-5 h-5" /> Verify and sign in</>
+                    )}
+                  </motion.button>
+
+                  <div className="flex items-center justify-between text-sm pt-1">
+                    <button
+                      type="button"
+                      onClick={backToCredentials}
+                      disabled={loading}
+                      className="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setUseBackupCode(!useBackupCode); setCode(""); setError(""); }}
+                      disabled={loading}
+                      className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition-colors"
+                    >
+                      {useBackupCode ? 'Use authenticator app' : 'Lost your device? Use a backup code'}
+                    </button>
                   </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Minimum 12 characters with mixed case, numbers, and symbols
-                </p>
-              </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="rememberDevice"
-                  name="rememberDevice"
-                  checked={formData.rememberDevice}
-                  onChange={handleChange}
-                  disabled={loading}
-                  className="h-4 w-4 text-blue-500 bg-gray-900 border-gray-700 rounded 
-                           focus:ring-blue-500 focus:ring-offset-gray-900"
-                />
-                <label htmlFor="rememberDevice" className="ml-2 text-sm text-gray-400">
-                  Trust this device for 30 days
-                </label>
-              </div>
+          <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Shield className="w-3.5 h-3.5" />
+            All sign-in attempts are logged and monitored.
+          </p>
+        </motion.div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 
-                         hover:from-blue-500 hover:to-blue-600 active:scale-[0.99]
-                         text-white font-semibold rounded-xl border border-blue-500/30
-                         hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 
-                         disabled:opacity-50 disabled:cursor-not-allowed 
-                         flex items-center justify-center gap-2 relative overflow-hidden group"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-400/20 to-blue-500/0 
-                              group-hover:translate-x-full transition-transform duration-1000" />
-                
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Verifying Credentials...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shield className="w-5 h-5" />
-                    <span>Authenticate</span>
-                  </>
-                )}
-              </button>
-
-              <div className="space-y-4 mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-700/50"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-gray-800/50 text-gray-500">
-                      Need Admin Access?
-                    </span>
-                  </div>
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/register')}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-gray-800 to-gray-900 
-                          hover:from-gray-700 hover:to-gray-800
-                          text-white font-medium rounded-xl border border-gray-700
-                          hover:shadow-lg transition-all duration-300 
-                          hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                >
-                  <Users className="w-5 h-5 text-gray-400" />
-                  Request Admin Access
-                </button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleEmergencyAccess}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors"
-                >
-                  <AlertCircle className="w-4 h-4 inline mr-1" />
-                  Emergency Access Request
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Step 2: 2FA */}
-          {step === 2 && (
-            <form onSubmit={handle2FALogin} className="space-y-5">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-600/20 to-cyan-600/20 
-                              border border-blue-500/30 flex items-center justify-center">
-                  <Fingerprint className="w-10 h-10 text-blue-400" />
-                </div>
-                <h2 className="text-lg font-semibold text-white">Two-Factor Authentication</h2>
-                <p className="text-sm text-gray-400 mt-2">
-                  Enter the 6-digit code from your authenticator app
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2 text-center">
-                  2FA Verification Code
-                </label>
-                <div className="flex justify-center gap-2">
-                  {[0, 1, 2, 3, 4, 5].map((index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      maxLength={1}
-                      className="w-12 h-12 text-center text-xl font-bold bg-gray-900 border-2 
-                               border-gray-700 rounded-lg text-white focus:border-blue-500 
-                               focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value) {
-                          // Auto-focus next input
-                          const nextInput = e.target.nextElementSibling;
-                          if (nextInput) nextInput.focus();
-                          
-                          // Update token
-                          const newToken = twoFactorToken.split('');
-                          newToken[index] = value;
-                          setTwoFactorToken(newToken.join(''));
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Backspace' && !e.target.value) {
-                          // Focus previous input on backspace
-                          const prevInput = e.target.previousElementSibling;
-                          if (prevInput) prevInput.focus();
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={resetLogin}
-                  disabled={loading}
-                  className="flex-1 py-3 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 
-                           rounded-xl border border-gray-700 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || twoFactorToken.length !== 6}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 
-                           hover:from-green-500 hover:to-emerald-500 text-white font-semibold 
-                           rounded-xl border border-green-500/30 transition-all 
-                           disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Verifying...
-                    </div>
-                  ) : (
-                    'Verify & Login'
-                  )}
-                </button>
-              </div>
-
-              <div className="text-center space-y-3">
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/2fa/setup')}
-                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors block"
-                >
-                  <QrCode className="w-4 h-4 inline mr-1" />
-                  Setup 2FA
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push('/admin/2fa/recovery')}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors block"
-                >
-                  <Smartphone className="w-4 h-4 inline mr-1" />
-                  Lost 2FA Device?
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Security footer */}
-          <div className="mt-8 pt-6 border-t border-gray-700/50">
-            <div className="text-center space-y-3">
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => router.push('/admin/audit')}
-                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
-                >
-                  View Audit Logs
-                </button>
-                <button
-                  onClick={() => router.push('/admin/help')}
-                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
-                >
-                  Security Guide
-                </button>
-                <button
-                  onClick={() => window.open('https://status.suretalk.com', '_blank')}
-                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
-                >
-                  System Status
-                </button>
-              </div>
-              <p className="text-xs text-gray-500">
-                <span className="text-red-400">⚠️</span> All access attempts are logged and monitored
-              </p>
-            </div>
-          </div>
+        <div className="text-center mt-6 text-sm text-gray-500">
+          <Link href="/login" className="inline-flex items-center gap-1 hover:text-brand-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to SureTalk sign in
+          </Link>
+          <p className="mt-2">© {new Date().getFullYear()} SureTalk</p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
