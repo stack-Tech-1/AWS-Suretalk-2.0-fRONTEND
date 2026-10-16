@@ -47,12 +47,20 @@ import { api } from '@/utils/api';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, parseISO, isBefore, isAfter, addDays } from 'date-fns';
+import { getDateFnsLocale, dateTimePattern } from '@/utils/dateLocale';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function ScheduledMessages() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const dateLocale = getDateFnsLocale(lang);
+  // Translated word for a status value from the API; unknown values are shown as-is
+  const statusWord = (value) => {
+    const key = `scheduled.state.${value}`;
+    const label = t(key);
+    return label === key ? value : label;
+  };
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(); // ✅ Use AuthContext
   
@@ -177,13 +185,13 @@ export default function ScheduledMessages() {
           });
         }
       } else {
-        throw new Error(response.error || 'Failed to fetch messages');
+        throw new Error(response.error || t('sched.fetchError'));
       }
 
     } catch (error) {
       console.error('Failed to fetch scheduled messages:', error);
-      setError(error.message || 'Failed to load scheduled messages');
-      toast.error(error.message || 'Failed to load scheduled messages');
+      setError(error.message || t('sched.loadError'));
+      toast.error(error.message || t('sched.loadError'));
     } finally {
       setLoading(false);
     }
@@ -253,12 +261,12 @@ export default function ScheduledMessages() {
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return 'Not scheduled';
+    if (!dateString) return t('sched.notScheduled');
     try {
       const date = parseISO(dateString);
-      return format(date, 'MMM d, yyyy • h:mm a');
+      return format(date, dateTimePattern(lang), { locale: dateLocale });
     } catch {
-      return 'Invalid date';
+      return t('sched.invalidDate');
     }
   };
 
@@ -267,7 +275,7 @@ export default function ScheduledMessages() {
     if (!dateString) return '';
     try {
       const date = parseISO(dateString);
-      return formatDistanceToNow(date, { addSuffix: true });
+      return formatDistanceToNow(date, { addSuffix: true, locale: dateLocale });
     } catch {
       return '';
     }
@@ -285,56 +293,56 @@ export default function ScheduledMessages() {
           return {
             icon: AlertTriangle,
             color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
-            label: 'Past Due'
+            label: t('sched.pastDue')
           };
         }
         return {
           icon: isUpcoming ? CalendarClock : Clock,
           color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-          label: isUpcoming ? 'Upcoming' : 'Scheduled'
+          label: isUpcoming ? t('scheduled.upcoming') : t('scheduled.statusScheduled')
         };
       case 'delivered':
         if (message.call_status) {
           switch (message.call_status) {
             case 'completed':
-              return { icon: PhoneCall, color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', label: 'Answered' };
+              return { icon: PhoneCall, color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', label: t('sched.answered') };
             case 'no-answer':
-              return { icon: PhoneMissed, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400', label: 'No Answer' };
+              return { icon: PhoneMissed, color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400', label: t('sched.noAnswer') };
             case 'busy':
-              return { icon: Phone, color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400', label: 'Busy' };
+              return { icon: Phone, color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400', label: t('sched.busy') };
             case 'failed':
             case 'canceled':
-              return { icon: PhoneOff, color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', label: 'Call Failed' };
+              return { icon: PhoneOff, color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', label: t('sched.callFailed') };
           }
         }
         return {
           icon: CheckCircle,
           color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-          label: 'Delivered'
+          label: t('sched.delivered')
         };
       case 'failed':
         return {
           icon: AlertCircle,
           color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
-          label: 'Failed'
+          label: t('scheduled.statusFailed')
         };
       case 'cancelled':
         return {
           icon: X,
           color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-          label: 'Cancelled'
+          label: t('scheduled.statusCancelled')
         };
       case 'testing':
         return {
           icon: Send,
           color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-          label: 'Testing'
+          label: t('sched.testing')
         };
       default:
         return {
           icon: Clock,
           color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-          label: message.delivery_status || 'Unknown'
+          label: statusWord(message.delivery_status) || t('common.unknown')
         };
     }
   };
@@ -347,25 +355,25 @@ export default function ScheduledMessages() {
         return {
           icon: Phone,
           color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-500',
-          label: '📞 Call + SMS'
+          label: t('sched.methodCallSms')
         };
       case 'email':
         return {
           icon: Mail,
           color: 'bg-green-100 dark:bg-green-900/30 text-green-500',
-          label: '📧 Email'
+          label: t('sched.methodEmail')
         };
       case 'both':
         return {
           icon: Users,
           color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500',
-          label: '📧📞 Email + Call'
+          label: t('sched.methodEmailCall')
         };
       default:
         return {
           icon: Send,
           color: 'bg-gray-100 dark:bg-gray-800 text-gray-500',
-          label: method || 'Unknown'
+          label: method || t('common.unknown')
         };
     }
   };
@@ -383,12 +391,12 @@ export default function ScheduledMessages() {
             : msg
         ));
         
-        toast.success('Message cancelled successfully');
+        toast.success(t('sched.cancelSuccess'));
         setShowDeleteConfirm(null);
       }
     } catch (error) {
       console.error('Failed to cancel message:', error);
-      toast.error(error.message || 'Failed to cancel message');
+      toast.error(error.message || t('sched.cancelError'));
     } finally {
       setActionLoading(null);
     }
@@ -409,7 +417,7 @@ export default function ScheduledMessages() {
       });
 
       if (response.success) {
-        toast.success('Test message sent successfully');
+        toast.success(t('sched.testSuccess'));
         setShowTestModal(false);
         setTestForm({
           recipientEmail: '',
@@ -419,7 +427,7 @@ export default function ScheduledMessages() {
       }
     } catch (error) {
       console.error('Failed to send test:', error);
-      toast.error(error.message || 'Failed to send test message');
+      toast.error(error.message || t('sched.testError'));
     } finally {
       setActionLoading(null);
     }
@@ -437,17 +445,19 @@ export default function ScheduledMessages() {
 
   // Handle copy message info
   const handleCopyInfo = async (message) => {
-    const info = `Message: ${message.voice_note_title || 'Voice Message'}
-Recipient: ${message.recipient_name || message.recipient_phone || message.recipient_email}
-Scheduled: ${formatDate(message.scheduled_for)}
-Status: ${message.delivery_status}`;
+    const info = [
+      `${t('scheduled.tableMessage')}: ${message.voice_note_title || t('sched.voiceMessage')}`,
+      `${t('scheduled.recipient')}: ${message.recipient_name || message.recipient_phone || message.recipient_email}`,
+      `${t('scheduled.statusScheduled')}: ${formatDate(message.scheduled_for)}`,
+      `${t('common.status')}: ${getStatusInfo(message).label}`
+    ].join('\n');
     
     try {
       await navigator.clipboard.writeText(info);
-      toast.success('Message info copied to clipboard');
+      toast.success(t('sched.copySuccess'));
     } catch (error) {
       console.error('Failed to copy:', error);
-      toast.error('Failed to copy info');
+      toast.error(t('sched.copyError'));
     }
   };
 
@@ -478,14 +488,14 @@ Status: ${message.delivery_status}`;
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Error Loading Messages</h3>
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">{t('sched.loadErrorTitle')}</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">{error}</p>
         <button
           onClick={handleRefresh}
           className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
-          Retry
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -548,16 +558,15 @@ Status: ${message.delivery_status}`;
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5" />
             <div>
-              <h4 className="font-medium text-gray-800 dark:text-white">LITE Tier Limitation</h4>
+              <h4 className="font-medium text-gray-800 dark:text-white">{t('sched.liteLimitTitle')}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                You have reached the maximum of 3 scheduled messages for LITE tier. 
-                Upgrade to ESSENTIAL for unlimited scheduling.
+                {t('sched.liteLimitDesc')}
               </p>
               <Link
                 href="/usersDashboard/billing"
                 className="inline-block mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Upgrade Plan →
+                {t('dash.upgradePlan')} →
               </Link>
             </div>
           </div>
@@ -745,17 +754,17 @@ Status: ${message.delivery_status}`;
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
                           <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                            {message.voice_note_title || 'Untitled Message'}
+                            {message.voice_note_title || t('sched.untitled')}
                           </p>
                           {message.metadata?.source === 'ivr' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex-shrink-0">
                               <Phone className="w-3 h-3" />
-                              Via IVR
+                              {t('sched.viaIvr')}
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          {message.recipient_name || message.recipient_phone || message.recipient_email || 'No recipient'}
+                          {message.recipient_name || message.recipient_phone || message.recipient_email || t('sched.noRecipient')}
                         </p>
                       </div>
                       <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${statusInfo.color}`}>
@@ -766,13 +775,13 @@ Status: ${message.delivery_status}`;
                     <div className="flex items-center justify-between mt-3">
                       <div className="text-xs text-gray-500 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {message.formattedDate}
+                        {formatDate(message.scheduled_for)}
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleViewDetails(message.id)}
                           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                          title="View Details"
+                          title={t('sched.viewDetails')}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -780,7 +789,7 @@ Status: ${message.delivery_status}`;
                           <button
                             onClick={() => handleEditMessage(message.id)}
                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                            title="Edit"
+                            title={t('common.edit')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
@@ -789,7 +798,7 @@ Status: ${message.delivery_status}`;
                           <button
                             onClick={() => { setSelectedMessage(message); setShowTestModal(true); }}
                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                            title="Send Test"
+                            title={t('scheduled.sendTest')}
                           >
                             <Send className="w-4 h-4" />
                           </button>
@@ -798,7 +807,7 @@ Status: ${message.delivery_status}`;
                           <button
                             onClick={() => setShowDeleteConfirm(message.id)}
                             className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
-                            title="Cancel"
+                            title={t('common.cancel')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -849,18 +858,18 @@ Status: ${message.delivery_status}`;
                             <div>
                               <div className="flex items-center gap-2">
                                 <h4 className="font-medium text-gray-800 dark:text-white">
-                                  {message.voice_note_title || 'Untitled Message'}
+                                  {message.voice_note_title || t('sched.untitled')}
                                 </h4>
                                 {message.metadata?.source === 'ivr' && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                     <Phone className="w-3 h-3" />
-                                    Via IVR
+                                    {t('sched.viaIvr')}
                                   </span>
                                 )}
                                 {message.is_permanent && (
                                   <span className="text-xs px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
                                     <Shield className="w-3 h-3 inline mr-1" />
-                                    Permanent
+                                    {t('common.permanent')}
                                   </span>
                                 )}
                               </div>
@@ -877,10 +886,10 @@ Status: ${message.delivery_status}`;
                                     href={`/usersDashboard/voice-notes/${message.voice_note_id}`}
                                     className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
                                   >
-                                    View Voice Note
+                                    {t('sched.viewVoiceNote')}
                                   </Link>
                                 ) : message.metadata?.recordingSid ? (
-                                  <span className="text-xs text-gray-500">IVR Recording</span>
+                                  <span className="text-xs text-gray-500">{t('sched.ivrRecording')}</span>
                                 ) : null}
                               </div>
                             </div>
@@ -892,9 +901,9 @@ Status: ${message.delivery_status}`;
                               <User className="w-4 h-4 text-gray-400" />
                               <span className="font-medium text-gray-800 dark:text-white">
                                 {message.recipient_name || 
-                                 (message.recipient_phone ? 'Phone Recipient' : 
-                                  message.recipient_email ? 'Email Recipient' : 
-                                  'No recipient')}
+                                 (message.recipient_phone ? t('sched.phoneRecipient') : 
+                                  message.recipient_email ? t('sched.emailRecipient') : 
+                                  t('sched.noRecipient'))}
                               </span>
                             </div>
                             {(message.recipient_phone || message.recipient_email) && (
@@ -920,7 +929,7 @@ Status: ${message.delivery_status}`;
                             <div className="flex items-center gap-2">
                               <Clock className="w-4 h-4 text-gray-400" />
                               <span className="text-gray-800 dark:text-white">
-                                {message.formattedDate}
+                                {formatDate(message.scheduled_for)}
                               </span>
                             </div>
                             {message.scheduled_for && (
@@ -929,7 +938,7 @@ Status: ${message.delivery_status}`;
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-600' 
                                   : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600'
                               }`}>
-                                {message.relativeTime}
+                                {formatRelativeTime(message.scheduled_for)}
                               </div>
                             )}
                           </div>
@@ -953,12 +962,12 @@ Status: ${message.delivery_status}`;
                                   message.sms_status === 'failed'      ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
                                   'bg-gray-100 dark:bg-gray-800 text-gray-500'
                                 }`}>
-                                  SMS {message.sms_status}
+                                  SMS {statusWord(message.sms_status)}
                                 </span>
                               )}
                               {!message.call_status && !message.sms_status && (
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {message.twilio_call_sid ? 'Call delivered · SMS sent' : 'Email sent'}
+                                  {message.twilio_call_sid ? t('sched.callDeliveredSmsSent') : t('sched.emailSent')}
                                 </p>
                               )}
                             </div>
@@ -969,7 +978,7 @@ Status: ${message.delivery_status}`;
                             <button
                               onClick={() => handleViewDetails(message.id)}
                               className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                              title="View Details"
+                              title={t('sched.viewDetails')}
                             >
                               <Eye className="w-4 h-4" />
                             </button>
@@ -978,7 +987,7 @@ Status: ${message.delivery_status}`;
                               <button
                                 onClick={() => handleEditMessage(message.id)}
                                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                title="Edit"
+                                title={t('common.edit')}
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -991,7 +1000,7 @@ Status: ${message.delivery_status}`;
                                   setShowTestModal(true);
                                 }}
                                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                title="Send Test"
+                                title={t('scheduled.sendTest')}
                               >
                                 <Send className="w-4 h-4" />
                               </button>
@@ -1001,7 +1010,7 @@ Status: ${message.delivery_status}`;
                               <button
                                 onClick={() => setShowDeleteConfirm(message.id)}
                                 className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded-lg transition-colors"
-                                title="Cancel"
+                                title={t('common.cancel')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1029,7 +1038,7 @@ Status: ${message.delivery_status}`;
                                     className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
                                   >
                                     <Eye className="w-4 h-4" />
-                                    View Details
+                                    {t('sched.viewDetails')}
                                   </button>
                                   
                                   {canEdit && (
@@ -1041,7 +1050,7 @@ Status: ${message.delivery_status}`;
                                       className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
                                     >
                                       <Edit className="w-4 h-4" />
-                                      Edit Message
+                                      {t('scheduled.editMessage')}
                                     </button>
                                   )}
 
@@ -1055,7 +1064,7 @@ Status: ${message.delivery_status}`;
                                       className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
                                     >
                                       <Send className="w-4 h-4" />
-                                      Send Test
+                                      {t('scheduled.sendTest')}
                                     </button>
                                   )}
 
@@ -1067,7 +1076,7 @@ Status: ${message.delivery_status}`;
                                     className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
                                   >
                                     <Copy className="w-4 h-4" />
-                                    Copy Info
+                                    {t('sched.copyInfo')}
                                   </button>
 
                                   {message.voice_note_id ? (
@@ -1077,12 +1086,12 @@ Status: ${message.delivery_status}`;
                                       onClick={() => setDropdownOpen(null)}
                                     >
                                       <Archive className="w-4 h-4" />
-                                      View Voice Note
+                                      {t('sched.viewVoiceNote')}
                                     </Link>
                                   ) : message.metadata?.recordingSid ? (
                                     <div className="w-full px-4 py-3 flex items-center gap-3 text-gray-400 dark:text-gray-500">
                                       <Phone className="w-4 h-4" />
-                                      IVR Recording
+                                      {t('sched.ivrRecording')}
                                     </div>
                                   ) : null}
 
@@ -1095,7 +1104,7 @@ Status: ${message.delivery_status}`;
                                       className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 flex items-center gap-3 border-t border-gray-200 dark:border-gray-700"
                                     >
                                       <Trash2 className="w-4 h-4" />
-                                      Cancel Message
+                                      {t('sched.cancelMessageFull')}
                                     </button>
                                   )}
                                 </motion.div>
@@ -1114,7 +1123,7 @@ Status: ${message.delivery_status}`;
             {pagination.totalPages > 1 && (
               <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 gap-4">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} messages
+                  {t('sched.showing', { from: ((pagination.page - 1) * pagination.limit) + 1, to: Math.min(pagination.page * pagination.limit, pagination.total), total: pagination.total })}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1180,7 +1189,7 @@ Status: ${message.delivery_status}`;
             {/* Delivery Methods */}
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Delivery Methods</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('sched.deliveryMethods')}</h3>
                 <Share2 className="w-5 h-5 text-gray-400" />
               </div>
               <div className="space-y-4">
@@ -1190,8 +1199,8 @@ Status: ${message.delivery_status}`;
                       <Phone className="w-5 h-5 text-blue-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white">Phone</p>
-                      <p className="text-sm text-gray-500">Voice calls</p>
+                      <p className="font-medium text-gray-800 dark:text-white">{t('contacts.phone')}</p>
+                      <p className="text-sm text-gray-500">{t('sched.voiceCalls')}</p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold">{stats.phone_messages || 0}</span>
@@ -1202,8 +1211,8 @@ Status: ${message.delivery_status}`;
                       <Mail className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white">Email</p>
-                      <p className="text-sm text-gray-500">Email delivery</p>
+                      <p className="font-medium text-gray-800 dark:text-white">{t('contacts.email')}</p>
+                      <p className="text-sm text-gray-500">{t('sched.emailDelivery')}</p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold">{stats.email_messages || 0}</span>
@@ -1214,8 +1223,8 @@ Status: ${message.delivery_status}`;
                       <Users className="w-5 h-5 text-purple-500" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800 dark:text-white">Both</p>
-                      <p className="text-sm text-gray-500">Phone & Email</p>
+                      <p className="font-medium text-gray-800 dark:text-white">{t('sched.both')}</p>
+                      <p className="text-sm text-gray-500">{t('sched.phoneAndEmail')}</p>
                     </div>
                   </div>
                   <span className="text-2xl font-bold">
@@ -1228,7 +1237,7 @@ Status: ${message.delivery_status}`;
             {/* Recent Activity */}
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Recent Activity</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('sched.recentActivity')}</h3>
                 <Activity className="w-5 h-5 text-gray-400" />
               </div>
               <div className="space-y-4">
@@ -1241,7 +1250,7 @@ Status: ${message.delivery_status}`;
                     }`} />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-800 dark:text-white">
-                        {message.voice_note_title?.substring(0, 40) || 'Voice Message'}
+                        {message.voice_note_title?.substring(0, 40) || t('sched.voiceMessage')}
                         {message.voice_note_title?.length > 40 && '...'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
@@ -1253,7 +1262,7 @@ Status: ${message.delivery_status}`;
                           message.delivery_status === 'failed' ? 'bg-red-100 dark:bg-red-900/30 text-red-600' :
                           'bg-blue-100 dark:bg-blue-900/30 text-blue-600'
                         }`}>
-                          {message.delivery_status}
+                          {statusWord(message.delivery_status)}
                         </span>
                       </div>
                     </div>
@@ -1271,7 +1280,7 @@ Status: ${message.delivery_status}`;
             {/* Quick Actions */}
             <div className="glass rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Quick Actions</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('dash.quickActions')}</h3>
                 <Zap className="w-5 h-5 text-yellow-500" />
               </div>
               <div className="space-y-3">
@@ -1281,8 +1290,8 @@ Status: ${message.delivery_status}`;
                 >
                   <Plus className="w-5 h-5" />
                   <div>
-                    <p className="font-medium">Schedule New Message</p>
-                    <p className="text-sm opacity-90">Create and schedule a voice message</p>
+                    <p className="font-medium">{t('sched.scheduleNew')}</p>
+                    <p className="text-sm opacity-90">{t('sched.scheduleNewDesc')}</p>
                   </div>
                 </Link>
                 <Link
@@ -1291,8 +1300,8 @@ Status: ${message.delivery_status}`;
                 >
                   <Users className="w-5 h-5 text-gray-500" />
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">Manage Contacts</p>
-                    <p className="text-sm text-gray-500">Add or update recipients</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{t('sched.manageContacts')}</p>
+                    <p className="text-sm text-gray-500">{t('sched.manageContactsDesc')}</p>
                   </div>
                 </Link>
                 <Link
@@ -1301,8 +1310,8 @@ Status: ${message.delivery_status}`;
                 >
                   <FileText className="w-5 h-5 text-gray-500" />
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">View Voice Notes</p>
-                    <p className="text-sm text-gray-500">Browse your recordings</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{t('sched.viewVoiceNotes')}</p>
+                    <p className="text-sm text-gray-500">{t('sched.viewVoiceNotesDesc')}</p>
                   </div>
                 </Link>
                 <button
@@ -1311,8 +1320,8 @@ Status: ${message.delivery_status}`;
                 >
                   <RefreshCw className="w-5 h-5 text-gray-500" />
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">Refresh List</p>
-                    <p className="text-sm text-gray-500">Get latest updates</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{t('sched.refreshList')}</p>
+                    <p className="text-sm text-gray-500">{t('sched.refreshListDesc')}</p>
                   </div>
                 </button>
               </div>
@@ -1412,13 +1421,13 @@ Status: ${message.delivery_status}`;
 
               <div className="space-y-4 mb-6">
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-1">Message</p>
+                  <p className="text-sm text-gray-500 mb-1">{t('scheduled.message')}</p>
                   <p className="font-medium text-gray-800 dark:text-white">{selectedMessage.voice_note_title}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Delivery Method
+                    {t('sched.deliveryMethod')}
                   </label>
                   <div className="flex gap-2">
                     {['email', 'sms', 'both'].map((method) => (
@@ -1434,7 +1443,7 @@ Status: ${message.delivery_status}`;
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {method === 'email' ? 'Email' : method === 'sms' ? 'SMS' : 'Both'}
+                        {method === 'email' ? t('contacts.email') : method === 'sms' ? 'SMS' : t('sched.both')}
                       </button>
                     ))}
                   </div>
@@ -1443,13 +1452,13 @@ Status: ${message.delivery_status}`;
                 {testForm.deliveryMethod.includes('email') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Test Email Address
+                      {t('sched.testEmail')}
                     </label>
                     <input
                       type="email"
                       value={testForm.recipientEmail}
                       onChange={(e) => setTestForm(prev => ({ ...prev, recipientEmail: e.target.value }))}
-                      placeholder="Enter email for test"
+                      placeholder={t('sched.testEmailPlaceholder')}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -1458,13 +1467,13 @@ Status: ${message.delivery_status}`;
                 {testForm.deliveryMethod.includes('sms') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Test Phone Number
+                      {t('sched.testPhone')}
                     </label>
                     <input
                       type="tel"
                       value={testForm.recipientPhone}
                       onChange={(e) => setTestForm(prev => ({ ...prev, recipientPhone: e.target.value }))}
-                      placeholder="Enter phone for test"
+                      placeholder={t('sched.testPhonePlaceholder')}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

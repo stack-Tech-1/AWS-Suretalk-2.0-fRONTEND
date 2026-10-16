@@ -32,16 +32,21 @@ import {
   ExternalLink,
   MessageSquare,
   MoreVertical,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { format, parseISO, formatDistanceToNow, isAfter, isBefore } from "date-fns";
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateFnsLocale, dateTimePattern } from '@/utils/dateLocale';
 
 export default function ScheduledMessageDetail() {
   const params = useParams();
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const dateLocale = getDateFnsLocale(lang);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [voiceNote, setVoiceNote] = useState(null);
@@ -94,12 +99,12 @@ export default function ScheduledMessageDetail() {
         }
 
       } else {
-        throw new Error(response.error || "Failed to load message");
+        throw new Error(response.error || t('schedd.loadError'));
       }
     } catch (error) {
       console.error("Failed to load message details:", error);
-      setError(error.message || "Failed to load message details");
-      toast.error(error.message || "Failed to load message details");
+      setError(error.message || t('schedd.loadDetailsError'));
+      toast.error(error.message || t('schedd.loadDetailsError'));
     } finally {
       setLoading(false);
     }
@@ -113,13 +118,13 @@ export default function ScheduledMessageDetail() {
       const response = await api.cancelScheduledMessage(params.id);
       
       if (response.success) {
-        toast.success("Message cancelled successfully");
+        toast.success(t('sched.cancelSuccess'));
         setMessage(prev => ({ ...prev, delivery_status: "cancelled" }));
         setShowDeleteConfirm(false);
       }
     } catch (error) {
       console.error("Failed to cancel message:", error);
-      toast.error(error.message || "Failed to cancel message");
+      toast.error(error.message || t('sched.cancelError'));
     } finally {
       setActionLoading(null);
     }
@@ -133,13 +138,13 @@ export default function ScheduledMessageDetail() {
       // Here you would call the actual API endpoint
       // For now, update locally
       setMessage(prev => ({ ...prev, delivery_status: newStatus }));
-      toast.success(`Status updated to ${newStatus}`);
+      toast.success(t('schedd.statusUpdated', { status: newStatus }));
       
       // Refresh details
       await loadMessageDetails();
     } catch (error) {
       console.error("Failed to update status:", error);
-      toast.error("Failed to update status");
+      toast.error(t('schedd.statusError'));
     } finally {
       setActionLoading(null);
     }
@@ -158,11 +163,11 @@ export default function ScheduledMessageDetail() {
       });
       
       if (response.success) {
-        toast.success("Test message sent successfully");
+        toast.success(t('sched.testSuccess'));
       }
     } catch (error) {
       console.error("Failed to send test:", error);
-      toast.error(error.message || "Failed to send test");
+      toast.error(error.message || t('sched.testError'));
     } finally {
       setActionLoading(null);
     }
@@ -170,18 +175,20 @@ export default function ScheduledMessageDetail() {
 
   // Handle copy info
   const handleCopyInfo = async () => {
-    const info = `Message: ${message.voice_note_title || "Voice Message"}
-Recipient: ${contact?.name || message.recipient_email || message.recipient_phone}
-Scheduled: ${format(parseISO(message.scheduled_for), "MMM d, yyyy • h:mm a")}
-Status: ${message.delivery_status}
-Message ID: ${message.id}`;
+    const info = [
+      `${t('scheduled.tableMessage')}: ${message.voice_note_title || t('sched.voiceMessage')}`,
+      `${t('scheduled.recipient')}: ${contact?.name || message.recipient_email || message.recipient_phone}`,
+      `${t('scheduled.statusScheduled')}: ${format(parseISO(message.scheduled_for), dateTimePattern(lang), { locale: dateLocale })}`,
+      `${t('common.status')}: ${getStatusInfo(message.delivery_status).label}`,
+      `${t('schedd.messageId')}: ${message.id}`
+    ].join('\n');
     
     try {
       await navigator.clipboard.writeText(info);
-      toast.success("Message info copied to clipboard");
+      toast.success(t('sched.copySuccess'));
     } catch (error) {
       console.error("Failed to copy:", error);
-      toast.error("Failed to copy info");
+      toast.error(t('sched.copyError'));
     }
   };
 
@@ -200,7 +207,7 @@ Message ID: ${message.id}`;
       }
     } catch (error) {
       console.error("Failed to get download URL:", error);
-      toast.error("Failed to get download URL");
+      toast.error(t('schedd.downloadUrlError'));
     }
   };
 
@@ -216,43 +223,43 @@ Message ID: ${message.id}`;
           return {
             icon: AlertCircle,
             color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400",
-            label: "Past Due"
+            label: t('sched.pastDue')
           };
         }
         return {
           icon: isUpcoming ? CalendarClock : Clock,
           color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-          label: isUpcoming ? "Upcoming" : "Scheduled"
+          label: isUpcoming ? t('scheduled.upcoming') : t('scheduled.statusScheduled')
         };
       case "delivered":
         return {
           icon: CheckCircle,
           color: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
-          label: "Delivered"
+          label: t('sched.delivered')
         };
       case "failed":
         return {
           icon: AlertCircle,
           color: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
-          label: "Failed"
+          label: t('scheduled.statusFailed')
         };
       case "cancelled":
         return {
           icon: X,
           color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-          label: "Cancelled"
+          label: t('scheduled.statusCancelled')
         };
       case "testing":
         return {
           icon: Bell,
           color: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
-          label: "Testing"
+          label: t('sched.testing')
         };
       default:
         return {
           icon: Clock,
           color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-          label: status || "Unknown"
+          label: status || t('common.unknown')
         };
     }
   };
@@ -264,25 +271,25 @@ Message ID: ${message.id}`;
         return {
           icon: Phone,
           color: "bg-blue-100 dark:bg-blue-900/30 text-blue-500",
-          label: "Phone"
+          label: t('contacts.phone')
         };
       case "email":
         return {
           icon: Mail,
           color: "bg-green-100 dark:bg-green-900/30 text-green-500",
-          label: "Email"
+          label: t('contacts.email')
         };
       case "both":
         return {
           icon: Users,
           color: "bg-purple-100 dark:bg-purple-900/30 text-purple-500",
-          label: "Both"
+          label: t('sched.both')
         };
       default:
         return {
           icon: Bell,
           color: "bg-gray-100 dark:bg-gray-800 text-gray-500",
-          label: method || "Unknown"
+          label: method || t('common.unknown')
         };
     }
   };
@@ -292,7 +299,7 @@ Message ID: ${message.id}`;
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-600 dark:text-gray-400">Loading message details...</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('schedd.loading')}</p>
       </div>
     );
   }
@@ -303,10 +310,10 @@ Message ID: ${message.id}`;
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          {error || "Message not found"}
+          {error || t('schedd.notFound')}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {error || "The requested scheduled message could not be found."}
+          {error || t('schedd.notFoundDesc')}
         </p>
         <div className="flex gap-3">
           <button
@@ -314,13 +321,13 @@ Message ID: ${message.id}`;
             className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Retry
+            {t('common.retry')}
           </button>
           <Link
             href="/usersDashboard/scheduled"
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            Back to List
+            {t('schedd.backToList')}
           </Link>
         </div>
       </div>
@@ -349,7 +356,7 @@ Message ID: ${message.id}`;
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                  {message.voice_note_title || "Scheduled Message"}
+                  {message.voice_note_title || t('schedd.scheduledMessage')}
                 </h1>
                 <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
                   <statusInfo.icon className="w-4 h-4" />
@@ -357,8 +364,8 @@ Message ID: ${message.id}`;
                 </div>
               </div>
               <p className="text-gray-600 dark:text-gray-400">
-                Scheduled for {format(scheduledDate, "MMM d, yyyy • h:mm a")}
-                {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true })}`}
+                {t('schedd.scheduledForLabel')} {format(scheduledDate, dateTimePattern(lang), { locale: dateLocale })}
+                {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true, locale: dateLocale })}`}
               </p>
             </div>
           </div>
@@ -367,7 +374,7 @@ Message ID: ${message.id}`;
             <button
               onClick={handleCopyInfo}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
-              title="Copy Info"
+              title={t('sched.copyInfo')}
             >
               <Copy className="w-5 h-5" />
             </button>
@@ -375,7 +382,7 @@ Message ID: ${message.id}`;
               <Link
                 href={`/usersDashboard/scheduled/${params.id}/edit`}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl"
-                title="Edit"
+                title={t('common.edit')}
               >
                 <Edit className="w-5 h-5" />
               </Link>
@@ -384,7 +391,7 @@ Message ID: ${message.id}`;
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-500 rounded-xl"
-                title="Cancel"
+                title={t('common.cancel')}
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -408,9 +415,9 @@ Message ID: ${message.id}`;
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                {tab === "overview" && "Overview"}
-                {tab === "details" && "Details"}
-                {tab === "activity" && "Activity"}
+                {tab === "overview" && t('schedd.tabOverview')}
+                {tab === "details" && t('schedd.tabDetails')}
+                {tab === "activity" && t('schedd.tabActivity')}
               </button>
             ))}
           </nav>
@@ -430,7 +437,7 @@ Message ID: ${message.id}`;
                 className="glass rounded-2xl p-6"
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">Message Details</h2>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('schedd.messageDetails')}</h2>
                   <div className={deliveryMethodInfo.color + " flex items-center gap-1 px-3 py-1 rounded-full"}>
                     <deliveryMethodInfo.icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{deliveryMethodInfo.label}</span>
@@ -448,14 +455,14 @@ Message ID: ${message.id}`;
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-800 dark:text-white">
-                              {message.voice_note_title || "Voice Message"}
+                              {message.voice_note_title || t('sched.voiceMessage')}
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                              Voice Note
+                              {t('schedd.voiceNote')}
                               {message.metadata?.source === 'ivr' && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                                   <Phone className="w-3 h-3" />
-                                  Via IVR
+                                  {t('sched.viaIvr')}
                                 </span>
                               )}
                             </p>
@@ -471,12 +478,12 @@ Message ID: ${message.id}`;
                                 {Math.round(voiceNote.duration_seconds / 60)} min
                               </span>
                               <span className="text-sm text-gray-500">
-                                {format(parseISO(voiceNote.created_at), "MMM d, yyyy")}
+                                {format(parseISO(voiceNote.created_at), "PP", { locale: dateLocale })}
                               </span>
                               {voiceNote.is_permanent && (
                                 <span className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400">
                                   <Shield className="w-3 h-3" />
-                                  Permanent
+                                  {t('common.permanent')}
                                 </span>
                               )}
                             </>
@@ -487,7 +494,7 @@ Message ID: ${message.id}`;
                         <Link
                           href={`/usersDashboard/voice-notes/${message.voice_note_id}`}
                           className="ml-4 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
-                          title="View Voice Note"
+                          title={t('sched.viewVoiceNote')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Link>
@@ -501,12 +508,12 @@ Message ID: ${message.id}`;
                           className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                         >
                           <Download className="w-4 h-4" />
-                          Get Download Link
+                          {t('schedd.getDownloadLink')}
                         </button>
                       ) : (
                         <span className="text-sm text-gray-400 dark:text-gray-500 flex items-center gap-2">
                           <Phone className="w-4 h-4" />
-                          IVR Recording — no download available
+                          {t('schedd.ivrNoDownload')}
                         </span>
                       )}
                     </div>
@@ -522,10 +529,10 @@ Message ID: ${message.id}`;
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-800 dark:text-white">
-                              {contact?.name || message.recipient_email || message.recipient_phone || "Recipient"}
+                              {contact?.name || message.recipient_email || message.recipient_phone || t('scheduled.recipient')}
                             </h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {contact ? "Contact" : "Manual Recipient"}
+                              {contact ? t('schedd.contact') : t('schedd.manualRecipient')}
                             </p>
                           </div>
                         </div>
@@ -557,7 +564,7 @@ Message ID: ${message.id}`;
                         <Link
                           href={`/usersDashboard/contacts/${contact.id}`}
                           className="ml-4 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
-                          title="View Contact"
+                          title={t('schedd.viewContact')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </Link>
@@ -572,28 +579,28 @@ Message ID: ${message.id}`;
                         <Calendar className="w-5 h-5 text-purple-500" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-800 dark:text-white">Schedule</h3>
+                        <h3 className="font-bold text-gray-800 dark:text-white">{t('schedd.schedule')}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Delivery timing
+                          {t('schedd.deliveryTiming')}
                         </p>
                       </div>
                     </div>
                     
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Scheduled For</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('scheduled.scheduledFor')}</span>
                         <span className="font-medium text-gray-800 dark:text-white">
-                          {format(scheduledDate, "MMM d, yyyy • h:mm a")}
+                          {format(scheduledDate, dateTimePattern(lang), { locale: dateLocale })}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Created On</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('schedd.createdOn')}</span>
                         <span className="font-medium text-gray-800 dark:text-white">
-                          {format(parseISO(message.created_at), "MMM d, yyyy • h:mm a")}
+                          {format(parseISO(message.created_at), dateTimePattern(lang), { locale: dateLocale })}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Time Zone</span>
+                        <span className="text-gray-600 dark:text-gray-400">{t('schedd.timeZone')}</span>
                         <span className="font-medium text-gray-800 dark:text-white">
                           {Intl.DateTimeFormat().resolvedOptions().timeZone}
                         </span>
@@ -603,7 +610,7 @@ Message ID: ${message.id}`;
                           <div className="flex items-center gap-2">
                             <CalendarClock className="w-4 h-4 text-blue-500" />
                             <span className="text-sm text-blue-600 dark:text-blue-400">
-                              Delivering {formatDistanceToNow(scheduledDate, { addSuffix: true })}
+                              {t('schedd.delivering')} {formatDistanceToNow(scheduledDate, { addSuffix: true, locale: dateLocale })}
                             </span>
                           </div>
                         </div>
@@ -619,9 +626,9 @@ Message ID: ${message.id}`;
                           <MessageSquare className="w-5 h-5 text-yellow-500" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-gray-800 dark:text-white">Custom Message</h3>
+                          <h3 className="font-bold text-gray-800 dark:text-white">{t('schedd.customMessage')}</h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Additional note included
+                            {t('schedd.additionalNote')}
                           </p>
                         </div>
                       </div>
@@ -638,7 +645,7 @@ Message ID: ${message.id}`;
                 transition={{ delay: 0.1 }}
                 className="glass rounded-2xl p-6"
               >
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Actions</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('common.actions')}</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {canEdit && (
@@ -649,8 +656,8 @@ Message ID: ${message.id}`;
                       <div className="flex items-center gap-3">
                         <Edit className="w-5 h-5 text-blue-500" />
                         <div>
-                          <h3 className="font-medium text-gray-800 dark:text-white">Edit Message</h3>
-                          <p className="text-sm text-gray-500">Update schedule or recipient</p>
+                          <h3 className="font-medium text-gray-800 dark:text-white">{t('scheduled.editMessage')}</h3>
+                          <p className="text-sm text-gray-500">{t('schedd.editHint')}</p>
                         </div>
                       </div>
                     </Link>
@@ -664,8 +671,8 @@ Message ID: ${message.id}`;
                       <div className="flex items-center gap-3">
                         <Trash2 className="w-5 h-5 text-red-500" />
                         <div>
-                          <h3 className="font-medium text-gray-800 dark:text-white">Cancel Message</h3>
-                          <p className="text-sm text-gray-500">Stop scheduled delivery</p>
+                          <h3 className="font-medium text-gray-800 dark:text-white">{t('sched.cancelMessageFull')}</h3>
+                          <p className="text-sm text-gray-500">{t('schedd.cancelHint')}</p>
                         </div>
                       </div>
                     </button>
@@ -679,8 +686,8 @@ Message ID: ${message.id}`;
                     <div className="flex items-center gap-3">
                       <Bell className="w-5 h-5 text-purple-500" />
                       <div>
-                        <h3 className="font-medium text-gray-800 dark:text-white">Send Test</h3>
-                        <p className="text-sm text-gray-500">Test delivery to yourself</p>
+                        <h3 className="font-medium text-gray-800 dark:text-white">{t('scheduled.sendTest')}</h3>
+                        <p className="text-sm text-gray-500">{t('schedd.testHint')}</p>
                       </div>
                     </div>
                   </button>
@@ -692,8 +699,8 @@ Message ID: ${message.id}`;
                     <div className="flex items-center gap-3">
                       <Copy className="w-5 h-5 text-gray-500" />
                       <div>
-                        <h3 className="font-medium text-gray-800 dark:text-white">Copy Info</h3>
-                        <p className="text-sm text-gray-500">Copy message details</p>
+                        <h3 className="font-medium text-gray-800 dark:text-white">{t('sched.copyInfo')}</h3>
+                        <p className="text-sm text-gray-500">{t('schedd.copyHint')}</p>
                       </div>
                     </div>
                   </button>
@@ -708,12 +715,12 @@ Message ID: ${message.id}`;
               animate={{ opacity: 1, y: 0 }}
               className="glass rounded-2xl p-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Technical Details</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schedd.technicalDetails')}</h2>
               
               <div className="space-y-6">
                 {/* Message Metadata */}
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white mb-4">Message Metadata</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white mb-4">{t('schedd.metadata')}</h3>
                   <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
                     <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                       {JSON.stringify(message.metadata || {}, null, 2)}
@@ -723,22 +730,22 @@ Message ID: ${message.id}`;
 
                 {/* Delivery Information */}
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white mb-4">Delivery Information</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white mb-4">{t('schedd.deliveryInfo')}</h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-600 dark:text-gray-400">Message ID</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('schedd.messageId')}</span>
                       <code className="text-sm font-mono text-gray-800 dark:text-gray-300">{message.id}</code>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-600 dark:text-gray-400">Voice Note ID</span>
-                      <code className="text-sm font-mono text-gray-800 dark:text-gray-300">{message.voice_note_id || "N/A"}</code>
+                      <span className="text-gray-600 dark:text-gray-400">{t('schedd.voiceNoteId')}</span>
+                      <code className="text-sm font-mono text-gray-800 dark:text-gray-300">{message.voice_note_id || t('schedd.na')}</code>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-600 dark:text-gray-400">Contact ID</span>
-                      <code className="text-sm font-mono text-gray-800 dark:text-gray-300">{message.recipient_contact_id || "N/A"}</code>
+                      <span className="text-gray-600 dark:text-gray-400">{t('schedd.contactId')}</span>
+                      <code className="text-sm font-mono text-gray-800 dark:text-gray-300">{message.recipient_contact_id || t('schedd.na')}</code>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-600 dark:text-gray-400">Delivery Attempts</span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('schedd.deliveryAttempts')}</span>
                       <span className="font-medium text-gray-800 dark:text-white">{message.delivery_attempts || 0}</span>
                     </div>
                   </div>
@@ -747,16 +754,16 @@ Message ID: ${message.id}`;
                 {/* Error Log */}
                 {message.error_message && (
                   <div>
-                    <h3 className="font-medium text-gray-800 dark:text-white mb-4">Error Information</h3>
+                    <h3 className="font-medium text-gray-800 dark:text-white mb-4">{t('schedd.errorInfo')}</h3>
                     <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
                         <div>
-                          <h4 className="font-medium text-red-800 dark:text-red-300">Delivery Error</h4>
+                          <h4 className="font-medium text-red-800 dark:text-red-300">{t('schedd.deliveryError')}</h4>
                           <p className="text-sm text-red-700 dark:text-red-400 mt-1">{message.error_message}</p>
                           {message.last_attempt_at && (
                             <p className="text-xs text-red-600 dark:text-red-500 mt-2">
-                              Last attempt: {format(parseISO(message.last_attempt_at), "MMM d, yyyy • h:mm a")}
+                              {t('schedd.lastAttempt')}: {format(parseISO(message.last_attempt_at), dateTimePattern(lang), { locale: dateLocale })}
                             </p>
                           )}
                         </div>
@@ -774,7 +781,7 @@ Message ID: ${message.id}`;
               animate={{ opacity: 1, y: 0 }}
               className="glass rounded-2xl p-6"
             >
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Activity Log</h2>
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schedd.activityLog')}</h2>
               
               <div className="space-y-6">
                 {/* Timeline */}
@@ -787,16 +794,16 @@ Message ID: ${message.id}`;
                       <div className="absolute left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-green-500" />
                       <div className="ml-10">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-gray-800 dark:text-white">Message Scheduled</h3>
+                          <h3 className="font-medium text-gray-800 dark:text-white">{t('schedd.evScheduled')}</h3>
                           <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-                            Created
+                            {t('schedd.created')}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Message was scheduled for delivery
+                          {t('schedd.evScheduledDesc')}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {format(parseISO(message.created_at), "MMM d, yyyy • h:mm a")}
+                          {format(parseISO(message.created_at), dateTimePattern(lang), { locale: dateLocale })}
                         </p>
                       </div>
                     </div>
@@ -807,16 +814,16 @@ Message ID: ${message.id}`;
                         <div className="absolute left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-blue-500" />
                         <div className="ml-10">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-gray-800 dark:text-white">Message Updated</h3>
+                            <h3 className="font-medium text-gray-800 dark:text-white">{t('schedd.evUpdated')}</h3>
                             <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                              Updated
+                              {t('voice.updated')}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Message details were updated
+                            {t('schedd.evUpdatedDesc')}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(parseISO(message.updated_at), "MMM d, yyyy • h:mm a")}
+                            {format(parseISO(message.updated_at), dateTimePattern(lang), { locale: dateLocale })}
                           </p>
                         </div>
                       </div>
@@ -828,16 +835,16 @@ Message ID: ${message.id}`;
                         <div className="absolute left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-green-500" />
                         <div className="ml-10">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-gray-800 dark:text-white">Message Delivered</h3>
+                            <h3 className="font-medium text-gray-800 dark:text-white">{t('schedd.evDelivered')}</h3>
                             <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
-                              Delivered
+                              {t('sched.delivered')}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Message was successfully delivered to recipient
+                            {t('schedd.evDeliveredDesc')}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(parseISO(message.delivered_at), "MMM d, yyyy • h:mm a")}
+                            {format(parseISO(message.delivered_at), dateTimePattern(lang), { locale: dateLocale })}
                           </p>
                         </div>
                       </div>
@@ -848,17 +855,17 @@ Message ID: ${message.id}`;
                       <div className="absolute left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-purple-500" />
                       <div className="ml-10">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-gray-800 dark:text-white">Scheduled Delivery Time</h3>
+                          <h3 className="font-medium text-gray-800 dark:text-white">{t('schedd.evTime')}</h3>
                           <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full">
-                            Scheduled
+                            {t('scheduled.statusScheduled')}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Message is scheduled for delivery
+                          {t('schedd.evTimeDesc')}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {format(scheduledDate, "MMM d, yyyy • h:mm a")}
-                          {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true })}`}
+                          {format(scheduledDate, dateTimePattern(lang), { locale: dateLocale })}
+                          {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true, locale: dateLocale })}`}
                         </p>
                       </div>
                     </div>
@@ -869,16 +876,16 @@ Message ID: ${message.id}`;
                         <div className="absolute left-4 -translate-x-1/2 w-4 h-4 rounded-full bg-yellow-500" />
                         <div className="ml-10">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-gray-800 dark:text-white">Delivery Attempt</h3>
+                            <h3 className="font-medium text-gray-800 dark:text-white">{t('schedd.evAttempt')}</h3>
                             <span className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-full">
-                              Attempt #{message.delivery_attempts || 1}
+                              {t('schedd.attemptNumber', { n: message.delivery_attempts || 1 })}
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Delivery attempt was made
+                            {t('schedd.evAttemptDesc')}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            {format(parseISO(message.last_attempt_at), "MMM d, yyyy • h:mm a")}
+                            {format(parseISO(message.last_attempt_at), dateTimePattern(lang), { locale: dateLocale })}
                           </p>
                         </div>
                       </div>
@@ -899,7 +906,7 @@ Message ID: ${message.id}`;
             transition={{ delay: 0.2 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Status Overview</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('schedd.statusOverview')}</h3>
             
             <div className="space-y-4">
               <div className={`p-4 rounded-xl ${statusInfo.color}`}>
@@ -909,16 +916,16 @@ Message ID: ${message.id}`;
                     <h4 className="font-bold text-lg">{statusInfo.label}</h4>
                     <p className="text-sm opacity-90">
                       {message.delivery_status === "scheduled" && isUpcoming
-                        ? "Scheduled for future delivery"
+                        ? t('schedd.descFuture')
                         : message.delivery_status === "scheduled"
-                        ? "Past due - awaiting delivery"
+                        ? t('schedd.descPastDue')
                         : message.delivery_status === "delivered"
-                        ? "Successfully delivered"
+                        ? t('schedd.descDelivered')
                         : message.delivery_status === "failed"
-                        ? "Delivery failed"
+                        ? t('schedd.descFailed')
                         : message.delivery_status === "cancelled"
-                        ? "Delivery cancelled"
-                        : "Unknown status"}
+                        ? t('schedd.descCancelled')
+                        : t('schedd.descUnknown')}
                     </p>
                   </div>
                 </div>
@@ -926,7 +933,7 @@ Message ID: ${message.id}`;
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Delivery Method</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('sched.deliveryMethod')}</span>
                   <div className="flex items-center gap-1">
                     <deliveryMethodInfo.icon className="w-4 h-4" />
                     <span className="font-medium">{deliveryMethodInfo.label}</span>
@@ -934,18 +941,18 @@ Message ID: ${message.id}`;
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Delivery Attempts</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('schedd.deliveryAttempts')}</span>
                   <span className="font-medium">{message.delivery_attempts || 0}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Created</span>
-                  <span className="font-medium">{format(parseISO(message.created_at), "MMM d, yyyy")}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('schedd.created')}</span>
+                  <span className="font-medium">{format(parseISO(message.created_at), "PP", { locale: dateLocale })}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Last Updated</span>
-                  <span className="font-medium">{format(parseISO(message.updated_at), "MMM d, yyyy")}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('schedd.lastUpdated')}</span>
+                  <span className="font-medium">{format(parseISO(message.updated_at), "PP", { locale: dateLocale })}</span>
                 </div>
               </div>
             </div>
@@ -958,7 +965,7 @@ Message ID: ${message.id}`;
             transition={{ delay: 0.3 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('dash.quickActions')}</h3>
             
             <div className="space-y-3">
               {canEdit && (
@@ -967,7 +974,7 @@ Message ID: ${message.id}`;
                   className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 >
                   <Edit className="w-5 h-5" />
-                  <span className="font-medium">Edit Message</span>
+                  <span className="font-medium">{t('scheduled.editMessage')}</span>
                 </Link>
               )}
 
@@ -977,7 +984,7 @@ Message ID: ${message.id}`;
                   className="w-full flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-left"
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span className="font-medium">Cancel Message</span>
+                  <span className="font-medium">{t('sched.cancelMessageFull')}</span>
                 </button>
               )}
 
@@ -987,7 +994,7 @@ Message ID: ${message.id}`;
                 className="w-full flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-left disabled:opacity-50"
               >
                 <Bell className="w-5 h-5" />
-                <span className="font-medium">Send Test</span>
+                <span className="font-medium">{t('scheduled.sendTest')}</span>
               </button>
 
               <button
@@ -995,7 +1002,7 @@ Message ID: ${message.id}`;
                 className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
               >
                 <Copy className="w-5 h-5" />
-                <span className="font-medium">Copy Info</span>
+                <span className="font-medium">{t('sched.copyInfo')}</span>
               </button>
 
               <Link
@@ -1003,7 +1010,7 @@ Message ID: ${message.id}`;
                 className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Back to List</span>
+                <span className="font-medium">{t('schedd.backToList')}</span>
               </Link>
             </div>
           </motion.div>
@@ -1015,7 +1022,7 @@ Message ID: ${message.id}`;
             transition={{ delay: 0.4 }}
             className="glass rounded-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Related</h3>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">{t('schedd.related')}</h3>
             
             <div className="space-y-3">
               {message.voice_note_id && (
@@ -1025,8 +1032,8 @@ Message ID: ${message.id}`;
                 >
                   <FileAudio className="w-5 h-5 text-blue-500" />
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">View Voice Note</p>
-                    <p className="text-sm text-gray-500">Original recording</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{t('sched.viewVoiceNote')}</p>
+                    <p className="text-sm text-gray-500">{t('schedd.originalRecording')}</p>
                   </div>
                 </Link>
               )}
@@ -1038,8 +1045,8 @@ Message ID: ${message.id}`;
                 >
                   <User className="w-5 h-5 text-green-500" />
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">View Contact</p>
-                    <p className="text-sm text-gray-500">Recipient details</p>
+                    <p className="font-medium text-gray-800 dark:text-white">{t('schedd.viewContact')}</p>
+                    <p className="text-sm text-gray-500">{t('schedd.recipientDetails')}</p>
                   </div>
                 </Link>
               )}
@@ -1050,8 +1057,8 @@ Message ID: ${message.id}`;
               >
                 <Plus className="w-5 h-5 text-purple-500" />
                 <div>
-                  <p className="font-medium text-gray-800 dark:text-white">Schedule New</p>
-                  <p className="text-sm text-gray-500">Create another message</p>
+                  <p className="font-medium text-gray-800 dark:text-white">{t('schedd.scheduleNew')}</p>
+                  <p className="text-sm text-gray-500">{t('schedd.scheduleNewDesc')}</p>
                 </div>
               </Link>
             </div>
@@ -1071,11 +1078,11 @@ Message ID: ${message.id}`;
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cancel Scheduled Message</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('scheduled.cancelTitle')}</h3>
             </div>
             
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to cancel this scheduled message? This action cannot be undone.
+              {t('scheduled.cancelConfirm')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -1083,7 +1090,7 @@ Message ID: ${message.id}`;
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                Keep Scheduled
+                {t('scheduled.keepScheduled')}
               </button>
               <button
                 onClick={handleCancelMessage}
@@ -1093,12 +1100,12 @@ Message ID: ${message.id}`;
                 {actionLoading === "cancel" ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Cancelling...
+                    {t('schedd.cancelling')}
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4" />
-                    Cancel Message
+                    {t('sched.cancelMessageFull')}
                   </>
                 )}
               </button>
@@ -1116,7 +1123,7 @@ Message ID: ${message.id}`;
             className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Download Link</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('schedd.downloadLink')}</h3>
               <button
                 onClick={() => setShowDownloadUrl(null)}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg"
@@ -1126,7 +1133,7 @@ Message ID: ${message.id}`;
             </div>
             
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              This link will expire in 1 hour. Copy it to share with others:
+              {t('schedd.downloadLinkDesc')}
             </p>
             
             <div className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-4">
@@ -1137,17 +1144,17 @@ Message ID: ${message.id}`;
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(showDownloadUrl);
-                  toast.success("Link copied to clipboard");
+                  toast.success(t('schedd.linkCopied'));
                 }}
                 className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
               >
-                Copy Link
+                {t('vnd.copyLink')}
               </button>
               <button
                 onClick={() => window.open(showDownloadUrl, '_blank')}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                Open Link
+                {t('schedd.openLink')}
               </button>
             </div>
           </motion.div>

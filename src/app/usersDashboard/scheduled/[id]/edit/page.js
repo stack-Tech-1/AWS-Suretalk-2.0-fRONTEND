@@ -22,16 +22,21 @@ import {
   CalendarClock,
   Shield,
   Bell,
-  RefreshCw
+  RefreshCw,
+  Pause
 } from "lucide-react";
 import { api } from "@/utils/api";
-import { format, parseISO, addDays, isAfter } from "date-fns";
+import { format, parseISO, addDays, isAfter, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getDateFnsLocale, dateTimePattern } from '@/utils/dateLocale';
 
 export default function EditScheduledMessage() {
   const params = useParams();
   const router = useRouter();
+  const { t, lang } = useLanguage();
+  const dateLocale = getDateFnsLocale(lang);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -102,12 +107,12 @@ export default function EditScheduledMessage() {
         }
 
       } else {
-        throw new Error(response.error || "Failed to load message");
+        throw new Error(response.error || t('schedd.loadError'));
       }
     } catch (error) {
       console.error("Failed to load message details:", error);
-      setError(error.message || "Failed to load message details");
-      toast.error(error.message || "Failed to load message details");
+      setError(error.message || t('schedd.loadDetailsError'));
+      toast.error(error.message || t('schedd.loadDetailsError'));
     } finally {
       setLoading(false);
     }
@@ -138,7 +143,7 @@ export default function EditScheduledMessage() {
     e.preventDefault();
     
     if (!formData.scheduledFor) {
-      toast.error("Please select a date and time");
+      toast.error(t('schedc.needDate'));
       return;
     }
 
@@ -163,7 +168,7 @@ export default function EditScheduledMessage() {
       const response = await api.updateScheduledMessage(params.id, updateData);
       
       if (response.success) {
-        toast.success("Message updated successfully");
+        toast.success(t('schede.updateSuccess'));
         
         // Redirect to message details
         setTimeout(() => {
@@ -172,8 +177,8 @@ export default function EditScheduledMessage() {
       }
     } catch (error) {
       console.error("Failed to update message:", error);
-      setError(error.message || "Failed to update message");
-      toast.error(error.message || "Failed to update message");
+      setError(error.message || t('schede.updateError'));
+      toast.error(error.message || t('schede.updateError'));
     } finally {
       setSaving(false);
     }
@@ -187,7 +192,7 @@ export default function EditScheduledMessage() {
       const response = await api.cancelScheduledMessage(params.id);
       
       if (response.success) {
-        toast.success("Message cancelled successfully");
+        toast.success(t('sched.cancelSuccess'));
         setShowDeleteConfirm(false);
         
         // Redirect to scheduled messages list
@@ -197,7 +202,7 @@ export default function EditScheduledMessage() {
       }
     } catch (error) {
       console.error("Failed to cancel message:", error);
-      toast.error(error.message || "Failed to cancel message");
+      toast.error(error.message || t('sched.cancelError'));
     } finally {
       setSaving(false);
     }
@@ -222,19 +227,19 @@ export default function EditScheduledMessage() {
         return {
           icon: Clock,
           color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-          label: "Scheduled"
+          label: t('scheduled.statusScheduled')
         };
       case "paused":
         return {
           icon: Pause,
           color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400",
-          label: "Paused"
+          label: t('schede.paused')
         };
       default:
         return {
           icon: Clock,
           color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
-          label: status || "Unknown"
+          label: status || t('common.unknown')
         };
     }
   };
@@ -246,25 +251,25 @@ export default function EditScheduledMessage() {
         return {
           icon: Phone,
           color: "bg-blue-100 dark:bg-blue-900/30 text-blue-500",
-          label: "Phone"
+          label: t('contacts.phone')
         };
       case "email":
         return {
           icon: Mail,
           color: "bg-green-100 dark:bg-green-900/30 text-green-500",
-          label: "Email"
+          label: t('contacts.email')
         };
       case "both":
         return {
           icon: Users,
           color: "bg-purple-100 dark:bg-purple-900/30 text-purple-500",
-          label: "Both"
+          label: t('sched.both')
         };
       default:
         return {
           icon: Bell,
           color: "bg-gray-100 dark:bg-gray-800 text-gray-500",
-          label: method || "Unknown"
+          label: method || t('common.unknown')
         };
     }
   };
@@ -274,7 +279,7 @@ export default function EditScheduledMessage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
-        <p className="text-gray-600 dark:text-gray-400">Loading message details...</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('schedd.loading')}</p>
       </div>
     );
   }
@@ -285,10 +290,10 @@ export default function EditScheduledMessage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          {error || "Message not found"}
+          {error || t('schedd.notFound')}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
-          {error || "The requested scheduled message could not be found."}
+          {error || t('schedd.notFoundDesc')}
         </p>
         <div className="flex gap-3">
           <button
@@ -296,13 +301,13 @@ export default function EditScheduledMessage() {
             className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Retry
+            {t('common.retry')}
           </button>
           <Link
             href="/usersDashboard/scheduled"
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            Back to List
+            {t('schedd.backToList')}
           </Link>
         </div>
       </div>
@@ -329,10 +334,10 @@ export default function EditScheduledMessage() {
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                Edit Scheduled Message
+                {t('schede.title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Update delivery details for: {message.voice_note_title || "Voice Message"}
+                {t('schede.subtitle', { title: message.voice_note_title || t('sched.voiceMessage') })}
               </p>
             </div>
           </div>
@@ -356,14 +361,14 @@ export default function EditScheduledMessage() {
           animate={{ opacity: 1, y: 0 }}
           className="glass rounded-2xl p-6"
         >
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Message Overview</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schede.overview')}</h2>
           
           <div className="space-y-6">
             {/* Current Status */}
             <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">Current Status</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white">{t('schede.currentStatus')}</h3>
                   <div className={`flex items-center gap-1 mt-1 ${statusInfo.color} px-3 py-1 rounded-full w-fit`}>
                     <statusInfo.icon className="w-4 h-4" />
                     <span className="text-sm font-medium">{statusInfo.label}</span>
@@ -375,7 +380,7 @@ export default function EditScheduledMessage() {
                     onClick={() => setShowDeleteConfirm(true)}
                     className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
                   >
-                    Cancel Message
+                    {t('sched.cancelMessageFull')}
                   </button>
                 )}
               </div>
@@ -389,10 +394,10 @@ export default function EditScheduledMessage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-800 dark:text-white">
-                    {message.voice_note_title || "Voice Message"}
+                    {message.voice_note_title || t('sched.voiceMessage')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Voice Note • Cannot be changed
+                    {t('schedd.voiceNote')} • {t('schede.cannotChange')}
                   </p>
                 </div>
               </div>
@@ -409,10 +414,10 @@ export default function EditScheduledMessage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-800 dark:text-white">
-                    {contact?.name || message.recipient_email || message.recipient_phone || "Recipient"}
+                    {contact?.name || message.recipient_email || message.recipient_phone || t('scheduled.recipient')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {contact ? "Contact" : "Manual Recipient"} • Cannot be changed
+                    {contact ? t('schedd.contact') : t('schedd.manualRecipient')} • {t('schede.cannotChange')}
                   </p>
                 </div>
               </div>
@@ -442,13 +447,13 @@ export default function EditScheduledMessage() {
           transition={{ delay: 0.1 }}
           className="glass rounded-2xl p-6"
         >
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Delivery Settings</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schede.deliverySettings')}</h2>
           
           <div className="space-y-6">
             {/* Delivery Method */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Delivery Method
+                {t('sched.deliveryMethod')}
               </label>
               <div className="flex gap-2">
                 {["email", "phone", "both"].map((method) => (
@@ -464,7 +469,7 @@ export default function EditScheduledMessage() {
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {method === 'email' ? 'Email' : method === 'phone' ? 'Phone' : 'Both'}
+                    {method === 'email' ? t('contacts.email') : method === 'phone' ? t('contacts.phone') : t('sched.both')}
                   </button>
                 ))}
               </div>
@@ -473,18 +478,18 @@ export default function EditScheduledMessage() {
             {/* Schedule Time */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Schedule Time
+                {t('schedc.stepTime')}
               </label>
               
               {/* Quick Schedule */}
               <div className="mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Quick Schedule</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('schedc.quickSchedule')}</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[
-                    { label: "Tomorrow", hours: 24 },
-                    { label: "In 3 days", hours: 72 },
-                    { label: "Next week", hours: 168 },
-                    { label: "Next month", hours: 720 }
+                    { label: t('schede.tomorrow'), hours: 24 },
+                    { label: t('schede.in3Days'), hours: 72 },
+                    { label: t('schedc.nextWeek'), hours: 168 },
+                    { label: t('schedc.nextMonth'), hours: 720 }
                   ].map((option) => (
                     <button
                       key={option.hours}
@@ -494,7 +499,7 @@ export default function EditScheduledMessage() {
                     >
                       <span className="text-sm font-medium">{option.label}</span>
                       <p className="text-xs text-gray-500 mt-1">
-                        {format(addDays(new Date(), option.hours / 24), 'MMM d')}
+                        {format(addDays(new Date(), option.hours / 24), lang === 'es' ? 'd MMM' : 'MMM d', { locale: dateLocale })}
                       </p>
                     </button>
                   ))}
@@ -503,7 +508,7 @@ export default function EditScheduledMessage() {
 
               {/* Custom Date/Time */}
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Custom Date & Time</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('schedc.customDate')}</p>
                 <input
                   type="datetime-local"
                   value={formData.scheduledFor ? format(new Date(formData.scheduledFor), "yyyy-MM-dd'T'HH:mm") : ""}
@@ -516,7 +521,7 @@ export default function EditScheduledMessage() {
               {/* Time Suggestions */}
               {availableTimes.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Suggested Times</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('schede.suggestedTimes')}</p>
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                     {availableTimes.slice(0, 12).map((time, index) => (
                       <button
@@ -529,8 +534,8 @@ export default function EditScheduledMessage() {
                             : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {format(time, 'MMM d')}<br />
-                        {format(time, 'h a')}
+                        {format(time, lang === 'es' ? 'd MMM' : 'MMM d', { locale: dateLocale })}<br />
+                        {format(time, lang === 'es' ? 'HH:mm' : 'h a')}
                       </button>
                     ))}
                   </div>
@@ -543,10 +548,10 @@ export default function EditScheduledMessage() {
               <div className="flex items-center gap-3">
                 <CalendarClock className="w-5 h-5 text-blue-500" />
                 <div>
-                  <h4 className="font-medium text-gray-800 dark:text-white">Current Schedule</h4>
+                  <h4 className="font-medium text-gray-800 dark:text-white">{t('schede.currentSchedule')}</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {format(scheduledDate, "MMM d, yyyy • h:mm a")}
-                    {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true })}`}
+                    {format(scheduledDate, dateTimePattern(lang), { locale: dateLocale })}
+                    {isUpcoming && ` • ${formatDistanceToNow(scheduledDate, { addSuffix: true, locale: dateLocale })}`}
                   </p>
                 </div>
               </div>
@@ -561,21 +566,21 @@ export default function EditScheduledMessage() {
           transition={{ delay: 0.2 }}
           className="glass rounded-2xl p-6"
         >
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Custom Message</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schedd.customMessage')}</h2>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Additional Message (Optional)
+              {t('schede.additionalMessage')}
             </label>
             <textarea
               value={formData.customMessage}
               onChange={(e) => setFormData(prev => ({ ...prev, customMessage: e.target.value }))}
-              placeholder="Add a personal note to accompany your voice message..."
+              placeholder={t('schedc.customMessagePlaceholder')}
               rows="4"
               className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-sm text-gray-500 mt-2">
-              This message will be included with your voice note delivery.
+              {t('schede.additionalMessageHint')}
             </p>
           </div>
         </motion.div>
@@ -587,23 +592,23 @@ export default function EditScheduledMessage() {
           transition={{ delay: 0.3 }}
           className="glass rounded-2xl p-6"
         >
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Status Settings</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schede.statusSettings')}</h2>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Message Status
+              {t('schede.messageStatus')}
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="scheduled">Scheduled</option>
-              <option value="paused">Paused</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="scheduled">{t('scheduled.statusScheduled')}</option>
+              <option value="paused">{t('schede.paused')}</option>
+              <option value="cancelled">{t('scheduled.statusCancelled')}</option>
             </select>
             <p className="text-sm text-gray-500 mt-2">
-              Pausing will temporarily stop delivery. Cancelling will permanently stop delivery.
+              {t('schede.statusHint')}
             </p>
           </div>
         </motion.div>
@@ -620,7 +625,7 @@ export default function EditScheduledMessage() {
               href={`/usersDashboard/scheduled/${params.id}`}
               className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-center transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </Link>
             <button
               type="submit"
@@ -630,12 +635,12 @@ export default function EditScheduledMessage() {
               {saving ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Saving Changes...
+                  {t('schede.saving')}
                 </>
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  Save Changes
+                  {t('vnd.saveChanges')}
                 </>
               )}
             </button>
@@ -655,11 +660,11 @@ export default function EditScheduledMessage() {
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cancel Scheduled Message</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white">{t('scheduled.cancelTitle')}</h3>
             </div>
             
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to cancel this scheduled message? This action cannot be undone.
+              {t('scheduled.cancelConfirm')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -667,7 +672,7 @@ export default function EditScheduledMessage() {
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
-                Keep Message
+                {t('schede.keepMessage')}
               </button>
               <button
                 onClick={handleCancelMessage}
@@ -677,12 +682,12 @@ export default function EditScheduledMessage() {
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Cancelling...
+                    {t('schedd.cancelling')}
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4" />
-                    Cancel Message
+                    {t('sched.cancelMessageFull')}
                   </>
                 )}
               </button>
