@@ -393,8 +393,9 @@ async getIvrSlots() {
 }
 
 // Admin dashboard endpoints
-async getAdminDashboardOverview() {
-  return this.request('/admin/dashboard/overview');
+async getAdminDashboardOverview({ refresh = false } = {}) {
+  // refresh=1 re-runs the live system health checks and skips the response cache
+  return this.request(`/admin/dashboard/overview${refresh ? `?refresh=1&t=${Date.now()}` : ''}`);
 }
 
 // User management endpoints
@@ -965,6 +966,28 @@ async resetPassword(token, newPassword) {
 // Two-factor authentication
 async setupTwoFactor() {
   return this.request('/auth/2fa/setup', { method: 'POST' });
+}
+
+// Admin account security + audit
+async getAdminTwoFactorStatus() {
+  return this.request(`/auth/admin/2fa/status?t=${Date.now()}`);
+}
+
+async regenerateAdminBackupCodes(token) {
+  return this.request('/auth/admin/2fa/backup-codes', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+async getAdminAuditLog(params = {}) {
+  const q = new URLSearchParams({ ...params, t: Date.now() }).toString();
+  return this.request(`/admin/audit-log?${q}`);
+}
+
+async getAdminLoginAttempts(params = {}) {
+  const q = new URLSearchParams({ ...params, t: Date.now() }).toString();
+  return this.request(`/admin/admin-login-attempts?${q}`);
 }
 
 async verifyTwoFactorSetup(token) {

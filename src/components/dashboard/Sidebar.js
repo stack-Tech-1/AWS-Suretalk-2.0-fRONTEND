@@ -108,6 +108,7 @@ export default function Sidebar({
     { icon: <FileText className="w-5 h-5" />, label: "System Logs", href: "/adminDashboard/logs", count: loading ? null : extractNumber(stats?.logs) },
     { icon: <Archive className="w-5 h-5" />, label: "Storage", href: "/adminDashboard/storage", count: null },
     { icon: <ClipboardList className="w-5 h-5" />, label: "Admin requests", href: "/adminDashboard/admin-requests", count: loading ? null : extractNumber(stats?.pendingRequests) },
+    { icon: <Lock className="w-5 h-5" />, label: "Security & audit", href: "/adminDashboard/security", count: null },
     { icon: <Settings className="w-5 h-5" />, label: "Settings", href: "/adminDashboard/settings", count: null },
   ];
 
