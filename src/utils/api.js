@@ -413,11 +413,20 @@ async getAdminDashboardOverview({ refresh = false } = {}) {
   return this.request(`/admin/dashboard/overview${refresh ? `?refresh=1&t=${Date.now()}` : ''}`);
 }
 
-// User management endpoints
+// User management endpoints (routes/adminUsers.js)
 async getUserDetails(id) {
-  return this.request(`/admin/users/${id}`);
+  return this.request(`/admin/users/${id}?t=${Date.now()}`); // always fresh after edits
 }
 
+async getUserActivity(id) {
+  return this.request(`/admin/users/${id}/activity?t=${Date.now()}`);
+}
+
+async getAdminUserStats() {
+  return this.request(`/admin/users/stats?t=${Date.now()}`);
+}
+
+// data: { fullName?, subscriptionTier?, storageLimitGb?, contactsLimit?, voiceNotesLimit? }
 async updateUser(id, data) {
   return this.request(`/admin/users/${id}`, {
     method: 'PUT',
@@ -425,10 +434,21 @@ async updateUser(id, data) {
   });
 }
 
-async deleteUser(id) {
-  return this.request(`/admin/users/${id}`, {
-    method: 'DELETE',
-  });
+async deactivateUser(id) {
+  return this.request(`/admin/users/${id}/deactivate`, { method: 'POST' });
+}
+
+async reactivateUser(id) {
+  return this.request(`/admin/users/${id}/reactivate`, { method: 'POST' });
+}
+
+async sendUserPasswordReset(id) {
+  return this.request(`/admin/users/${id}/send-password-reset`, { method: 'POST' });
+}
+
+// Soft delete (data kept, Stripe subscription cancelled). notify=false skips the goodbye email.
+async deleteUser(id, { notify = true } = {}) {
+  return this.request(`/admin/users/${id}${notify ? '' : '?notify=0'}`, { method: 'DELETE' });
 }
 
 async createUser(data) {
@@ -438,48 +458,28 @@ async createUser(data) {
   });
 }
 
-// Export functionality
-async exportUsers(format = 'csv', filters = {}) {
-  return this.request(`/admin/users/export?format=${format}&${new URLSearchParams(filters).toString()}`);
-}
-
-
-// Bulk operations
-async bulkUpdateUsers(userIds, action, data = {}) {
-  return this.request('/admin/users/bulk-update', {
+// action: 'change-plan' (with tier) | 'deactivate' | 'reactivate' | 'delete'
+async bulkUserAction(userIds, action, tier) {
+  return this.request('/admin/users/bulk', {
     method: 'POST',
-    body: JSON.stringify({ userIds, action, data }),
+    body: JSON.stringify({ userIds, action, ...(tier ? { tier } : {}) }),
   });
 }
 
-// Export users
-async exportUsers(format = 'csv', filters = {}) {
-  const query = new URLSearchParams({ format, ...filters }).toString();
-  return fetch(`${API_BASE_URL}/admin/users/export?${query}`, {
-    headers: {
-      'Authorization': `Bearer ${this.token}`,
-    },
-  }).then(response => {
-    if (format === 'csv') {
-      return response.blob();
-    }
-    return response.json();
+// Downloads the user export as a file; resolves to { blob, filename }
+async downloadUsersExport(format = 'csv', filters = {}) {
+  const clean = Object.fromEntries(Object.entries({ format, ...filters }).filter(([, v]) => v !== undefined && v !== ''));
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const response = await fetch(`${API_BASE_URL}/admin/users/export?${new URLSearchParams(clean)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-}
-
-// Delete user
-async deleteUser(id) {
-  return this.request(`/admin/users/${id}`, {
-    method: 'DELETE',
-  });
-}
-
-// Create user (admin)
-async createUser(data) {
-  return this.request('/admin/users', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  if (!response.ok) {
+    let message = 'Export failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  const match = /filename="?([^"]+)"?/.exec(response.headers.get('Content-Disposition') || '');
+  return { blob: await response.blob(), filename: match?.[1] || `suretalk-users.${format}` };
 }
 
 

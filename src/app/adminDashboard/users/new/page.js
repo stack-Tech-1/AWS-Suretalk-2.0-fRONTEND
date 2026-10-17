@@ -1,534 +1,193 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Layout from "../../../../components/dashboard/Layout";
-import { motion } from "framer-motion";
-import { api } from "../../../../utils/api";
-import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
-import {
-  ArrowLeft, Save, User, Mail, Phone, Shield, CreditCard,
-  HardDrive, Users, Volume2, AlertCircle, CheckCircle,
-  XCircle, RefreshCw, Home, FolderOpen, UserPlus,
-  Lock, Eye, EyeOff, ChevronRight
-} from "lucide-react";
+import { ArrowLeft, UserPlus, Mail, Phone, User, CheckCircle, AlertCircle, AlertTriangle, Copy, Loader2, Users, Volume2, HardDrive } from "lucide-react";
+import { api } from "@/utils/api";
+import { toast } from "@/components/ui/Toast";
+import { PLANS } from "@/components/admin/userShared";
+
+const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent";
+const EMPTY = { fullName: "", email: "", phone: "", subscriptionTier: "LITE", sendSetupEmail: true };
 
 export default function CreateUser() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showTempPassword, setShowTempPassword] = useState(false);
-  const [tempPassword, setTempPassword] = useState("");
-  
-  const [formData, setFormData] = useState({
-    email: "",
-    phone: "",
-    fullName: "",
-    subscriptionTier: "ESSENTIAL",
-    subscriptionStatus: "inactive",
-    storageLimitGb: 5,
-    contactsLimit: 50,
-    voiceNotesLimit: 100,
-    isAdmin: false,
-    adminStatus: "none",
-    sendWelcomeEmail: true
-  });
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState(null);
 
-  const subscriptionPlans = [
-    { id: "LITE", name: "Lite", storage: 2, contacts: 10, notes: 50, price: "$0" },
-    { id: "ESSENTIAL", name: "Essential", storage: 5, contacts: 50, notes: 100, price: "$6.99" },
-    { id: "LEGACY_VAULT_PREMIUM", name: "Premium", storage: 1000, contacts: 500, notes: 1000, price: "$12.99" },
-  ];
-
-  // Breadcrumb items
-  const breadcrumbs = [
-    { label: "Dashboard", href: "/adminDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "User Management", href: "/adminDashboard/users", icon: <FolderOpen className="w-4 h-4" /> },
-    { label: "Create User", href: "/adminDashboard/users/new", icon: <UserPlus className="w-4 h-4" />, current: true }
-  ];
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handlePlanChange = (planId) => {
-    const plan = subscriptionPlans.find(p => p.id === planId);
-    if (plan) {
-      setFormData(prev => ({
-        ...prev,
-        subscriptionTier: planId,
-        storageLimitGb: plan.storage,
-        contactsLimit: plan.contacts,
-        voiceNotesLimit: plan.notes
-      }));
-    }
-  };
-
-  const generatePassword = () => {
-    const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    return password;
-  };
+  const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
+    setError("");
+    const phone = form.phone.replace(/[\s()-]/g, '');
+    if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+      setError('Phone must be in international format, starting with + and the country code, e.g. +2348012345678');
+      return;
+    }
+    setSaving(true);
     try {
-      const response = await api.createUser(formData);
-      
-      if (response.success) {
-        setSuccess(true);
-        setTempPassword(response.data.tempPassword || "");
-        
-        // Redirect after 5 seconds
-        setTimeout(() => {
-          router.push('/adminDashboard/users');
-        }, 5000);
-      } else {
-        setError(response.error || "Failed to create user");
-      }
+      const res = await api.createUser({
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        ...(phone ? { phone } : {}),
+        subscriptionTier: form.subscriptionTier,
+        sendSetupEmail: form.sendSetupEmail,
+      });
+      setResult(res.data);
     } catch (err) {
-      console.error("Failed to create user:", err);
-      setError(err.message || "Failed to create user");
+      setError(err.message || 'Failed to create user');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  return (
-    <div>
-      {/* Breadcrumb Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={index} className="flex items-center">
-                {index > 0 && (
-                  <ChevronRight className="w-4 h-4 text-gray-400 mx-2" />
-                )}
-                <Link
-                  href={crumb.href}
-                  className={`flex items-center gap-2 text-sm ${
-                    crumb.current 
-                      ? 'font-semibold text-brand-600 dark:text-brand-400' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {crumb.icon}
-                  {crumb.label}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </nav>
-      </motion.div>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/adminDashboard/users"
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+  if (result) {
+    return (
+      <div className="max-w-2xl">
+        <div className="glass rounded-2xl p-8">
+          <div className="flex items-start gap-4 mb-6">
+            <CheckCircle className="w-10 h-10 text-green-500 flex-shrink-0" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Create New User</h1>
-              <p className="text-gray-600 dark:text-gray-400">Add a new user to the SureTalk platform</p>
+              <h1 className="font-display text-2xl font-bold text-gray-800 dark:text-white">User created</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{result.user.full_name} · {result.user.email}</p>
             </div>
+          </div>
+
+          {result.emailSent ? (
+            <p className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-300">
+              We emailed {result.user.email} a link to set their password. The link works for 7 days — if it expires, use
+              &ldquo;Send password reset&rdquo; on their profile.
+            </p>
+          ) : (
+            <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-800 dark:text-amber-300 flex items-start gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                No email was sent{form.sendSetupEmail ? ' (the email service failed)' : ''}. Send them this link so they can set their password.
+                It works for 7 days — treat it like a password.
+              </p>
+              <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg">
+                <code className="flex-1 text-xs break-all text-gray-700 dark:text-gray-300">{result.setupLink}</code>
+                <button onClick={() => { navigator.clipboard.writeText(result.setupLink); toast.success('Link copied'); }}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0" aria-label="Copy link">
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <Link href={`/adminDashboard/users/${result.user.id}`}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-500 text-white text-center font-medium">
+              View user
+            </Link>
+            <button onClick={() => { setResult(null); setForm(EMPTY); }}
+              className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium">
+              Add another user
+            </button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Success/Error Messages */}
-      {success && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <div className="flex-1">
-              <p className="font-medium text-green-800 dark:text-green-300">User created successfully!</p>
-              <p className="text-sm text-green-700 dark:text-green-400">
-                {formData.sendWelcomeEmail 
-                  ? "A welcome email with login instructions has been sent to the user."
-                  : "User account created. You need to provide login credentials manually."}
-              </p>
-              
-              {tempPassword && (
-                <div className="mt-3 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-green-800 dark:text-green-300">Temporary Password</p>
-                      <p className="text-xs text-green-700 dark:text-green-400">Save this password securely</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(tempPassword);
-                        toast.success("Password copied to clipboard!", 'Copied');
-                      }}
-                      className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
-                    >
-                      Copy
-                    </button>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <code className="flex-1 p-2 bg-white dark:bg-gray-800 rounded font-mono text-sm">
-                      {showTempPassword ? tempPassword : "•".repeat(12)}
-                    </code>
-                    <button
-                      onClick={() => setShowTempPassword(!showTempPassword)}
-                      className="p-2 hover:bg-green-200 dark:hover:bg-green-800 rounded"
-                    >
-                      {showTempPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      )}
+  return (
+    <div className="max-w-3xl">
+      <div className="flex items-center gap-4 mb-8">
+        <Link href="/adminDashboard/users" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Back to users">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="font-display text-3xl font-bold text-gray-800 dark:text-white">Add user</h1>
+          <p className="text-gray-600 dark:text-gray-400">Create an account. They&apos;ll choose their own password.</p>
+        </div>
+      </div>
 
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <p className="font-medium text-red-800 dark:text-red-300">{error}</p>
-          </div>
-        </motion.div>
+        <div role="alert" className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Basic Info */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Basic Information */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Basic Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                      placeholder="user@example.com"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone Number (Optional)
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Initial Status
-                  </label>
-                  <select
-                    name="subscriptionStatus"
-                    value={formData.subscriptionStatus}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                  >
-                    <option value="inactive">Inactive (Requires activation)</option>
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Subscription Plan */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Subscription Plan
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {subscriptionPlans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    onClick={() => handlePlanChange(plan.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      formData.subscriptionTier === plan.id
-                        ? 'border-brand-500 bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-gray-800 dark:text-white">{plan.name}</h3>
-                      <span className="text-lg font-bold text-brand-600 dark:text-brand-400">{plan.price}</span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="w-4 h-4 text-gray-400" />
-                        <span>{plan.storage} GB Storage</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span>{plan.contacts} Contacts</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Volume2 className="w-4 h-4 text-gray-400" />
-                        <span>{plan.notes} Voice Notes</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Custom Limits (Optional) */}
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Custom Limits (Optional)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Storage Limit (GB)
-                  </label>
-                  <div className="relative">
-                    <HardDrive className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="storageLimitGb"
-                      value={formData.storageLimitGb}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Contacts Limit
-                  </label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="contactsLimit"
-                      value={formData.contactsLimit}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Voice Notes Limit
-                  </label>
-                  <div className="relative">
-                    <Volume2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="voiceNotesLimit"
-                      value={formData.voiceNotesLimit}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <section className="glass rounded-2xl p-6 space-y-5">
+          <div>
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full name</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input id="fullName" value={form.fullName} onChange={e => set('fullName', e.target.value)} required maxLength={255}
+                className={`${inputClass} pl-10`} placeholder="Ada Okafor" />
             </div>
           </div>
-
-          {/* Right Column - Admin & Settings */}
-          <div className="space-y-8">
-            {/* Admin Settings */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Admin Settings
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium text-gray-700 dark:text-gray-300">Admin Access</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Grant admin privileges</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="isAdmin"
-                      checked={formData.isAdmin}
-                      onChange={handleInputChange}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
-                  </label>
-                </div>
-                
-                {formData.isAdmin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Admin Status
-                    </label>
-                    <select
-                      name="adminStatus"
-                      value={formData.adminStatus}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    >
-                      <option value="pending">Pending (Requires approval)</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Select "pending" to require admin approval for admin access
-                    </p>
-                  </div>
-                )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input id="email" type="email" value={form.email} onChange={e => set('email', e.target.value)} required
+                  className={`${inputClass} pl-10`} placeholder="ada@example.com" />
               </div>
             </div>
-
-            {/* Email Settings */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">Email Settings</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium text-gray-700 dark:text-gray-300">Send Welcome Email</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Send login instructions to user's email
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="sendWelcomeEmail"
-                      checked={formData.sendWelcomeEmail}
-                      onChange={handleInputChange}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
-                  </label>
-                </div>
-                
-                {!formData.sendWelcomeEmail && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                      You will need to provide the temporary password to the user manually.
-                    </p>
-                  </div>
-                )}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone <span className="text-gray-400 font-normal">(optional)</span></label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input id="phone" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
+                  className={`${inputClass} pl-10`} placeholder="+2348012345678" />
               </div>
+              <p className="text-xs text-gray-500 mt-1.5">Needed for the phone line (IVR). Include the country code.</p>
             </div>
+          </div>
+        </section>
 
-            {/* Form Actions */}
-            <div className="glass rounded-2xl p-6">
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Creating User...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" />
-                      Create User
-                    </>
-                  )}
+        <section className="glass rounded-2xl p-6">
+          <h2 className="font-display text-xl font-bold text-gray-800 dark:text-white mb-1">Plan</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+            The user isn&apos;t charged — a paid plan here is complimentary. If they later subscribe through the app, Stripe takes over.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {PLANS.map(plan => {
+              const selected = form.subscriptionTier === plan.id;
+              return (
+                <button type="button" key={plan.id} onClick={() => set('subscriptionTier', plan.id)} aria-pressed={selected}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${selected
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-bold text-gray-800 dark:text-white">{plan.label}</span>
+                    <span className="text-sm font-semibold text-brand-600 dark:text-brand-400">{plan.price}</span>
+                  </div>
+                  <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2"><Users className="w-4 h-4" /> {plan.contacts} contacts</li>
+                    <li className="flex items-center gap-2"><Volume2 className="w-4 h-4" /> {plan.voiceNotes} voice notes</li>
+                    <li className="flex items-center gap-2"><HardDrive className="w-4 h-4" /> {plan.storageGb} GB storage</li>
+                  </ul>
                 </button>
-                <Link
-                  href="/adminDashboard/users"
-                  className="block w-full text-center px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  Cancel
-                </Link>
-              </div>
-            </div>
-
-            {/* Information Panel */}
-            <div className="glass rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800">
-              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-400 mb-3">Information</h3>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span>A temporary password will be generated automatically</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span>User will receive welcome email with login instructions</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <span>Admin access requires additional approval by default</span>
-                </li>
-              </ul>
-            </div>
+              );
+            })}
           </div>
+        </section>
+
+        <section className="glass rounded-2xl p-6">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={form.sendSetupEmail} onChange={e => set('sendSetupEmail', e.target.checked)} className="mt-1 rounded" />
+            <span>
+              <span className="font-medium text-gray-800 dark:text-white">Email them a link to set their password</span>
+              <span className="block text-sm text-gray-500">Recommended. If you untick this, you&apos;ll get the link to send yourself.</span>
+            </span>
+          </label>
+        </section>
+
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <Link href="/adminDashboard/users"
+            className="px-6 py-3 text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800">
+            Cancel
+          </Link>
+          <button type="submit" disabled={saving}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg disabled:opacity-50">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} Create user
+          </button>
         </div>
       </form>
     </div>

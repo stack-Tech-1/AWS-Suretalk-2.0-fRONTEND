@@ -1,755 +1,394 @@
 "use client";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Users, Search, Filter, MoreVertical, Mail, Phone,
-  Calendar, Shield, CreditCard, TrendingUp, ChevronDown,
-  UserPlus, Download, Eye, Edit, Trash2, RefreshCw,
-  AlertCircle, Check, ChevronRight, Home, FolderOpen,
-  CheckSquare, Square, Settings, User as UserIcon,
-  FileDown, Users as UsersIcon, CreditCard as CreditCardIcon
-} from "lucide-react";
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "../../../utils/api";
-import { toast } from '@/components/ui/Toast';
 import Link from "next/link";
+import {
+  Users, Search, UserPlus, Download, Eye, Edit, Trash2, RefreshCw, AlertCircle,
+  CheckSquare, Square, Mail, Phone, Shield, CreditCard, Activity, ChevronDown,
+  UserX, UserCheck, ChevronLeft, ChevronRight, Loader2
+} from "lucide-react";
+import { api } from "@/utils/api";
+import { toast } from "@/components/ui/Toast";
+import {
+  PLANS, planInfo, statusInfo, timeAgo, formatDate, saveBlob, ConfirmDialog, useConfirm
+} from "@/components/admin/userShared";
+
+const FILTERS = [
+  { id: "all", label: "All users", params: {} },
+  { id: "LITE", label: "Lite", params: { tier: "LITE" } },
+  { id: "ESSENTIAL", label: "Essential", params: { tier: "ESSENTIAL" } },
+  { id: "PREMIUM", label: "Premium", params: { tier: "LEGACY_VAULT_PREMIUM" } },
+  { id: "paying", label: "Paying (Stripe)", params: { status: "paying" } },
+  { id: "active", label: "Active", params: { status: "active" } },
+  { id: "inactive", label: "Inactive", params: { status: "inactive" } },
+  { id: "admins", label: "Admins", params: { type: "admins" } },
+];
+const PAGE_SIZE = 25;
 
 export default function AdminUsers() {
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 1
-  });
-  
-  // Bulk actions state
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  
-  // Export state
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportFormat, setExportFormat] = useState("csv");
-  const [exportInProgress, setExportInProgress] = useState(false);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState([]);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkTier, setBulkTier] = useState("ESSENTIAL");
+  const [notifyUser, setNotifyUser] = useState(true);
+  const confirm = useConfirm();
+  // Read by dialog confirm handlers at click time (state captured when the dialog opened would be stale)
+  const bulkTierRef = useRef("ESSENTIAL");
+  const notifyRef = useRef(true);
 
-  const filters = [
-    { id: "all", label: "All Users" },
-    { id: "LITE", label: "Lite" },
-    { id: "ESSENTIAL", label: "Essential" },
-    { id: "LEGACY_VAULT_PREMIUM", label: "Premium" },
-    { id: "active", label: "Active" },
-    { id: "inactive", label: "Inactive" },
-  ];
+  const filterParams = FILTERS.find(f => f.id === filter)?.params || {};
 
-  // Breadcrumb items
-  const breadcrumbs = [
-    { label: "Dashboard", href: "/adminDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "User Management", href: "/adminDashboard/users", icon: <UsersIcon className="w-4 h-4" />, current: true }
-  ];
-
-  // Fetch users data
+  // Search waits until typing pauses
   useEffect(() => {
-    fetchUsersData();
-  }, [pagination.page, selectedFilter, searchQuery]);
+    const t = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const fetchUsersData = async () => {
+  useEffect(() => { setPage(1); }, [filter, search]);
+
+  const loadStats = useCallback(() => {
+    api.getAdminUserStats().then(r => setStats(r.data)).catch(() => {});
+  }, []);
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Check admin access
-      const profile = await api.getProfile();
-      if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
-        router.replace('/admin/login');
-        return;
-      }
-
-      // Fetch users with filters
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        ...(selectedFilter !== 'all' && selectedFilter !== 'active' && selectedFilter !== 'inactive' && {
-          tier: selectedFilter
-        }),
-        ...(selectedFilter === 'active' && { status: 'active' }),
-        ...(selectedFilter === 'inactive' && { status: 'inactive' }),
-        ...(searchQuery && { search: searchQuery })
-      };
-
-      const response = await api.getAdminUsers(params);
-      setUsers(response.data.users || []);
-      setPagination(response.data.pagination || pagination);
-      
-      // Reset selected users when data changes
-      setSelectedUsers([]);
-
-      // Fetch dashboard overview for stats
-      const dashboardResponse = await api.getAdminDashboardOverview();
-      if (dashboardResponse.data) {
-        setStats({
-          totalUsers: dashboardResponse.data.userStats?.total_users || 0,
-          premiumUsers: dashboardResponse.data.userStats?.premium_users || 0,
-          mrr: dashboardResponse.data.revenue?.current_month_revenue || 0,
-          activeToday: dashboardResponse.data.userStats?.active_today || 0
-        });
-      }
-
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-      // Fallback to mock data for development
-      if (process.env.NODE_ENV === 'development') {
-        setUsers([
-          {
-            id: "1",
-            full_name: "John Doe",
-            email: "john@example.com",
-            phone: "+1 (555) 123-4567",
-            subscription_tier: "LEGACY_VAULT_PREMIUM",
-            subscription_status: "active",
-            created_at: "2024-01-15T00:00:00.000Z",
-            last_login: new Date(Date.now() - 7200000).toISOString(),
-            note_count: 24,
-            contact_count: 8
-          },
-          {
-            id: "2",
-            full_name: "Sarah Smith",
-            email: "sarah@example.com",
-            phone: "+1 (555) 987-6543",
-            subscription_tier: "ESSENTIAL",
-            subscription_status: "active",
-            created_at: "2024-02-28T00:00:00.000Z",
-            last_login: new Date(Date.now() - 86400000).toISOString(),
-            note_count: 12,
-            contact_count: 5
-          },
-        ]);
-        setStats({
-          totalUsers: 1247,
-          premiumUsers: 312,
-          mrr: 4256,
-          activeToday: 89
-        });
-      }
+      const params = { page, limit: PAGE_SIZE, ...filterParams, ...(search ? { search } : {}), t: Date.now() };
+      const res = await api.getAdminUsers(params);
+      setUsers(res.data.users || []);
+      setPagination(res.data.pagination || { page: 1, totalPages: 1, total: 0 });
+      setSelected([]);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Could not load users");
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, filter, search]);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  const refreshAll = () => { loadUsers(); loadStats(); };
+
+  const toggle = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const allSelected = users.length > 0 && selected.length === users.length;
+
+  const doExport = async (format) => {
+    setExporting(format);
+    try {
+      const { blob, filename } = await api.downloadUsersExport(format, { ...filterParams, search });
+      saveBlob(blob, filename);
+      toast.success(`Exported ${pagination.total.toLocaleString()} user${pagination.total === 1 ? '' : 's'}`, 'Export ready');
+      setExportOpen(false);
+    } catch (err) {
+      toast.error(err.message || 'Export failed');
+    } finally {
+      setExporting(null);
+    }
   };
 
-  // Format time ago
-  const timeAgo = (date) => {
-    if (!date) return "Never";
-    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    if (seconds < 60) return "Just now";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    return `${Math.floor(seconds / 86400)} days ago`;
+  const reportBulk = (res, verb) => {
+    const { affected, skipped } = res.data;
+    if (affected) toast.success(`${verb} ${affected} user${affected === 1 ? '' : 's'}`, 'Done');
+    if (skipped?.length) {
+      const reasons = [...new Set(skipped.map(s => s.reason))].join(', ');
+      toast.warning(`${skipped.length} skipped (${reasons})`, 'Some users skipped');
+    }
+    refreshAll();
   };
 
-  // Format date
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+  const bulk = (action) => {
+    setBulkOpen(false);
+    const count = selected.length;
+    const plural = `${count} user${count === 1 ? '' : 's'}`;
+    const configs = {
+      'change-plan': {
+        title: `Change plan for ${plural}`,
+        message: 'Users who pay through Stripe are skipped — their plan follows their subscription. Limits are set to the new plan\'s defaults.',
+        confirmLabel: 'Change plan',
+        planPicker: true,
+        run: () => api.bulkUserAction(selected, 'change-plan', bulkTierRef.current).then(r => reportBulk(r, 'Updated plan for')),
+      },
+      deactivate: {
+        title: `Deactivate ${plural}?`,
+        message: 'They won\'t be able to sign in or use the app until reactivated. Their data and any Stripe billing stay as they are.',
+        confirmLabel: 'Deactivate', danger: true,
+        run: () => api.bulkUserAction(selected, 'deactivate').then(r => reportBulk(r, 'Deactivated')),
+      },
+      reactivate: {
+        title: `Reactivate ${plural}?`,
+        message: 'They\'ll be able to sign in and use the app again.',
+        confirmLabel: 'Reactivate',
+        run: () => api.bulkUserAction(selected, 'reactivate').then(r => reportBulk(r, 'Reactivated')),
+      },
+      delete: {
+        title: `Delete ${plural}?`,
+        message: 'Their accounts are closed and any Stripe subscriptions cancelled. Their data is kept on record but they lose access. Admin accounts are skipped. No goodbye emails are sent for bulk deletes.',
+        confirmLabel: 'Delete', danger: true,
+        run: () => api.bulkUserAction(selected, 'delete').then(r => reportBulk(r, 'Deleted')),
+      },
+    };
+    const c = configs[action];
+    confirm.open({
+      ...c,
+      onConfirm: async () => {
+        try { await c.run(); } catch (err) { toast.error(err.message || 'Bulk action failed'); return true; }
+      }
     });
   };
 
-  // Get plan color and icon
-  const getPlanInfo = (tier) => {
-    switch(tier) {
-      case 'LEGACY_VAULT_PREMIUM':
-        return {
-          color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-          icon: <Shield className="w-3 h-3" />,
-          label: 'Premium'
-        };
-      case 'ESSENTIAL':
-        return {
-          color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-          icon: <CreditCard className="w-3 h-3" />,
-          label: 'Essential'
-        };
-      case 'LITE':
-        return {
-          color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-          icon: null,
-          label: 'Lite'
-        };
-      default:
-        return {
-          color: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
-          icon: null,
-          label: tier || 'Unknown'
-        };
-    }
-  };
-
-  // Handle user selection
-  const handleSelectUser = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedUsers.length === users.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(users.map(user => user.id));
-    }
-  };
-
-  // Handle bulk actions
-  const handleBulkAction = async (action, data) => {
-    if (selectedUsers.length === 0) {
-      toast.warning("Please select at least one user", 'Required');
-      return;
-    }
-
-    setBulkActionLoading(true);
-    try {
-      await api.bulkUpdateUsers(selectedUsers, action, data);
-      toast.success(`Bulk ${action} completed successfully!`, 'Done');
-      fetchUsersData(); // Refresh data
-      setSelectedUsers([]);
-    } catch (error) {
-      console.error("Bulk action failed:", error);
-      toast.error(`Failed to perform bulk action: ${error.message}`);
-    } finally {
-      setBulkActionLoading(false);
-      setShowBulkActions(false);
-    }
-  };
-
-  // Handle export
-  const handleExport = async () => {
-    setExportLoading(true);
-    try {
-      const filters = {
-        tier: selectedFilter !== 'all' ? selectedFilter : undefined,
-        status: ['active', 'inactive'].includes(selectedFilter) ? selectedFilter : undefined,
-        search: searchQuery || undefined
-      };
-      
-      // Remove undefined filters
-      Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
-      
-      const response = await api.exportUsers(exportFormat, filters);
-      
-      if (exportFormat === 'csv') {
-        // Download CSV file
-        const url = window.URL.createObjectURL(response);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `users_export_${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        toast.success(`Exported ${response.data?.length || 0} users as JSON`, 'Exported');
+  const deleteOne = (user) => {
+    setNotifyUser(true);
+    notifyRef.current = true;
+    confirm.open({
+      title: `Delete ${user.full_name || user.email}?`,
+      message: 'Their account is closed and any Stripe subscription cancelled. Their data is kept on record but they lose access.',
+      confirmLabel: 'Delete user', danger: true, notifyOption: true,
+      onConfirm: async () => {
+        try {
+          const res = await api.deleteUser(user.id, { notify: notifyRef.current });
+          if (res.data?.stripeCancelled === false) toast.warning(res.message, 'Check Stripe');
+          else toast.success(`${user.full_name || user.email} was deleted`, 'User deleted');
+          refreshAll();
+        } catch (err) {
+          toast.error(err.message || 'Delete failed');
+          return true;
+        }
       }
-      
-      setShowExportModal(false);
-    } catch (error) {
-      console.error("Export failed:", error);
-      toast.error("Failed to export users");
-    } finally {
-      setExportLoading(false);
-    }
+    });
   };
 
-  // Calculate user stats
-  const calculateUserStats = () => {
-    const totalUsers = stats?.totalUsers || users.length;
-    const premiumUsers = stats?.premiumUsers || users.filter(u => u.subscription_tier === 'LEGACY_VAULT_PREMIUM').length;
-    const mrr = stats?.mrr || 4256;
-    const activeToday = stats?.activeToday || users.filter(u => {
-      if (!u.last_login) return false;
-      const lastLogin = new Date(u.last_login);
-      const today = new Date();
-      return lastLogin.toDateString() === today.toDateString();
-    }).length;
+  const premiumShare = stats?.total_users ? Math.round((stats.premium_users / stats.total_users) * 100) : 0;
+  const kpis = [
+    { label: "Total users", value: stats?.total_users, detail: stats ? `+${stats.new_users_30d} in the last 30 days` : '', icon: Users, color: "from-blue-500 to-cyan-500" },
+    { label: "Premium users", value: stats?.premium_users, detail: stats ? `${premiumShare}% of users` : '', icon: Shield, color: "from-purple-500 to-pink-500" },
+    { label: "Paying subscribers", value: stats?.paying_users, detail: stats ? `≈ $${Number(stats.estimated_mrr).toLocaleString('en-US', { minimumFractionDigits: 2 })}/month at list prices` : '', icon: CreditCard, color: "from-green-500 to-emerald-500" },
+    { label: "Active today", value: stats?.active_today, detail: stats ? `${stats.inactive_users} inactive or deactivated` : '', icon: Activity, color: "from-orange-500 to-red-500" },
+  ];
 
-    return [
-      { 
-        label: "Total Users", 
-        value: totalUsers.toLocaleString(), 
-        change: "+12%",
-        color: "from-blue-500 to-cyan-500",
-        icon: <Users className="w-5 h-5" />
-      },
-      { 
-        label: "Premium Users", 
-        value: premiumUsers.toLocaleString(), 
-        change: "+8%", 
-        color: "from-purple-500 to-pink-500",
-        icon: <CreditCardIcon className="w-5 h-5" />
-      },
-      { 
-        label: "MRR", 
-        value: `$${mrr.toLocaleString()}`, 
-        change: "+18%", 
-        color: "from-green-500 to-emerald-500",
-        icon: <TrendingUp className="w-5 h-5" />
-      },
-      { 
-        label: "Active Today", 
-        value: activeToday.toLocaleString(), 
-        change: "-3%", 
-        color: "from-orange-500 to-red-500",
-        icon: <UserIcon className="w-5 h-5" />
-      },
-    ];
-  };
+  const from = pagination.total ? (pagination.page - 1) * PAGE_SIZE + 1 : 0;
+  const to = Math.min(pagination.page * PAGE_SIZE, pagination.total);
 
   return (
     <div>
-      {/* Breadcrumb Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={index} className="flex items-center">
-                {index > 0 && (
-                  <ChevronRight className="w-4 h-4 text-gray-400 mx-2" />
-                )}
-                <Link
-                  href={crumb.href}
-                  className={`flex items-center gap-2 text-sm ${
-                    crumb.current 
-                      ? 'font-semibold text-brand-600 dark:text-brand-400' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {crumb.icon}
-                  {crumb.label}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </nav>
-      </motion.div>
-
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
                 <Users className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                  User Management
-                </h1>
-                {loading && (
-                  <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
-                )}
-              </div>
+              <h1 className="font-display text-3xl font-bold text-gray-800 dark:text-white">User management</h1>
+              {loading && <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />}
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Manage {stats?.totalUsers?.toLocaleString() || "all"} SureTalk users, subscriptions, and account details
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Find users, change plans, and manage accounts.</p>
           </div>
-          <div className="flex gap-3">
-            {/* Bulk Actions Button */}
-            {selectedUsers.length > 0 && (
-              <div className="relative">
-                <button 
-                  onClick={() => setShowBulkActions(!showBulkActions)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 
-                           text-white rounded-xl hover:shadow-lg transition-all"
-                >
-                  <Settings className="w-4 h-4" />
-                  Bulk Actions ({selectedUsers.length})
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                
-                {showBulkActions && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowBulkActions(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl 
-                                  border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="font-semibold text-gray-800 dark:text-white">Bulk Actions</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{selectedUsers.length} users selected</p>
-                      </div>
-                      <div className="p-2">
-                        <button
-                          onClick={() => {
-                            const tier = prompt("Enter new subscription tier (LITE, ESSENTIAL, LEGACY_VAULT_PREMIUM):");
-                            if (tier) handleBulkAction('change-plan', { subscriptionTier: tier });
-                          }}
-                          disabled={bulkActionLoading}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 
-                                   hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                        >
-                          <CreditCard className="w-4 h-4" />
-                          Change Plan
-                        </button>
-                        <button
-                          onClick={() => {
-                            const status = prompt("Enter new status (active, inactive, suspended, canceled):");
-                            if (status) handleBulkAction('change-status', { subscriptionStatus: status });
-                          }}
-                          disabled={bulkActionLoading}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 
-                                   hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                        >
-                          <Settings className="w-4 h-4" />
-                          Change Status
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) {
-                              handleBulkAction('delete');
-                            }
-                          }}
-                          disabled={bulkActionLoading}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 dark:text-red-400 
-                                   hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Selected
-                        </button>
-                        <button
-                          onClick={() => {
-                            // Export selected users
-                            const selectedUserData = users.filter(u => selectedUsers.includes(u.id));
-                            const csvContent = convertToCSV(selectedUserData);
-                            downloadCSV(csvContent, `selected_users_${Date.now()}.csv`);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 
-                                   hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <FileDown className="w-4 h-4" />
-                          Export Selected
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-            
-            <button 
-              onClick={() => setShowExportModal(true)}
-              disabled={exportLoading}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-brand-500 
-                       text-brand-600 dark:text-brand-400 rounded-xl hover:bg-brand-50 
-                       dark:hover:bg-brand-900/20 transition-colors disabled:opacity-50"
-            >
-              {exportLoading ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              Export
-            </button>
-            <button 
-              onClick={() => router.push('/adminDashboard/users/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 
-                       text-white rounded-xl hover:shadow-lg transition-all"
-            >
-              <UserPlus className="w-4 h-4" />
-              Add User
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-      >
-        {calculateUserStats().map((stat, index) => (
-          <div 
-            key={index}
-            className="glass rounded-xl p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-white">{stat.value}</p>
-              </div>
-              <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color} bg-opacity-10`}>
-                <div className={`bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`}>
-                  {stat.icon}
-                </div>
-              </div>
-            </div>
-            <div className={`flex items-center text-sm font-medium ${
-              stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
-            }`}>
-              <TrendingUp className={`w-4 h-4 mr-1 ${stat.change.startsWith('+') ? '' : 'rotate-180'}`} />
-              {stat.change}
-            </div>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="mb-8"
-      >
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
+          <div className="flex flex-wrap gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="search"
-                placeholder="Search users by name, email, or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
-                         bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 
-                         focus:border-transparent transition-all"
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {filters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setSelectedFilter(filter.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  selectedFilter === filter.id
-                    ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {filter.label}
+              <button onClick={() => setExportOpen(o => !o)}
+                className="flex items-center gap-2 px-4 py-2 border-2 border-brand-500 text-brand-600 dark:text-brand-400 rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+                <Download className="w-4 h-4" /> Export <ChevronDown className="w-4 h-4" />
               </button>
-            ))}
+              {exportOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 p-2">
+                    <p className="px-3 py-2 text-xs text-gray-500">
+                      Exports the {pagination.total.toLocaleString()} user{pagination.total === 1 ? '' : 's'} matching the current filter{search ? ' and search' : ''}.
+                    </p>
+                    {[['csv', 'CSV', 'Excel, Google Sheets'], ['json', 'JSON', 'For developers']].map(([format, label, hint]) => (
+                      <button key={format} onClick={() => doExport(format)} disabled={!!exporting}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50">
+                        <span>
+                          <span className="font-medium text-gray-800 dark:text-white">{label}</span>
+                          <span className="block text-xs text-gray-500">{hint}</span>
+                        </span>
+                        {exporting === format && <Loader2 className="w-4 h-4 animate-spin text-brand-500" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <Link href="/adminDashboard/users/new"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all">
+              <UserPlus className="w-4 h-4" /> Add user
+            </Link>
           </div>
         </div>
       </motion.div>
 
-      {/* Selected Users Banner */}
-      {selectedUsers.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 
-                   border border-blue-200 dark:border-blue-800 rounded-xl"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-gray-800 dark:text-white">
-                {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
-              </span>
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {kpis.map(k => {
+          const Icon = k.icon;
+          return (
+            <div key={k.label} className="glass rounded-xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">{k.label}</p>
+                <div className={`p-2 rounded-lg bg-gradient-to-br ${k.color} text-white`}><Icon className="w-4 h-4" /></div>
+              </div>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white">
+                {k.value === undefined ? <span className="inline-block w-16 h-7 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" /> : Number(k.value).toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500 mt-2 min-h-[1rem]">{k.detail}</p>
             </div>
-            <button
-              onClick={() => setSelectedUsers([])}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-            >
-              Clear selection
+          );
+        })}
+      </div>
+
+      {/* Search and filters */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input type="search" placeholder="Search by name, email, or phone" value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f.id
+                ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+              {f.label}
             </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bulk bar */}
+      {selected.length > 0 && (
+        <div className="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CheckSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <span className="font-medium text-gray-800 dark:text-white">{selected.length} selected</span>
+            <button onClick={() => setSelected([])} className="text-sm text-blue-600 dark:text-blue-400">Clear</button>
           </div>
-        </motion.div>
+          <div className="relative">
+            <button onClick={() => setBulkOpen(o => !o)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl">
+              Bulk actions <ChevronDown className="w-4 h-4" />
+            </button>
+            {bulkOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setBulkOpen(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 p-2">
+                  {[
+                    ['change-plan', CreditCard, 'Change plan'],
+                    ['deactivate', UserX, 'Deactivate'],
+                    ['reactivate', UserCheck, 'Reactivate'],
+                    ['delete', Trash2, 'Delete'],
+                  ].map(([action, Icon, label]) => (
+                    <button key={action} onClick={() => bulk(action)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${action === 'delete' ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                      <Icon className="w-4 h-4" /> {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
-      {/* Users Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="glass rounded-2xl overflow-hidden"
-      >
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center">
-              <RefreshCw className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Loading users...</p>
-            </div>
+      {/* Table */}
+      <div className="glass rounded-2xl overflow-hidden">
+        {error ? (
+          <div className="p-10 text-center">
+            <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+            <p className="text-gray-700 dark:text-gray-300 mb-4">Couldn&apos;t load users ({error}).</p>
+            <button onClick={loadUsers} className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium">Try again</button>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+            <div className={`overflow-x-auto ${loading ? 'opacity-60' : ''}`}>
+              <table className="w-full min-w-[900px]">
+                <thead className="bg-gray-50 dark:bg-gray-800 text-left text-sm text-gray-700 dark:text-gray-300">
                   <tr>
-                    <th className="py-4 px-6 text-left">
-                      <div className="flex items-center">
-                        <button
-                          onClick={handleSelectAll}
-                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                        >
-                          {selectedUsers.length === users.length ? (
-                            <CheckSquare className="w-4 h-4 text-brand-500" />
-                          ) : (
-                            <Square className="w-4 h-4 text-gray-400" />
-                          )}
-                        </button>
-                      </div>
+                    <th className="py-4 px-6">
+                      <button onClick={() => setSelected(allSelected ? [] : users.map(u => u.id))} disabled={!users.length}
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700" aria-label="Select all on this page">
+                        {allSelected ? <CheckSquare className="w-4 h-4 text-brand-500" /> : <Square className="w-4 h-4 text-gray-400" />}
+                      </button>
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      User
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Contact
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Plan
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Status
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Usage
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-800 dark:text-gray-300">
-                      Joined
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Actions
-                    </th>
+                    <th className="py-4 px-4 font-semibold">User</th>
+                    <th className="py-4 px-4 font-semibold">Contact</th>
+                    <th className="py-4 px-4 font-semibold">Plan</th>
+                    <th className="py-4 px-4 font-semibold">Status</th>
+                    <th className="py-4 px-4 font-semibold">Usage</th>
+                    <th className="py-4 px-4 font-semibold">Joined</th>
+                    <th className="py-4 px-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {users.map((user) => {
-                    const planInfo = getPlanInfo(user.subscription_tier);
-                    const isSelected = selectedUsers.includes(user.id);
+                  {users.map(user => {
+                    const plan = planInfo(user.subscription_tier);
+                    const status = statusInfo(user.subscription_status);
+                    const isSel = selected.includes(user.id);
                     return (
-                      <tr 
-                        key={user.id} 
-                        className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${isSelected ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                      >
+                      <tr key={user.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${isSel ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
                         <td className="py-4 px-6">
-                          <button
-                            onClick={() => handleSelectUser(user.id)}
-                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                          >
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-brand-500" />
-                            ) : (
-                              <Square className="w-4 h-4 text-gray-400" />
-                            )}
+                          <button onClick={() => toggle(user.id)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700" aria-label={`Select ${user.full_name || user.email}`}>
+                            {isSel ? <CheckSquare className="w-4 h-4 text-brand-500" /> : <Square className="w-4 h-4 text-gray-400" />}
                           </button>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 
-                                          flex items-center justify-center">
-                              <span className="font-bold text-white text-sm">
-                                {user.full_name?.charAt(0) || 'U'}
-                              </span>
+                        <td className="py-4 px-4">
+                          <Link href={`/adminDashboard/users/${user.id}`} className="flex items-center gap-3 group">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
+                              <span className="font-bold text-white text-sm">{(user.full_name || user.email || 'U').charAt(0).toUpperCase()}</span>
                             </div>
-                            <div>
-                              <h4 className="font-medium text-gray-800 dark:text-white">
-                                {user.full_name || 'Unknown User'}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Calendar className="w-3 h-3 text-gray-400" />
-                                <span className="text-xs text-gray-500">
-                                  Last active: {timeAgo(user.last_login)}
-                                </span>
-                              </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-800 dark:text-white group-hover:text-brand-600 truncate">
+                                {user.full_name || 'No name'}
+                                {user.is_admin && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">Admin</span>}
+                              </p>
+                              <p className="text-xs text-gray-500">Last active {timeAgo(user.last_active).toLowerCase()}</p>
                             </div>
-                          </div>
+                          </Link>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{user.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{user.phone || 'N/A'}</span>
-                            </div>
-                          </div>
+                        <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                          <p className="flex items-center gap-2"><Mail className="w-3 h-3 text-gray-400" />{user.email}</p>
+                          <p className="flex items-center gap-2 mt-1"><Phone className="w-3 h-3 text-gray-400" />{user.phone || '—'}</p>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium w-fit ${planInfo.color}`}>
-                            {planInfo.icon}
-                            {planInfo.label}
-                          </div>
+                        <td className="py-4 px-4">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${plan.color}`}>{plan.label}</span>
+                          {user.stripe_managed && <span className="block text-xs text-gray-500 mt-1">Pays via Stripe</span>}
                         </td>
-                        <td className="py-4 px-6">
-                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium w-fit ${
-                            user.subscription_status === 'active' ? 
-                              'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                              'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                          }`}>
-                            {user.subscription_status?.charAt(0).toUpperCase() + user.subscription_status?.slice(1) || 'Unknown'}
-                          </div>
+                        <td className="py-4 px-4">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${status.color}`}>{status.label}</span>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="space-y-1">
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              Notes: {user.note_count || 0}
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              Contacts: {user.contact_count || 0}
-                            </div>
-                          </div>
+                        <td className="py-4 px-4 text-xs text-gray-600 dark:text-gray-400">
+                          <p>{user.note_count} voice notes</p>
+                          <p>{user.contact_count} contacts</p>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
-                            {formatDate(user.created_at)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => router.push(`/adminDashboard/users/${user.id}`)}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                              title="View User"
-                            >
+                        <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{formatDate(user.created_at)}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-1">
+                            <Link href={`/adminDashboard/users/${user.id}`} className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700" title="View" aria-label="View user">
                               <Eye className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => router.push(`/adminDashboard/users/${user.id}/edit`)}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                              title="Edit User"
-                            >
+                            </Link>
+                            <Link href={`/adminDashboard/users/${user.id}/edit`} className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700" title="Edit" aria-label="Edit user">
                               <Edit className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                if (confirm("Are you sure you want to delete this user?")) {
-                                  api.deleteUser(user.id)
-                                    .then(() => fetchUsersData())
-                                    .catch(err => console.error("Delete failed:", err));
-                                }
-                              }}
-                              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 rounded"
-                              title="Delete User"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            </Link>
+                            {!user.is_admin && (
+                              <button onClick={() => deleteOne(user)} className="p-2 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500" title="Delete" aria-label="Delete user">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -759,198 +398,52 @@ export default function AdminUsers() {
               </table>
             </div>
 
-            {/* Empty State */}
-            {users.length === 0 && (
+            {!loading && users.length === 0 && (
               <div className="text-center py-16">
-                <div className="w-20 h-20 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="w-10 h-10 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                  No users found
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Try adjusting your search or filters.
-                </p>
+                <AlertCircle className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-1">No users found</h3>
+                <p className="text-gray-600 dark:text-gray-400">Try a different search or filter.</p>
               </div>
             )}
 
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 1}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      pagination.page === 1
-                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      pagination.page >= pagination.totalPages
-                        ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
+            {pagination.total > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 text-sm">
+                <span className="text-gray-600 dark:text-gray-400">
+                  Showing {from.toLocaleString()}–{to.toLocaleString()} of {pagination.total.toLocaleString()}
+                </span>
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setPage(p => p - 1)} disabled={page <= 1}
+                      className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-40" aria-label="Previous page">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-gray-600 dark:text-gray-400">Page {page} of {pagination.totalPages}</span>
+                    <button onClick={() => setPage(p => p + 1)} disabled={page >= pagination.totalPages}
+                      className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-40" aria-label="Next page">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>
         )}
-      </motion.div>
+      </div>
 
-      {/* Export Modal */}
-{showExportModal && (
-  <>
-    <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-      onClick={() => setShowExportModal(false)}
-    />
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col"
-      >
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-y-auto flex-1">
-          <div className="p-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Export Users</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Export user data with current filters and search.
-            </p>
-            
-            <div className="space-y-4 mb-6">
-              {/* ... format selection ... */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Export Format
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setExportFormat('csv')}
-                    className={`p-4 rounded-xl border-2 text-center transition-all ${
-                      exportFormat === 'csv'
-                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium text-gray-800 dark:text-white mb-1">CSV</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Excel, Numbers, Sheets</div>
-                  </button>
-                  <button
-                    onClick={() => setExportFormat('json')}
-                    className={`p-4 rounded-xl border-2 text-center transition-all ${
-                      exportFormat === 'json'
-                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-medium text-gray-800 dark:text-white mb-1">JSON</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">API, Developers</div>
-                  </button>
-                </div>
-              </div>
-              
-              {/* ... current filters ... */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Current Filters
-                </label>
-                <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Status:</span>
-                      <span className="font-medium">{selectedFilter}</span>
-                    </div>
-                    {searchQuery && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Search:</span>
-                        <span className="font-medium">{searchQuery}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Total Users:</span>
-                      <span className="font-medium">{users.length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 
-                         text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleExport}
-                disabled={exportLoading}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 
-                         text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {exportLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    Exporting...
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Export Now
-                  </div>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      <ConfirmDialog {...confirm.dialogProps}>
+        {confirm.dialogProps.planPicker && (
+          <select value={bulkTier} onChange={e => { setBulkTier(e.target.value); bulkTierRef.current = e.target.value; }} aria-label="New plan"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+            {PLANS.map(p => <option key={p.id} value={p.id}>{p.label} — {p.contacts} contacts, {p.voiceNotes} voice notes, {p.storageGb} GB</option>)}
+          </select>
+        )}
+        {confirm.dialogProps.notifyOption && (
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" checked={notifyUser} onChange={e => { setNotifyUser(e.target.checked); notifyRef.current = e.target.checked; }} className="rounded" />
+            Email the user that their account was closed
+          </label>
+        )}
+      </ConfirmDialog>
     </div>
-  </>
-)}    </div>
   );
-}
-
-// Helper functions for CSV export
-function convertToCSV(data) {
-  if (data.length === 0) return '';
-  
-  const headers = Object.keys(data[0]);
-  const csvRows = [headers.join(',')];
-  
-  for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header];
-      const escaped = String(value).replace(/"/g, '""');
-      return escaped.includes(',') ? `"${escaped}"` : escaped;
-    });
-    csvRows.push(values.join(','));
-  }
-  
-  return csvRows.join('\n');
-}
-
-function downloadCSV(csvContent, fileName) {
-  const blob = new Blob([csvContent], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
 }

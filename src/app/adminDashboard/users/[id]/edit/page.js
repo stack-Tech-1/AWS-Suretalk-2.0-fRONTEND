@@ -1,482 +1,203 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { api } from "../../../../../utils/api";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Save,
-  User,
-  Mail,
-  Phone,
-  Shield,
-  CreditCard,
-  HardDrive,
-  Users,
-  Volume2,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  RefreshCw
-} from "lucide-react";
+import { ArrowLeft, Save, User, Mail, Phone, CreditCard, HardDrive, Users, Volume2, AlertCircle, RefreshCw, Loader2, Lock } from "lucide-react";
+import { api } from "@/utils/api";
+import { toast } from "@/components/ui/Toast";
+import { PLANS } from "@/components/admin/userShared";
+
+const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed";
 
 export default function EditUser() {
   const router = useRouter();
-  const params = useParams(); 
-  const { id } = params;
-  const [loading, setLoading] = useState(true);
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    subscription_tier: "ESSENTIAL",
-    subscription_status: "active",
-    storage_limit_gb: 5,
-    contacts_limit: 50,
-    voice_notes_limit: 100,
-    is_admin: false,
-    admin_status: "none"
-  });
-
-  const subscriptionPlans = [
-    { id: "LITE", name: "Lite", storage: 2, contacts: 10, notes: 50, price: "$0" },
-    { id: "ESSENTIAL", name: "Essential", storage: 5, contacts: 50, notes: 100, price: "$6.99" },
-    { id: "LEGACY_VAULT_PREMIUM", name: "Premium", storage: 1000, contacts: 500, notes: 1000, price: "$12.99" },
-  ];
+  const [error, setError] = useState('');
+  const [form, setForm] = useState(null);
 
   useEffect(() => {
-    if (id) {
-      fetchUserData();
-    }
+    if (!id) return;
+    api.getUserDetails(id)
+      .then(res => {
+        const u = res.data.user;
+        setUser(u);
+        setForm({
+          fullName: u.full_name || '',
+          subscriptionTier: u.subscription_tier === 'PREMIUM' ? 'LEGACY_VAULT_PREMIUM' : (u.subscription_tier || 'LITE'),
+          storageLimitGb: u.storage_limit_gb ?? 1,
+          contactsLimit: u.contacts_limit ?? 3,
+          voiceNotesLimit: u.voice_notes_limit ?? 3,
+        });
+      })
+      .catch(err => setLoadError(err.message || 'Failed to load user'));
   }, [id]);
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.getUserDetails(id);
-      const user = response.data.user;
-      
-      setFormData({
-        full_name: user.full_name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        subscription_tier: user.subscription_tier || "ESSENTIAL",
-        subscription_status: user.subscription_status || "active",
-        storage_limit_gb: user.storage_limit_gb || 5,
-        contacts_limit: user.contacts_limit || 50,
-        voice_notes_limit: user.voice_notes_limit || 100,
-        is_admin: user.is_admin || false,
-        admin_status: user.admin_status || "none"
-      });
-      
-    } catch (err) {
-      console.error("Failed to fetch user:", err);
-      setError("Failed to load user data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-3" />
+        <p className="text-gray-700 dark:text-gray-300 mb-4">{loadError}</p>
+        <Link href="/adminDashboard/users" className="px-5 py-2 rounded-xl bg-brand-600 text-white">Back to users</Link>
+      </div>
+    );
+  }
+  if (!form) {
+    return <div className="flex items-center justify-center min-h-[60vh]"><RefreshCw className="w-10 h-10 text-brand-500 animate-spin" /></div>;
+  }
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handlePlanChange = (planId) => {
-    const plan = subscriptionPlans.find(p => p.id === planId);
-    if (plan) {
-      setFormData(prev => ({
-        ...prev,
-        subscription_tier: planId,
-        storage_limit_gb: plan.storage,
-        contacts_limit: plan.contacts,
-        voice_notes_limit: plan.notes
-      }));
-    }
-  };
+  const planLocked = user.stripe_managed;
+  const set = (key, value) => setForm(f => ({ ...f, [key]: value }));
+  const choosePlan = (plan) => setForm(f => ({
+    ...f, subscriptionTier: plan.id, storageLimitGb: plan.storageGb, contactsLimit: plan.contacts, voiceNotesLimit: plan.voiceNotes
+  }));
+  const chosen = PLANS.find(p => p.id === form.subscriptionTier);
+  const customised = chosen && (Number(form.storageLimitGb) !== chosen.storageGb || Number(form.contactsLimit) !== chosen.contacts || Number(form.voiceNotesLimit) !== chosen.voiceNotes);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    if (!form.fullName.trim()) { setError('Name cannot be empty'); return; }
+
+    // Only send what changed
+    const update = {};
+    if (form.fullName.trim() !== (user.full_name || '')) update.fullName = form.fullName.trim();
+    if (!planLocked) {
+      if (form.subscriptionTier !== user.subscription_tier) update.subscriptionTier = form.subscriptionTier;
+      if (Number(form.storageLimitGb) !== user.storage_limit_gb) update.storageLimitGb = Number(form.storageLimitGb);
+      if (Number(form.contactsLimit) !== user.contacts_limit) update.contactsLimit = Number(form.contactsLimit);
+      if (Number(form.voiceNotesLimit) !== user.voice_notes_limit) update.voiceNotesLimit = Number(form.voiceNotesLimit);
+    }
+    if (!Object.keys(update).length) { toast.info('Nothing to save — no changes made.'); return; }
+
     setSaving(true);
-    setError(null);
-    setSuccess(false);
-
     try {
-      // Prepare data for API
-      const updateData = {
-        fullName: formData.full_name,
-        phone: formData.phone,
-        subscriptionTier: formData.subscription_tier,
-        subscriptionStatus: formData.subscription_status,
-        storageLimitGb: parseInt(formData.storage_limit_gb),
-        contactsLimit: parseInt(formData.contacts_limit),
-        voiceNotesLimit: parseInt(formData.voice_notes_limit),
-      };
-
-      await api.updateUser(id, updateData);
-      setSuccess(true);
-      
-      // Redirect back after 2 seconds
-      setTimeout(() => {
-        router.push(`/adminDashboard/users/${id}`);
-      }, 2000);
-
+      await api.updateUser(id, update);
+      toast.success('Changes saved', 'User updated');
+      router.push(`/adminDashboard/users/${id}`);
     } catch (err) {
-      console.error("Failed to update user:", err);
-      setError(err.message || "Failed to update user");
-    } finally {
+      setError(err.message || 'Failed to save changes');
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <RefreshCw className="w-12 h-12 text-brand-500 animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link
-              href={`/adminDashboard/users/${id}`}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Edit User</h1>
-              <p className="text-gray-600 dark:text-gray-400">Update user details and settings</p>
-            </div>
-          </div>
+    <div className="max-w-4xl">
+      <div className="flex items-center gap-4 mb-8">
+        <Link href={`/adminDashboard/users/${id}`} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Back to user">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="font-display text-3xl font-bold text-gray-800 dark:text-white">Edit user</h1>
+          <p className="text-gray-600 dark:text-gray-400">{user.full_name || user.email}</p>
         </div>
       </div>
-
-      {/* Success/Error Messages */}
-      {success && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-            <div>
-              <p className="font-medium text-green-800 dark:text-green-300">User updated successfully!</p>
-              <p className="text-sm text-green-700 dark:text-green-400">Redirecting back to user details...</p>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            <p className="font-medium text-red-800 dark:text-red-300">{error}</p>
-          </div>
-        </motion.div>
+        <div role="alert" className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Basic Info */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Basic Information */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Basic Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="full_name"
-                    value={formData.full_name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                      placeholder="user@example.com"
-                      disabled // Email shouldn't be changed after creation
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Email cannot be changed</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Account Status
-                  </label>
-                  <select
-                    name="subscription_status"
-                    value={formData.subscription_status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="canceled">Canceled</option>
-                  </select>
-                </div>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <section className="glass rounded-2xl p-6">
+          <h2 className="font-display text-xl font-bold text-gray-800 dark:text-white mb-5 flex items-center gap-2"><User className="w-5 h-5" /> Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full name</label>
+              <input id="fullName" value={form.fullName} onChange={e => set('fullName', e.target.value)} maxLength={255} className={inputClass} required />
             </div>
-
-            {/* Subscription Plan */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                Subscription Plan
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {subscriptionPlans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    onClick={() => handlePlanChange(plan.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      formData.subscription_tier === plan.id
-                        ? 'border-brand-500 bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-gray-800 dark:text-white">{plan.name}</h3>
-                      <span className="text-lg font-bold text-brand-600 dark:text-brand-400">{plan.price}</span>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="w-4 h-4 text-gray-400" />
-                        <span>{plan.storage} GB Storage</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span>{plan.contacts} Contacts</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Volume2 className="w-4 h-4 text-gray-400" />
-                        <span>{plan.notes} Voice Notes</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input value={user.email} disabled className={`${inputClass} pl-10`} />
               </div>
-
-              {/* Custom Limits */}
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Custom Limits (Optional)</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Storage Limit (GB)
-                  </label>
-                  <div className="relative">
-                    <HardDrive className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="storage_limit_gb"
-                      value={formData.storage_limit_gb}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Contacts Limit
-                  </label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="contacts_limit"
-                      value={formData.contacts_limit}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Voice Notes Limit
-                  </label>
-                  <div className="relative">
-                    <Volume2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="voice_notes_limit"
-                      value={formData.voice_notes_limit}
-                      onChange={handleInputChange}
-                      min="1"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
+              <p className="text-xs text-gray-500 mt-1.5">The sign-in email can&apos;t be changed here.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input value={user.phone || 'Not provided'} disabled className={`${inputClass} pl-10`} />
               </div>
+              <p className="text-xs text-gray-500 mt-1.5">Linked to their phone line (IVR) account, so it can&apos;t be changed here.</p>
             </div>
           </div>
+        </section>
 
-          {/* Right Column - Admin & Actions */}
-          <div className="space-y-8">
-            {/* Admin Settings */}
-            <div className="glass rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Admin Settings
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="font-medium text-gray-700 dark:text-gray-300">Admin Access</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Grant admin privileges</p>
+        <section className="glass rounded-2xl p-6">
+          <h2 className="font-display text-xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2"><CreditCard className="w-5 h-5" /> Plan</h2>
+          {planLocked ? (
+            <div className="mb-5 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 flex items-start gap-3">
+              <Lock className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-indigo-800 dark:text-indigo-300">
+                This user pays through Stripe, so their plan and limits follow their subscription. To change their plan, update or cancel the subscription in Stripe.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+              Choosing a plan sets its standard limits. This doesn&apos;t charge the user — use it for free or complimentary accounts.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {PLANS.map(plan => {
+              const selected = form.subscriptionTier === plan.id;
+              return (
+                <button type="button" key={plan.id} onClick={() => !planLocked && choosePlan(plan)} disabled={planLocked}
+                  aria-pressed={selected}
+                  className={`p-4 rounded-xl border-2 text-left transition-all disabled:cursor-not-allowed ${selected
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'} ${planLocked && !selected ? 'opacity-50' : ''}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-bold text-gray-800 dark:text-white">{plan.label}</span>
+                    <span className="text-sm font-semibold text-brand-600 dark:text-brand-400">{plan.price}</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="is_admin"
-                      checked={formData.is_admin}
-                      onChange={handleInputChange}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
-                  </label>
-                </div>
-                {formData.is_admin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Admin Status
-                    </label>
-                    <select
-                      name="admin_status"
-                      value={formData.admin_status}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-                    >
-                      <option value="none">None</option>
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div className="glass rounded-2xl p-6 border-2 border-red-200 dark:border-red-800">
-              <h2 className="text-xl font-bold text-red-700 dark:text-red-400 mb-4">Danger Zone</h2>
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  These actions are permanent and cannot be undone.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to reset this user\'s password? An email will be sent with reset instructions.')) {
-                    }
-                  }}
-                  className="w-full px-4 py-3 text-left border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="font-medium text-gray-800 dark:text-white">Reset Password</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Send password reset email</div>
+                  <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-400">
+                    <li className="flex items-center gap-2"><Users className="w-4 h-4" /> {plan.contacts} contacts</li>
+                    <li className="flex items-center gap-2"><Volume2 className="w-4 h-4" /> {plan.voiceNotes} voice notes</li>
+                    <li className="flex items-center gap-2"><HardDrive className="w-4 h-4" /> {plan.storageGb} GB storage</li>
+                  </ul>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to deactivate this account? The user will lose access immediately.')) {
-                    }
-                  }}
-                  className="w-full px-4 py-3 text-left border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <div className="font-medium text-gray-800 dark:text-white">Deactivate Account</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Temporarily disable access</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="glass rounded-2xl p-6">
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {saving ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  )}
-                </button>
-                <Link
-                  href={`/adminDashboard/users/${id}`}
-                  className="block w-full text-center px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  Cancel
-                </Link>
-              </div>
-            </div>
+              );
+            })}
           </div>
+
+          <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Limits</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            {customised ? 'Custom limits — different from the plan\'s standard limits.' : 'Standard limits for this plan. You can raise or lower them for this user.'}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              ['contactsLimit', 'Contacts', Users],
+              ['voiceNotesLimit', 'Voice notes', Volume2],
+              ['storageLimitGb', 'Storage (GB)', HardDrive],
+            ].map(([key, label, Icon]) => (
+              <div key={key}>
+                <label htmlFor={key} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+                <div className="relative">
+                  <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input id={key} type="number" min="0" max="100000" step="1" value={form[key]} disabled={planLocked}
+                    onChange={e => set(key, e.target.value)} className={`${inputClass} pl-10`} required />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <Link href={`/adminDashboard/users/${id}`}
+            className="px-6 py-3 text-center border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800">
+            Cancel
+          </Link>
+          <button type="submit" disabled={saving}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl hover:shadow-lg disabled:opacity-50">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save changes
+          </button>
         </div>
       </form>
     </div>
