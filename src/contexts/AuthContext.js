@@ -63,6 +63,10 @@ export const AuthProvider = ({ children }) => {
         console.warn('Auth check failed: network error, keeping session');
         return; // finally still runs setLoading(false)
       }
+      if (err?.status === 503 || err?.data?.maintenance) {
+        // Maintenance mode — the session is still valid, so keep the user signed in for when it ends
+        return;
+      }
       // Actual auth failure (401 etc) — remove token only, not all of localStorage
       console.warn('Auth check failed, removing token');
       localStorage.removeItem('token');

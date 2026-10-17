@@ -92,7 +92,8 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok && typeof window !== 'undefined') {
-        const path = window.location.pathname;
+        // Trailing slash stripped: the site serves pages as /maintenance/ (trailingSlash export)
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
         // Maintenance mode is on (admin Settings) — show the maintenance screen instead of errors
         if (response.status === 503 && data.maintenance && !path.startsWith('/admin') && path !== '/maintenance') {
           window.location.replace('/maintenance');

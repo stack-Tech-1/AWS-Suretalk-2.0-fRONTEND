@@ -21,9 +21,15 @@ export default function MaintenancePage() {
     try {
       const res = await api.getMaintenanceStatus();
       if (!res.data?.maintenance) {
-        window.location.replace(document.referrer && new URL(document.referrer).origin === window.location.origin
-          ? document.referrer
-          : '/');
+        // Back to the page they were on — unless that was this screen (e.g. after a refresh)
+        let target = '/';
+        try {
+          const ref = document.referrer ? new URL(document.referrer) : null;
+          if (ref && ref.origin === window.location.origin && !ref.pathname.startsWith('/maintenance')) target = ref.href;
+        } catch {
+          // unreadable referrer — go home
+        }
+        window.location.replace(target);
         return;
       }
       if (res.data.message) setMessage(res.data.message);
