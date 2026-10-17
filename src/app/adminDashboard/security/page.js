@@ -492,6 +492,11 @@ function FragmentRow({ children }) {
 
 export default function AdminSecurityPage() {
   const [tab, setTab] = useState("2fa");
+  // Set when the admin was sent here because "Require 2FA for all admins" is on
+  const [required, setRequired] = useState(false);
+  useEffect(() => {
+    setRequired(new URLSearchParams(window.location.search).get('required') === '1');
+  }, []);
 
   return (
     <div>
@@ -506,6 +511,15 @@ export default function AdminSecurityPage() {
           Protect your admin account and review what admins have done.
         </p>
       </motion.div>
+
+      {required && (
+        <div role="alert" className="mb-6 p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 dark:text-amber-300">
+            Two-step verification is required for all admin accounts. Turn it on below to keep using the admin console.
+          </p>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {TABS.map(t => {

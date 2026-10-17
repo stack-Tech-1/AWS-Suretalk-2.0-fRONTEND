@@ -1,551 +1,334 @@
 "use client";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Settings as SettingsIcon, Shield, Server,
-  Bell, Users, DollarSign, Globe, Key,
-  Database, Cloud, AlertTriangle, Save,
-  RefreshCw, CheckCircle, ChevronRight, Home
-} from "lucide-react";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  Settings as SettingsIcon, Wrench, ShieldCheck, Gauge, Activity, AlertTriangle,
+  AlertCircle, CheckCircle, Loader2, RefreshCw, Zap, Save
+} from "lucide-react";
 import { api } from "@/utils/api";
-import { toast } from '@/components/ui/Toast';
+import { toast } from "@/components/ui/Toast";
+
+const timeAgo = (date) => {
+  if (!date) return '—';
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 1000));
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+  return `${Math.floor(seconds / 3600)} h ago`;
+};
+
+const SERVICE_STATUS = {
+  ok: { label: 'Operational', dot: 'bg-green-500', text: 'text-green-600 dark:text-green-400' },
+  slow: { label: 'Slow', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400' },
+  down: { label: 'Down', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400' },
+};
+
+function Toggle({ checked, onChange, disabled, danger = false, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
+        checked ? (danger ? 'bg-red-500' : 'bg-green-500') : 'bg-gray-300 dark:bg-gray-600'
+      }`}
+    >
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+    </button>
+  );
+}
+
+function Card({ icon: Icon, iconClass, title, subtitle, children, delay = 0 }) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className="glass rounded-2xl p-6"
+    >
+      <div className="flex items-start gap-3 mb-5">
+        <Icon className={`w-6 h-6 mt-0.5 ${iconClass}`} />
+        <div>
+          <h2 className="font-display text-xl font-bold text-gray-800 dark:text-white">{title}</h2>
+          {subtitle && <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </motion.section>
+  );
+}
 
 export default function AdminSettings() {
-  const router = useRouter();
-  const [settings, setSettings] = useState({
-    system: {
-      maintenanceMode: false,
-      apiRateLimit: 1000,
-      maxFileSize: 50,
-      sessionTimeout: 30,
-    },
-    security: {
-      require2FA: false,
-      ipWhitelist: false,
-      auditLogging: true,
-      encryption: 'aes-256',
-    },
-    notifications: {
-      emailAlerts: true,
-      slackAlerts: true,
-      smsAlerts: false,
-      criticalOnly: false,
-    },
-    billing: {
-      autoInvoice: true,
-      taxEnabled: true,
-      currency: 'USD',
-      gracePeriod: 14,
-    },
-  });
+  const [data, setData] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [saving, setSaving] = useState(null); // key being saved
+  const [confirmMaintenance, setConfirmMaintenance] = useState(false);
+  const [message, setMessage] = useState('');
+  const [twoFaError, setTwoFaError] = useState('');
+  const [health, setHealth] = useState(null);
+  const [checking, setChecking] = useState(false);
 
-  const [serviceStatus, setServiceStatus] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalSettings, setOriginalSettings] = useState({});
-
-  // Breadcrumb items
-  const breadcrumbs = [
-    { label: "Dashboard", href: "/adminDashboard", icon: <Home className="w-4 h-4" /> },
-    { label: "System Settings", href: "/adminDashboard/settings", current: true }
-  ];
-
-  // Fetch settings from backend
-  useEffect(() => {
-    fetchSettings();
+  const load = useCallback(async () => {
+    try {
+      const res = await api.getSettings();
+      setData(res.data);
+      setMessage(res.data.settings.maintenanceMessage || '');
+      setLoadError('');
+    } catch (err) {
+      setLoadError(err.message || 'Could not load settings');
+    }
   }, []);
 
-  const fetchSettings = async () => {
+  const loadHealth = useCallback(async (refresh = false) => {
+    setChecking(true);
     try {
-      setLoading(true);
-      const [settingsResponse, serviceResponse] = await Promise.all([
-        api.getSettings(),
-        api.getServiceStatus()
-      ]);
-
-      if (settingsResponse.success && settingsResponse.data.settings) {
-        const backendSettings = settingsResponse.data.settings;
-        setSettings(prev => ({
-          system: { ...prev.system, ...(backendSettings.system || {}) },
-          security: { ...prev.security, ...(backendSettings.security || {}) },
-          notifications: { ...prev.notifications, ...(backendSettings.notifications || {}) },
-          billing: { ...prev.billing, ...(backendSettings.billing || {}) },
-        }));
-        setOriginalSettings(settingsResponse.data.settings);
-      }
-
-      if (serviceResponse.success) {
-        setServiceStatus(serviceResponse.data || []);
-      }
-
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
+      const res = await api.getServiceStatus({ refresh });
+      setHealth(res.data);
+    } catch (err) {
+      toast.error(err.message || 'Could not check services');
     } finally {
-      setLoading(false);
+      setChecking(false);
     }
-  };
+  }, []);
 
-  const handleSettingChange = async (category, key, value) => {
-    const newSettings = {
-      ...settings,
-      [category]: {
-        ...settings[category],
-        [key]: value
-      }
-    };
-    setSettings(newSettings);
-    setHasChanges(true);
+  useEffect(() => { load(); loadHealth(); }, [load, loadHealth]);
 
-    // Auto-save individual setting (optional - you can remove if you prefer bulk save)
+  const save = async (key, value) => {
+    setSaving(key);
     try {
-      await api.updateSetting(category, key, value);
-    } catch (error) {
-      console.error("Failed to save setting:", error);
-    }
-  };
-
-  const handleSaveAll = async () => {
-    if (!hasChanges) return;
-
-    setSaving(true);
-    try {
-      // Prepare all updates
-      const updates = [];
-      Object.keys(settings).forEach(category => {
-        Object.keys(settings[category]).forEach(key => {
-          updates.push({
-            category,
-            key,
-            value: settings[category][key]
-          });
-        });
-      });
-
-      const response = await api.bulkUpdateSettings(updates);
-      if (response.success) {
-        toast.success('Settings saved successfully!', 'Saved');
-        setHasChanges(false);
-        setOriginalSettings(settings);
-      }
-    } catch (error) {
-      console.error("Failed to save settings:", error);
-      toast.error('Failed to save settings');
+      const res = await api.updateSetting(key, value);
+      setData(prev => ({ ...prev, settings: { ...prev.settings, [key]: res.data.value } }));
+      return res.data.value;
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   };
 
-  const handleResetDefaults = async () => {
-    if (!window.confirm("Are you sure you want to reset all settings to defaults?")) {
-      return;
-    }
-
+  const setMaintenance = async (on) => {
     try {
-      const response = await api.resetSettings();
-      if (response.success) {
-        toast.success('Settings reset to defaults!', 'Reset');
-        fetchSettings(); // Reload settings
-        setHasChanges(false);
-      }
-    } catch (error) {
-      console.error("Failed to reset settings:", error);
-      toast.error('Failed to reset settings');
+      await save('maintenanceMode', on);
+      setConfirmMaintenance(false);
+      if (on) toast.warning('Maintenance mode is on. Users now see the maintenance screen.', 'Maintenance on');
+      else toast.success('Maintenance mode is off. The app is open again.', 'Maintenance off');
+    } catch (err) {
+      toast.error(err.message || 'Could not change maintenance mode');
     }
   };
 
-  const handleDatabaseMaintenance = async () => {
-    if (!window.confirm("This will run database optimization. Continue?")) {
-      return;
+  const saveMessage = async () => {
+    try {
+      await save('maintenanceMessage', message.trim());
+      toast.success('Maintenance message saved');
+    } catch (err) {
+      toast.error(err.message || 'Could not save the message');
     }
-
-    // You would implement this endpoint
-    toast.info("Database maintenance would run here", 'Not Implemented');
   };
 
-  const handleRotateKeys = async () => {
-    if (!window.confirm("This will generate new encryption keys. Existing data will need re-encryption. Continue?")) {
-      return;
+  const setRequire2FA = async (on) => {
+    setTwoFaError('');
+    try {
+      await save('require2FA', on);
+      toast.success(on ? 'All admins now need two-step verification.' : 'Two-step verification is now optional for admins.');
+      load(); // refresh the "admins without 2FA" count
+    } catch (err) {
+      setTwoFaError(err.message || 'Could not change this setting');
     }
-
-    // You would implement this endpoint
-    toast.info("Key rotation would run here", 'Not Implemented');
   };
 
-  const handleCDNConfig = async () => {
-    // You would implement this endpoint
-    toast.info("CDN configuration would open here", 'Not Implemented');
-  };
+  if (!data && !loadError) {
+    return <div className="flex justify-center py-32"><Loader2 className="w-10 h-10 animate-spin text-brand-500" /></div>;
+  }
 
-  if (loading) {
+  if (!data) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
-        </div>
+      <div role="alert" className="p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 flex items-center justify-between gap-3">
+        <span className="text-sm text-red-700 dark:text-red-300">Couldn&apos;t load settings ({loadError}).</span>
+        <button onClick={load} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium">Try again</button>
       </div>
     );
   }
 
-  return (
-    <div>
-      {/* Breadcrumb Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6"
-      >
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={index} className="flex items-center">
-                {index > 0 && (
-                  <ChevronRight className="w-4 h-4 text-gray-400 mx-2" />
-                )}
-                <Link
-                  href={crumb.href}
-                  className={`flex items-center gap-2 text-sm ${
-                    crumb.current 
-                      ? 'font-semibold text-brand-600 dark:text-brand-400' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {crumb.icon}
-                  {crumb.label}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </nav>
-      </motion.div>
+  const { settings, limits, admins } = data;
+  const messageChanged = message.trim() !== (settings.maintenanceMessage || '').trim();
 
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
+  return (
+    <div className="max-w-4xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500">
             <SettingsIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-            System Settings
-          </h1>
+          <h1 className="font-display text-3xl font-bold text-gray-800 dark:text-white">Settings</h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Configure system-wide settings and preferences
-        </p>
+        <p className="text-gray-600 dark:text-gray-400">Platform-wide switches. Changes take effect within about 15 seconds.</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Navigation */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="lg:col-span-1"
-        >
-          <div className="glass rounded-2xl p-6 sticky top-24">
-            <nav className="space-y-2">
-              {[
-                { icon: Server, label: "System", id: "system" },
-                { icon: Shield, label: "Security", id: "security" },
-                { icon: Bell, label: "Notifications", id: "notifications" },
-                { icon: DollarSign, label: "Billing", id: "billing" },
-                { icon: Users, label: "User Management", id: "users" },
-                { icon: Database, label: "Database", id: "database" },
-                { icon: Cloud, label: "Cloud Services", id: "cloud" },
-              ].map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 
-                           dark:hover:bg-gray-800 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-5 h-5 text-gray-500 group-hover:text-brand-500" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </a>
-              ))}
-            </nav>
-
-            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <button 
-                onClick={handleSaveAll}
-                disabled={!hasChanges || saving}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 
-                         bg-gradient-to-r from-brand-500 to-accent-500 text-white 
-                         rounded-xl hover:shadow-lg transition-all mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Save All Changes
-                  </>
-                )}
-              </button>
-              <button 
-                onClick={handleResetDefaults}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 
-                         border-2 border-brand-500 text-brand-600 dark:text-brand-400 
-                         rounded-xl hover:bg-brand-50 dark:hover:bg-brand-900/20 
-                         transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Reset to Defaults
-              </button>
+      <div className="space-y-6">
+        {/* Maintenance mode */}
+        <Card icon={Wrench} iconClass="text-amber-500" title="Maintenance mode"
+          subtitle="Temporarily close the app to users while you work on it.">
+          <div className={`flex items-center justify-between gap-4 p-4 rounded-xl border ${settings.maintenanceMode
+            ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+            : 'border-gray-200 dark:border-gray-700'}`}>
+            <div>
+              <p className="font-medium text-gray-800 dark:text-white">
+                {settings.maintenanceMode ? 'Maintenance mode is ON' : 'Maintenance mode is off'}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {settings.maintenanceMode
+                  ? 'Users see the maintenance screen and can\'t sign in or use the app.'
+                  : 'The app is open to everyone.'}
+              </p>
             </div>
+            <Toggle
+              label="Maintenance mode"
+              checked={settings.maintenanceMode}
+              danger
+              disabled={saving === 'maintenanceMode'}
+              onChange={() => settings.maintenanceMode ? setMaintenance(false) : setConfirmMaintenance(true)}
+            />
           </div>
-        </motion.div>
 
-        {/* Right Column - Settings Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:col-span-2 space-y-8"
-        >
-          {/* System Settings */}
-          <div id="system" className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Server className="w-6 h-6 text-blue-500" />
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">System Configuration</h2>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">Maintenance Mode</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Temporarily disable public access</p>
-                </div>
-                <button
-                  onClick={() => handleSettingChange('system', 'maintenanceMode', !settings.system.maintenanceMode)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.system.maintenanceMode ? 'bg-red-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.system.maintenanceMode ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
+          {confirmMaintenance && !settings.maintenanceMode && (
+            <div className="mt-4 p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+              <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">Turn on maintenance mode?</p>
+              <p className="text-sm text-amber-700 dark:text-amber-400 mb-4">
+                Everyone using the website or app will be moved to the maintenance screen within about 15 seconds.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmMaintenance(false)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Cancel
+                </button>
+                <button onClick={() => setMaintenance(true)} disabled={saving === 'maintenanceMode'}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium inline-flex items-center gap-2 disabled:opacity-60">
+                  {saving === 'maintenanceMode' && <Loader2 className="w-4 h-4 animate-spin" />} Turn on
                 </button>
               </div>
-
-              <div>
-                <h3 className="font-medium text-gray-800 dark:text-white mb-2">API Rate Limit</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Requests per minute per user</p>
-                <div className="flex gap-2">
-                  {[100, 500, 1000, 5000].map((limit) => (
-                    <button
-                      key={limit}
-                      onClick={() => handleSettingChange('system', 'apiRateLimit', limit)}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        settings.system.apiRateLimit === limit
-                          ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {limit}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-gray-800 dark:text-white mb-2">Maximum File Size (MB)</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Maximum voice recording size</p>
-                <div className="flex gap-2">
-                  {[10, 25, 50, 100].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => handleSettingChange('system', 'maxFileSize', size)}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        settings.system.maxFileSize === size
-                          ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {size} MB
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
-          </div>
+          )}
 
-          {/* Security Settings */}
-          <div id="security" className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Shield className="w-6 h-6 text-green-500" />
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Security Settings</h2>
-            </div>
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">Require 2FA for Admin</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Two-factor authentication for all admin users</p>
-                </div>
-                <button
-                  onClick={() => handleSettingChange('security', 'require2FA', !settings.security.require2FA)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.security.require2FA ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.security.require2FA ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-gray-800 dark:text-white">IP Whitelist</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Restrict admin access to specific IPs</p>
-                </div>
-                <button
-                  onClick={() => handleSettingChange('security', 'ipWhitelist', !settings.security.ipWhitelist)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.security.ipWhitelist ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.security.ipWhitelist ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              <div>
-                <h3 className="font-medium text-gray-800 dark:text-white mb-2">Encryption Method</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Data encryption algorithm</p>
-                <div className="flex gap-2">
-                  {['aes-128', 'aes-256', 'rsa-2048', 'rsa-4096'].map((method) => (
-                    <button
-                      key={method}
-                      onClick={() => handleSettingChange('security', 'encryption', method)}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        settings.security.encryption === method
-                          ? 'bg-gradient-to-r from-brand-500 to-accent-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      {method.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Service Status */}
-          <div className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Cloud className="w-6 h-6 text-purple-500" />
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Service Status</h2>
-            </div>
-            <div className="space-y-4">
-              {serviceStatus.map((service) => (
-                <div key={service.name} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      service.status === 'operational' ? 'bg-green-100 dark:bg-green-900/30' :
-                      service.status === 'degraded' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
-                      'bg-blue-100 dark:bg-blue-900/30'
-                    }`}>
-                      {service.status === 'operational' ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : service.status === 'degraded' ? (
-                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      ) : (
-                        <RefreshCw className="w-4 h-4 text-blue-500" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-800 dark:text-white">{service.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Uptime: {service.uptime}</p>
-                    </div>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    service.status === 'operational' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                    service.status === 'degraded' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400' :
-                    'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                  }`}>
-                    {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Advanced Settings */}
-          <div className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <AlertTriangle className="w-6 h-6 text-red-500" />
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Advanced Settings</h2>
-            </div>
-            <div className="space-y-4">
-              <button 
-                onClick={handleDatabaseMaintenance}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-300 
-                         dark:border-gray-600 hover:border-red-500 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Database className="w-5 h-5 text-red-500" />
-                  <div>
-                    <h3 className="font-medium text-gray-800 dark:text-white">Database Maintenance</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Run database optimization and cleanup</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </button>
-
-              <button 
-                onClick={handleRotateKeys}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-300 
-                         dark:border-gray-600 hover:border-yellow-500 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Key className="w-5 h-5 text-yellow-500" />
-                  <div>
-                    <h3 className="font-medium text-gray-800 dark:text-white">Rotate Encryption Keys</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Generate new encryption keys</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </button>
-
-              <button 
-                onClick={handleCDNConfig}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-300 
-                         dark:border-gray-600 hover:border-purple-500 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Globe className="w-5 h-5 text-purple-500" />
-                  <div>
-                    <h3 className="font-medium text-gray-800 dark:text-white">CDN Configuration</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Manage content delivery network</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+          <div className="mt-5">
+            <label htmlFor="maintenance-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Message shown to users
+            </label>
+            <textarea
+              id="maintenance-message"
+              rows={3}
+              maxLength={500}
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
+            <div className="flex items-center justify-between gap-3 mt-2">
+              <p className="text-xs text-gray-500">
+                If you keep the default message, Spanish-speaking users see it in Spanish. A custom message is shown exactly as written.
+              </p>
+              <button onClick={saveMessage} disabled={!messageChanged || !message.trim() || saving === 'maintenanceMessage'}
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-600 to-accent-500 text-white text-sm font-medium disabled:opacity-50">
+                {saving === 'maintenanceMessage' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save message
               </button>
             </div>
           </div>
-        </motion.div>
+
+          <div className="mt-5 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm text-gray-600 dark:text-gray-400">
+            <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Keeps working during maintenance</p>
+            Admin console · phone line (IVR) · scheduled calls and SMS · message links opened by recipients · Stripe payments and Twilio callbacks
+          </div>
+        </Card>
+
+        {/* Admin 2FA */}
+        <Card icon={ShieldCheck} iconClass="text-green-500" title="Admin security" delay={0.05}
+          subtitle="Rules for everyone who can sign in to the admin console.">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-medium text-gray-800 dark:text-white">Require two-step verification for all admins</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Admins without it are sent to set it up and can&apos;t use the admin console until they do.
+              </p>
+            </div>
+            <Toggle
+              label="Require two-step verification for all admins"
+              checked={settings.require2FA}
+              disabled={saving === 'require2FA'}
+              onChange={() => setRequire2FA(!settings.require2FA)}
+            />
+          </div>
+
+          {twoFaError && (
+            <div role="alert" className="mt-4 p-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 dark:text-red-300">
+                {twoFaError}{' '}
+                <Link href="/adminDashboard/security" className="font-semibold underline">Go to Security &amp; audit</Link>
+              </p>
+            </div>
+          )}
+
+          <p className={`mt-4 text-sm flex items-center gap-2 ${admins.without_2fa > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}>
+            {admins.without_2fa > 0 ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+            {admins.without_2fa > 0
+              ? `${admins.without_2fa} of ${admins.total} admin${admins.total === 1 ? '' : 's'} haven't turned on two-step verification yet.`
+              : `All ${admins.total} admin${admins.total === 1 ? ' has' : 's have'} two-step verification on.`}
+          </p>
+        </Card>
+
+        {/* Current limits (read-only) */}
+        <Card icon={Gauge} iconClass="text-blue-500" title="Current limits" delay={0.1}
+          subtitle="Protection limits the server is enforcing right now. For information only.">
+          <dl className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+            {[
+              ['Requests per network (IP)', `${limits.generalPerIp.toLocaleString()} per ${limits.windowMinutes} min`, limits.generalOverridden && 'set by GENERAL_RATE_LIMIT'],
+              ['Requests per signed-in user', `${limits.perUser.toLocaleString()} per ${limits.windowMinutes} min`, limits.perUserOverridden && 'set by PER_USER_RATE_LIMIT'],
+              ['Failed sign-ins per network', `${limits.failedLoginsPerIp} per 15 min`],
+              ['Sign-up / reset emails and SMS per network', `${limits.messageSendsPerHour} per hour`],
+              ['Largest file upload', `${limits.uploadMaxMb} MB`],
+            ].map(([label, value, note]) => (
+              <div key={label} className="flex items-center justify-between gap-4 py-3">
+                <dt className="text-gray-600 dark:text-gray-400">{label}</dt>
+                <dd className="text-right">
+                  <span className="font-medium text-gray-800 dark:text-white">{value}</span>
+                  {note && <span className="block text-xs text-gray-500">{note}</span>}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-xs text-gray-500 mt-3">
+            To change the request limits, edit <code>GENERAL_RATE_LIMIT</code> or <code>PER_USER_RATE_LIMIT</code> in AppRunner&apos;s environment settings.
+          </p>
+        </Card>
+
+        {/* Live service status */}
+        <Card icon={Activity} iconClass="text-purple-500" title="Service status" delay={0.15}
+          subtitle={health ? `Live checks · last run ${timeAgo(health.checkedAt)}` : 'Checking services...'}>
+          <div className="space-y-3">
+            {health?.services?.map(service => {
+              const s = SERVICE_STATUS[service.status] || SERVICE_STATUS.down;
+              return (
+                <div key={service.service} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
+                    <span className="font-medium text-gray-700 dark:text-gray-300 truncate">{service.service}</span>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className={`font-medium ${s.text}`}>{s.label}</span>
+                    {service.status !== 'down' && service.latency_ms !== null && <span className="text-gray-500"> · {service.latency_ms}ms</span>}
+                    {service.status === 'down' && service.error && <p className="text-xs text-red-500">{service.error}</p>}
+                  </div>
+                </div>
+              );
+            })}
+            {!health && <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>}
+          </div>
+          <button onClick={() => loadHealth(true)} disabled={checking}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 disabled:opacity-60">
+            {checking ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+            {checking ? 'Checking...' : 'Run system check'}
+          </button>
+        </Card>
       </div>
     </div>
   );

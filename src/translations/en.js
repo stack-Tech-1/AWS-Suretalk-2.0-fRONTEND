@@ -1884,6 +1884,14 @@ const en = {
   "audio.unmute": "Unmute",
   "audio.reset": "Reset to beginning",
   "audio.changeSpeed": "Change playback speed",
+
+  // ── Maintenance screen ──
+  "maint.title": "We'll be right back",
+  "maint.defaultMessage": "We're doing some maintenance and will be back shortly.",
+  "maint.safe": "Your voice notes, contacts and scheduled messages are safe, and scheduled messages will still be delivered.",
+  "maint.checkAgain": "Check again",
+  "maint.checking": "Checking...",
+  "maint.autoCheck": "This page checks automatically every minute.",
 };
 
 export default en;

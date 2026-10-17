@@ -91,6 +91,20 @@ class ApiClient {
       const response = await fetch(url, config);
       const data = await response.json();
 
+      if (!response.ok && typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        // Maintenance mode is on (admin Settings) — show the maintenance screen instead of errors
+        if (response.status === 503 && data.maintenance && !path.startsWith('/admin') && path !== '/maintenance') {
+          window.location.replace('/maintenance');
+          return new Promise(() => {}); // page is leaving; don't let callers show an error or redirect to login
+        }
+        // "Require 2FA for all admins" is on and this admin hasn't set it up yet
+        if (response.status === 403 && data.code === 'ADMIN_2FA_REQUIRED' && path !== '/adminDashboard/security') {
+          window.location.replace('/adminDashboard/security?required=1');
+          return new Promise(() => {});
+        }
+      }
+
       if (!response.ok) {
         const error = new Error(data.error || data.message || 'Request failed');
         error.status = response.status;
@@ -610,28 +624,20 @@ async runLogAnalysis() {
   });
 }
 
-async updateSetting(category, key, value) {
+// Platform settings: key is 'maintenanceMode', 'maintenanceMessage' or 'require2FA'
+async updateSetting(key, value) {
   return this.request('/admin/settings', {
     method: 'PUT',
-    body: JSON.stringify({ category, key, value }),
+    body: JSON.stringify({ key, value }),
   });
 }
 
-async bulkUpdateSettings(updates) {
-  return this.request('/admin/settings/bulk', {
-    method: 'PUT',
-    body: JSON.stringify({ updates }),
-  });
+async getServiceStatus({ refresh = false } = {}) {
+  return this.request(`/admin/settings/service-status?t=${Date.now()}${refresh ? '&refresh=1' : ''}`);
 }
 
-async resetSettings() {
-  return this.request('/admin/settings/reset', {
-    method: 'POST',
-  });
-}
-
-async getServiceStatus() {
-  return this.request('/admin/settings/service-status');
+async getMaintenanceStatus() {
+  return this.request(`/status/maintenance?t=${Date.now()}`);
 }
 
 
@@ -855,7 +861,7 @@ async getVaultUploadUrl(fileName, fileType, isWill = false) {
 
 // Settings endpoints
 async getSettings() {
-  return this.request('/admin/settings');
+  return this.request(`/admin/settings?t=${Date.now()}`); // always fresh — switches must show their real state
 }
 
 async updateSettings(category, key, value) {

@@ -1884,6 +1884,14 @@ const es = {
   "audio.unmute": "Activar sonido",
   "audio.reset": "Volver al inicio",
   "audio.changeSpeed": "Cambiar velocidad de reproducción",
+
+  // ── Maintenance screen ──
+  "maint.title": "Volvemos enseguida",
+  "maint.defaultMessage": "Estamos haciendo mantenimiento y volveremos en breve.",
+  "maint.safe": "Tus notas de voz, contactos y mensajes programados están a salvo, y los mensajes programados se seguirán entregando.",
+  "maint.checkAgain": "Comprobar de nuevo",
+  "maint.checking": "Comprobando...",
+  "maint.autoCheck": "Esta página se comprueba automáticamente cada minuto.",
 };
 
 export default es;
