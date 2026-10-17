@@ -509,45 +509,43 @@ async downloadUsersExport(format = 'csv', filters = {}) {
 }
 
 
-// Admin scheduled messages endpoints
+// Admin scheduled messages (routes/adminScheduled.js). The user-side cancelScheduledMessage is separate.
 async getAdminScheduledMessages(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  return this.request(`/admin/scheduled-messages${query ? `?${query}` : ''}`);
+  const clean = Object.fromEntries(Object.entries({ ...params, t: Date.now() }).filter(([, v]) => v !== undefined && v !== ''));
+  return this.request(`/admin/scheduled-messages?${new URLSearchParams(clean)}`);
 }
 
-async getAdminScheduledMessagesStats(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  return this.request(`/admin/scheduled-messages/stats${query ? `?${query}` : ''}`);
+async getAdminScheduledStats() {
+  return this.request(`/admin/scheduled-messages/stats?t=${Date.now()}`);
 }
 
-async updateScheduledMessageStatus(id, status, notes = '') {
-  return this.request(`/admin/scheduled-messages/${id}/status`, {
-    method: 'PUT',
-    body: JSON.stringify({ status, notes }),
+async getAdminScheduledMessage(id) {
+  return this.request(`/admin/scheduled-messages/${id}?t=${Date.now()}`);
+}
+
+// action: 'pause' | 'resume' | 'cancel' (needs reason) | 'retry'
+async adminScheduledAction(id, action, reason) {
+  return this.request(`/admin/scheduled-messages/${id}/${action}`, {
+    method: 'POST',
+    body: JSON.stringify(reason ? { reason } : {}),
   });
 }
 
-async cancelScheduledMessage(id) {
-  return this.request(`/admin/scheduled-messages/${id}`, {
-    method: 'DELETE',
+// Downloads the export as a file; resolves to { blob, filename }
+async downloadScheduledExport(format = 'csv', filters = {}) {
+  const clean = Object.fromEntries(Object.entries({ format, ...filters }).filter(([, v]) => v !== undefined && v !== ''));
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const response = await fetch(`${API_BASE_URL}/admin/scheduled-messages/export?${new URLSearchParams(clean)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  if (!response.ok) {
+    let message = 'Export failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  const match = /filename="?([^"]+)"?/.exec(response.headers.get('Content-Disposition') || '');
+  return { blob: await response.blob(), filename: match?.[1] || `suretalk-scheduled.${format}` };
 }
-
-// Export scheduled messages
-async exportScheduledMessages(format = 'csv', filters = {}) {
-  const query = new URLSearchParams({ format, ...filters }).toString();
-  return fetch(`${API_BASE_URL}/admin/scheduled-messages/export?${query}`, {
-    headers: {
-      'Authorization': `Bearer ${this.token}`,
-    },
-  }).then(response => {
-    if (format === 'csv') {
-      return response.blob();
-    }
-    return response.json();
-  });
-}
-
 // Add to your ApiClient class in utils/api.js
 async getAdminLogs(params = {}) {
   const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
