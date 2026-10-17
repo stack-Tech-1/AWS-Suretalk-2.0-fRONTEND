@@ -271,9 +271,9 @@ export default function Topbar({
   };
 
   const userMenuItems = type === "admin" ? [
-    { icon: <User className="w-4 h-4" />, label: t('dash.menu.adminProfile'), href: "/admin/profile" },
-    { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.systemSettings'), href: "/admin/settings" },
-    { icon: <Globe className="w-4 h-4" />, label: t('dash.menu.logs'), href: "/admin/logs" },
+    { icon: <User className="w-4 h-4" />, label: t('dash.menu.adminProfile'), href: "/adminDashboard/security" },
+    { icon: <Settings className="w-4 h-4" />, label: t('dash.menu.systemSettings'), href: "/adminDashboard/settings" },
+    { icon: <Globe className="w-4 h-4" />, label: t('dash.menu.logs'), href: "/adminDashboard/logs" },
     { icon: <LogOut className="w-4 h-4" />, label: t('dash.menu.logout'), href: "/", isLogout: true },
   ] : [
     { icon: <User className="w-4 h-4" />, label: t('dash.menu.profile'), href: "/usersDashboard/settings/profile" },

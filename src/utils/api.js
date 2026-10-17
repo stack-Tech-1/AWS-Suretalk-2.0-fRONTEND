@@ -546,62 +546,50 @@ async downloadScheduledExport(format = 'csv', filters = {}) {
   const match = /filename="?([^"]+)"?/.exec(response.headers.get('Content-Disposition') || '');
   return { blob: await response.blob(), filename: match?.[1] || `suretalk-scheduled.${format}` };
 }
-// Add to your ApiClient class in utils/api.js
+// Admin system logs (routes/adminLogs.js)
 async getAdminLogs(params = {}) {
-  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
-  const query = new URLSearchParams(clean).toString();
-  return this.request(`/admin/logs${query ? `?${query}` : ''}`);
+  const clean = Object.fromEntries(Object.entries({ ...params, t: Date.now() }).filter(([, v]) => v !== undefined && v !== ''));
+  return this.request(`/admin/logs?${new URLSearchParams(clean)}`);
 }
 
-// Add to your ApiClient class
-async getAdminStorageStats() {
-  return this.request('/admin/storage');
+async getAdminLogSummary(params = {}) {
+  const clean = Object.fromEntries(Object.entries({ ...params, t: Date.now() }).filter(([, v]) => v !== undefined && v !== ''));
+  return this.request(`/admin/logs/summary?${new URLSearchParams(clean)}`);
 }
 
-// Storage methods
-async getBucketDetails(bucketName) {
-  return this.request(`/admin/storage/bucket/${encodeURIComponent(bucketName)}`);
+async getAdminLogServices() {
+  return this.request('/admin/logs/services');
 }
 
-async addLifecycleRule(data) {
-  return this.request('/admin/storage/lifecycle-rules', {
-    method: 'POST',
-    body: JSON.stringify(data),
+async getAdminLog(id) {
+  return this.request(`/admin/logs/${id}`);
+}
+
+// Removes only logs past the retention policy (routine 1 year, important 3 years)
+async clearOldLogs() {
+  return this.request('/admin/logs/clear-old', { method: 'POST' });
+}
+
+// Downloads the log export as a file; resolves to { blob, filename }
+async downloadLogsExport(format = 'csv', filters = {}) {
+  const clean = Object.fromEntries(Object.entries({ format, ...filters }).filter(([, v]) => v !== undefined && v !== ''));
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const response = await fetch(`${API_BASE_URL}/admin/logs/export?${new URLSearchParams(clean)}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-}
-
-async getLifecycleRules(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  return this.request(`/admin/storage/lifecycle-rules${query ? `?${query}` : ''}`);
-}
-
-async updateStorageConfig(data) {
-  return this.request('/admin/storage/config', {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-}
-
-async uploadStorageReport(formData) {
-  // Note: This needs special handling for file upload
-  const url = `${API_BASE_URL}/admin/storage/upload-report`;
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || data.message || 'Upload failed');
+    let message = 'Export failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
   }
-  return data;
+  const match = /filename="?([^"]+)"?/.exec(response.headers.get('Content-Disposition') || '');
+  return { blob: await response.blob(), filename: match?.[1] || `suretalk-logs.${format}` };
 }
 
+// Admin storage overview (routes/adminStorage.js) — read-only
+async getAdminStorageOverview() {
+  return this.request(`/admin/storage/overview?t=${Date.now()}`);
+}
 // Admin request statistics
 async getAdminRequestStats() {
   return this.request('/admin/requests/stats');
@@ -626,26 +614,6 @@ async exportAdminRequests(format = 'csv', filters = {}) {
       return response.blob();
     }
     return response.json();
-  });
-}
-
-// Log statistics
-async getLogStats() {
-  return this.request('/admin/logs/stats');
-}
-
-// Clear old logs
-async clearOldLogs(days = 30) {
-  return this.request('/admin/logs/clear-old', {
-    method: 'POST',
-    body: JSON.stringify({ days }),
-  });
-}
-
-// Run log analysis (if you implement this later)
-async runLogAnalysis() {
-  return this.request('/admin/logs/analyze', {
-    method: 'POST',
   });
 }
 
