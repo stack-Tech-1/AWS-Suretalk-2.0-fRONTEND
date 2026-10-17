@@ -109,7 +109,8 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const error = new Error(data.error || data.message || 'Request failed');
+        // Form validation failures arrive as { errors: [{ msg }] } — show the first one
+        const error = new Error(data.error || data.message || data.errors?.[0]?.msg || 'Request failed');
         error.status = response.status;
         error.data = data;
         throw error;
@@ -910,6 +911,15 @@ async updateProfile(data) {
     method: 'PUT',
     body: JSON.stringify(data),
   });
+}
+
+// Phone line account (routes/users.js): status, and create it with a 4-digit PIN
+async getPhoneLineStatus() {
+  return this.request(`/users/phone-line?t=${Date.now()}`);
+}
+
+async createPhoneLinePin(pin) {
+  return this.request('/users/phone-line/pin', { method: 'POST', body: JSON.stringify({ pin }) });
 }
 
 async changePassword({ currentPassword, newPassword }) {
