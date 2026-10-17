@@ -1,514 +1,176 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Shield, 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Key,
-  Users,
-  Briefcase
-} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { api } from "../../../utils/api";
+import { Shield, User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle, Clock, Key, Briefcase, ArrowLeft, CheckCircle } from "lucide-react";
+import LogoIcon from "@/components/common/LogoIcon";
+import { api } from "@/utils/api";
+import { getTurnstileToken } from "@/utils/turnstile";
+
+const inputClass = "w-full py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all disabled:opacity-60";
+
+function Field({ label, htmlFor, icon: Icon, hint, children }) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      <div className="relative">
+        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />}
+        {children}
+      </div>
+      {hint && <p className="text-xs text-gray-500">{hint}</p>}
+    </div>
+  );
+}
 
 export default function AdminRegister() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Form, 2: Pending, 3: Success
+  const [done, setDone] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    adminCode: "", // Secret code for admin registration
-    reason: "", // Why they need admin access
-    department: "",
-  });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", department: "", password: "", confirmPassword: "", registrationCode: "", reason: "" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const set = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (form.password !== form.confirmPassword) return setError("The passwords don't match.");
+    if (form.password.length < 12) return setError("Password must be at least 12 characters.");
+    if (form.reason.trim().length < 10) return setError("Tell us why you need admin access (at least 10 characters).");
+
     setLoading(true);
-
     try {
-      // Validate inputs
-      if (!formData.firstName || !formData.lastName || !formData.email || 
-          !formData.phone || !formData.password || !formData.confirmPassword ||
-          !formData.adminCode || !formData.reason) {
-        throw new Error("Please fill in all required fields");
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        throw new Error("Passwords do not match");
-      }
-
-      if (formData.password.length < 12) {
-        throw new Error("Password must be at least 12 characters");
-      }
-
-      // Validate admin code (in production, this would be more secure)
-      const validAdminCodes = ["SURE2024", "ADMINACCESS", "SUPERSECRET"];
-      if (!validAdminCodes.includes(formData.adminCode.toUpperCase())) {
-        throw new Error("Invalid admin registration code");
-      }
-
-      // In production, this would call a backend endpoint like:
+      const turnstileToken = await getTurnstileToken('admin_request');
       await api.request('/auth/admin/request', {
         method: 'POST',
         body: JSON.stringify({
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          fullName: `${formData.firstName} ${formData.lastName}`,
-          department: formData.department,
-          reason: formData.reason,
+          fullName: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          department: form.department || undefined,
+          password: form.password,
+          registrationCode: form.registrationCode.trim(),
+          reason: form.reason.trim(),
+          ...(turnstileToken ? { turnstileToken } : {}),
         }),
       });
-      
-      // Move to pending approval step
-      setStep(2);
-
-    } catch (error) {
-      console.error("Admin registration error:", error);
-      setError(error.message || "Registration failed. Please try again.");
+      localStorage.setItem('pending_admin_email', form.email.trim());
+      setDone(true);
+    } catch (err) {
+      setError(err.message || "Couldn't submit your request. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: Pending Approval
-  if (step === 2) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 w-full max-w-md"
-        >
-          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-gray-700/50 text-center">
-            <div className="w-20 h-20 bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Clock className="w-10 h-10 text-blue-400" />
-            </div>
-            
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Admin Access Requested
-            </h2>
-            
-            <p className="text-gray-400 mb-6">
-              Your request for admin access has been submitted for review.
-              An existing administrator will review your application within 24-48 hours.
-            </p>
-            
-            <div className="bg-gray-900/30 rounded-xl p-4 mb-6">
-              <h3 className="font-semibold text-white mb-3">What happens next?</h3>
-              <div className="space-y-3 text-sm text-gray-400">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>Request received and logged</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                  <span>Security review initiated</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <span>Pending administrator approval</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                  <span>You'll receive email notification</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <button
-                onClick={() => router.push('/admin/login')}
-                className="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
-              >
-                Return to Admin Login
-              </button>
-              
-              <button
-                onClick={() => { window.location.href = 'https://suretalknow.com'; }}
-                className="w-full py-3 border border-gray-700 text-gray-400 hover:text-white rounded-xl font-medium transition-colors"
-              >
-                Go to Home
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Step 3: Success (if approved)
-  if (step === 3) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 w-full max-w-md"
-        >
-          <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-gray-700/50 text-center">
-            <div className="w-20 h-20 bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Shield className="w-10 h-10 text-green-400" />
-            </div>
-            
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Admin Access Approved!
-            </h2>
-            
-            <p className="text-gray-400 mb-6">
-              Your admin access has been approved. You can now log in with your credentials.
-            </p>
-            
-            <button
-              onClick={() => router.push('/admin/login')}
-              className="w-full py-3 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-xl font-medium hover:shadow-lg transition-all"
-            >
-              Go to Admin Login
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Step 1: Registration Form
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative z-10 w-full max-w-lg"
-      >
-        {/* Security Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white">
-              Admin Registration
-            </h1>
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4 py-10">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-brand-500/15 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-accent-500/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
+        className="relative z-10 w-full max-w-lg glass rounded-3xl shadow-2xl px-6 sm:px-8 py-8 sm:py-10">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="flex items-center gap-3">
+            <LogoIcon size={40} />
+            <span className="font-display text-2xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
           </div>
-          <p className="text-gray-400">
-            Request administrator access to SureTalk systems
-          </p>
+          <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+            <Shield className="w-3.5 h-3.5" /> Admin Console
+          </span>
         </div>
 
-        {/* Security Warning */}
-        <div className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-xl">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-medium text-white mb-1">Security Notice</h3>
-              <p className="text-sm text-gray-400">
-                Admin access provides full system control. All requests are logged and require approval from existing administrators.
-              </p>
+        {done ? (
+          <div className="text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <Clock className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white mb-2">Request sent</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              A super admin will review your request. You&apos;ll get an email at <strong>{form.email}</strong> when it&apos;s decided.
+            </p>
+            <ul className="text-left text-sm text-gray-600 dark:text-gray-400 space-y-2 mb-8 mx-auto max-w-xs">
+              <li className="flex items-start gap-2"><CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /> Your request was received</li>
+              <li className="flex items-start gap-2"><Clock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" /> Waiting for a super admin to review it</li>
+            </ul>
+            <div className="flex flex-col gap-3">
+              <Link href="/admin/pending" className="py-3 rounded-xl bg-gradient-to-r from-brand-600 to-accent-500 text-white font-semibold">Check my request status</Link>
+              <Link href="/admin/login" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Back to admin sign in</Link>
             </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white text-center">Request admin access</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1 mb-6">Admins can see every user&apos;s data, so each request is reviewed by a super admin.</p>
 
-        {/* Registration Form */}
-        <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-gray-700/50">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-xl flex items-start gap-3"
-            >
-              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-red-300">
-                {error}
+            {error && (
+              <div role="alert" className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
-            </motion.div>
-          )}
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  First Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                             bg-gray-900/50 text-white placeholder-gray-500
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-transparent transition-all"
-                    placeholder="John"
-                    required
-                    disabled={loading}
-                  />
-                </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="First name" htmlFor="firstName" icon={User}>
+                  <input id="firstName" name="firstName" value={form.firstName} onChange={set} required disabled={loading} autoComplete="given-name" className={`${inputClass} pl-11 pr-4`} />
+                </Field>
+                <Field label="Last name" htmlFor="lastName" icon={User}>
+                  <input id="lastName" name="lastName" value={form.lastName} onChange={set} required disabled={loading} autoComplete="family-name" className={`${inputClass} pl-11 pr-4`} />
+                </Field>
               </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  Last Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                             bg-gray-900/50 text-white placeholder-gray-500
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-transparent transition-all"
-                    placeholder="Doe"
-                    required
-                    disabled={loading}
-                  />
-                </div>
+              <Field label="Email" htmlFor="email" icon={Mail}>
+                <input id="email" name="email" type="email" value={form.email} onChange={set} required disabled={loading} autoComplete="email" className={`${inputClass} pl-11 pr-4`} placeholder="you@suretalknow.com" />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Phone" htmlFor="phone" icon={Phone}>
+                  <input id="phone" name="phone" type="tel" value={form.phone} onChange={set} required disabled={loading} autoComplete="tel" className={`${inputClass} pl-11 pr-4`} placeholder="+2348012345678" />
+                </Field>
+                <Field label="Department (optional)" htmlFor="department" icon={Briefcase}>
+                  <select id="department" name="department" value={form.department} onChange={set} disabled={loading} className={`${inputClass} pl-11 pr-4`}>
+                    <option value="">Choose…</option>
+                    <option value="Customer support">Customer support</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Management">Management</option>
+                    <option value="Security">Security</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </Field>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Email Address *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                           bg-gray-900/50 text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-transparent transition-all"
-                  placeholder="admin@company.com"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Phone Number *
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                           bg-gray-900/50 text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-transparent transition-all"
-                  placeholder="+1 (555) 123-4567"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Department
-              </label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                           bg-gray-900/50 text-white
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-transparent transition-all"
-                  disabled={loading}
-                >
-                  <option value="">Select Department</option>
-                  <option value="IT">IT Department</option>
-                  <option value="Support">Customer Support</option>
-                  <option value="Management">Management</option>
-                  <option value="Security">Security</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  Password *
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-700 
-                             bg-gray-900/50 text-white placeholder-gray-500
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-transparent transition-all"
-                    placeholder="Min. 10 characters"
-                    required
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-400"
-                  >
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Password" htmlFor="password" icon={Lock} hint="At least 12 characters">
+                  <input id="password" name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={set} required minLength={12} disabled={loading} autoComplete="new-password" className={`${inputClass} pl-11 pr-11`} />
+                  <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
-                </div>
+                </Field>
+                <Field label="Confirm password" htmlFor="confirmPassword" icon={Lock}>
+                  <input id="confirmPassword" name="confirmPassword" type={showPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={set} required disabled={loading} autoComplete="new-password" className={`${inputClass} pl-11 pr-4`} />
+                </Field>
               </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  Confirm Password *
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-700 
-                             bg-gray-900/50 text-white placeholder-gray-500
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 
-                             focus:border-transparent transition-all"
-                    placeholder="Confirm password"
-                    required
-                    disabled={loading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-400"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Admin Registration Code *
-              </label>
-              <div className="relative">
-                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="text"
-                  name="adminCode"
-                  value={formData.adminCode}
-                  onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-700 
-                           bg-gray-900/50 text-white placeholder-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 
-                           focus:border-transparent transition-all"
-                  placeholder="Enter registration code"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Contact an existing administrator to get the registration code
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                Reason for Admin Access *
-              </label>
-              <textarea
-                name="reason"
-                value={formData.reason}
-                onChange={handleChange}
-                className="w-full p-4 rounded-xl border border-gray-700 
-                         bg-gray-900/50 text-white placeholder-gray-500
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 
-                         focus:border-transparent transition-all"
-                placeholder="Explain why you need admin access..."
-                rows="3"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="pt-4 border-t border-gray-700">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 
-                         hover:from-blue-700 hover:to-blue-600
-                         text-white font-medium rounded-xl border border-blue-700
-                         hover:shadow-lg transform transition-all duration-300 
-                         hover:-translate-y-0.5 disabled:opacity-50 
-                         disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Submitting Request...
-                  </>
-                ) : (
-                  <>
-                    <Shield className="w-5 h-5" />
-                    Request Admin Access
-                  </>
-                )}
+              <Field label="Registration code" htmlFor="registrationCode" icon={Key} hint="Ask your SureTalk contact for the current code.">
+                <input id="registrationCode" name="registrationCode" value={form.registrationCode} onChange={set} disabled={loading} autoComplete="off" className={`${inputClass} pl-11 pr-4`} />
+              </Field>
+              <Field label="Why do you need admin access?" htmlFor="reason">
+                <textarea id="reason" name="reason" value={form.reason} onChange={set} required rows={3} maxLength={2000} disabled={loading}
+                  className={`${inputClass} px-4`} placeholder="e.g. I handle customer support and need to look up accounts" />
+              </Field>
+              <button type="submit" disabled={loading}
+                className="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-accent-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                {loading ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending request…</> : <><Shield className="w-5 h-5" /> Request admin access</>}
               </button>
-            </div>
-          </form>
+            </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-gray-400">
-              Already have admin access?{" "}
-              <Link
-                href="/admin/login"
-                className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                Login here
-              </Link>
+            <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+              Already approved? <Link href="/admin/login" className="font-semibold text-brand-600 dark:text-brand-400">Sign in</Link>
             </p>
-          </div>
-        </div>
+          </>
+        )}
       </motion.div>
+
+      <Link href="/admin/login" className="fixed top-4 left-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-600"><ArrowLeft className="w-4 h-4" /> Admin sign in</Link>
     </div>
   );
 }

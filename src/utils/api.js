@@ -174,33 +174,32 @@ class ApiClient {
     return this.request('/auth/profile');
   }
   
-    // Add these methods to the ApiClient class:
-    async getPendingRequests(status = 'all') {
-        const q = status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : '';
-        return this.request(`/admin/pending-requests${q}`);
-    }
-    
-    
+  // Admin access requests (routes/adminRequests.js). Approve/reject/delete need a super admin.
+  async getAdminRequests(params = {}) {
+    const clean = Object.fromEntries(Object.entries({ ...params, t: Date.now() }).filter(([, v]) => v !== undefined && v !== '' && v !== 'all'));
+    return this.request(`/admin/requests?${new URLSearchParams(clean)}`);
+  }
 
-        async approveAdminRequest(id) {
-            return this.request(`/admin/requests/${id}/action`, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'approve' }), 
-            headers: { 'Content-Type': 'application/json' }
-            });
-        }
-        
-        async rejectAdminRequest(id, notes = '') {
-            return this.request(`/admin/requests/${id}/action`, {
-            method: 'POST',
-            body: JSON.stringify({ 
-                action: 'reject', 
-                notes: notes
-            }),
-            headers: { 'Content-Type': 'application/json' }
-            });
-        }
+  async getAdminRequestStats() {
+    return this.request(`/admin/requests/stats?t=${Date.now()}`);
+  }
 
+  async approveAdminRequest(id) {
+    return this.request(`/admin/requests/${id}/approve`, { method: 'POST' });
+  }
+
+  async rejectAdminRequest(id, reason = '') {
+    return this.request(`/admin/requests/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+
+  async deleteAdminRequest(id) {
+    return this.request(`/admin/requests/${id}`, { method: 'DELETE' });
+  }
+
+  // Pending page: checks an applicant's own request (needs their password)
+  async checkAdminRequestStatus(email, password) {
+    return this.request('/auth/admin/request-status', { method: 'POST', body: JSON.stringify({ email, password }) });
+  }
   // Voice notes endpoints
   async getVoiceNotes(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -590,33 +589,6 @@ async downloadLogsExport(format = 'csv', filters = {}) {
 async getAdminStorageOverview() {
   return this.request(`/admin/storage/overview?t=${Date.now()}`);
 }
-// Admin request statistics
-async getAdminRequestStats() {
-  return this.request('/admin/requests/stats');
-}
-
-// Bulk approve pending requests
-async bulkApproveRequests() {
-  return this.request('/admin/requests/bulk-approve', {
-    method: 'POST',
-  });
-}
-
-// Export requests (already in your backend)
-async exportAdminRequests(format = 'csv', filters = {}) {
-  const query = new URLSearchParams({ format, ...filters }).toString();
-  return fetch(`${API_BASE_URL}/admin/users/export?${query}`, {
-    headers: {
-      'Authorization': `Bearer ${this.token}`,
-    },
-  }).then(response => {
-    if (format === 'csv') {
-      return response.blob();
-    }
-    return response.json();
-  });
-}
-
 // Platform settings: key is 'maintenanceMode', 'maintenanceMessage' or 'require2FA'
 async updateSetting(key, value) {
   return this.request('/admin/settings', {

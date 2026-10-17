@@ -1,141 +1,108 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Clock, Shield, Mail, AlertCircle, 
-  RefreshCw, LogOut
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { Clock, Shield, Mail, Lock, AlertCircle, CheckCircle, XCircle, RefreshCw, Eye, EyeOff } from "lucide-react";
+import LogoIcon from "@/components/common/LogoIcon";
+import { api } from "@/utils/api";
+
+const inputClass = "w-full py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent disabled:opacity-60";
 
 export default function PendingAdminStatus() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState(null); // { status, reason }
 
   useEffect(() => {
-    // Get email from localStorage or query params
-    const pendingEmail = localStorage.getItem('pending_admin_email');
-    if (pendingEmail) {
-      setEmail(pendingEmail);
-    } else {
-      router.push('/admin/login');
+    try { setEmail(localStorage.getItem('pending_admin_email') || ""); } catch {}
+  }, []);
+
+  const check = async (e) => {
+    e.preventDefault();
+    setError("");
+    setChecking(true);
+    try {
+      const r = await api.checkAdminRequestStatus(email.trim(), password);
+      setResult(r.data);
+      if (r.data.status !== 'pending') { try { localStorage.removeItem('pending_admin_email'); } catch {} }
+    } catch (err) {
+      setError(err.message || "Couldn't check your request");
+    } finally {
+      setChecking(false);
     }
-  }, [router]);
-
-  const handleCheckStatus = async () => {
-    setLoading(true);
-    // Call API to check status
-    // If approved, redirect to login
-    // If still pending, show message
-    setTimeout(() => setLoading(false), 1000);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('pending_admin_email');
-    router.push('/admin/login');
-  };
+  const view = {
+    pending: { icon: Clock, color: 'from-amber-500 to-orange-500', title: 'Still waiting for review', text: 'A super admin hasn\'t decided yet. You\'ll get an email when they do.' },
+    approved: { icon: CheckCircle, color: 'from-green-500 to-emerald-500', title: 'You\'re approved', text: 'You can now sign in to the admin console. We recommend turning on two-step verification once you\'re in.' },
+    rejected: { icon: XCircle, color: 'from-red-500 to-pink-500', title: 'Request not approved', text: 'A super admin decided not to give this account admin access.' },
+  }[result?.status];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="p-6 bg-yellow-50 border-b border-yellow-200">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">Admin Access Pending</h1>
-                <p className="text-sm text-gray-600">Your request is under review</p>
-              </div>
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
+        className="relative z-10 w-full max-w-md glass rounded-3xl shadow-2xl px-6 sm:px-8 py-8 sm:py-10">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="flex items-center gap-3">
+            <LogoIcon size={40} />
+            <span className="font-display text-2xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SureTalk</span>
+          </div>
+          <span className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+            <Shield className="w-3.5 h-3.5" /> Admin Console
+          </span>
+        </div>
+
+        {view ? (
+          <div className="text-center">
+            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${view.color} flex items-center justify-center mx-auto mb-5 shadow-lg`}>
+              <view.icon className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white mb-2">{view.title}</h1>
+            <p className="text-gray-600 dark:text-gray-400">{view.text}</p>
+            {result.status === 'rejected' && result.reason && (
+              <p className="mt-4 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 text-sm text-gray-700 dark:text-gray-300 text-left"><strong>Reason:</strong> {result.reason}</p>
+            )}
+            <div className="flex flex-col gap-3 mt-8">
+              {result.status === 'approved'
+                ? <Link href="/admin/login" className="py-3 rounded-xl bg-gradient-to-r from-brand-600 to-accent-500 text-white font-semibold">Sign in</Link>
+                : <button onClick={() => setResult(null)} className="py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium inline-flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4" /> Check again later</button>}
+              <Link href="/admin/login" className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Back to admin sign in</Link>
             </div>
           </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {email && (
-              <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-blue-800">
-                  <Mail className="w-4 h-4" />
-                  <span className="font-medium">Requested for:</span>
-                  <span className="font-mono">{email}</span>
-                </div>
+        ) : (
+          <>
+            <h1 className="font-display text-2xl font-bold text-gray-900 dark:text-white text-center">Check your request</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-1 mb-6">Enter the email and password you used when you asked for admin access.</p>
+            {error && (
+              <div role="alert" className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-yellow-500 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-gray-800">Review Process</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Your admin access request is currently being reviewed by our team.
-                    This process typically takes 24-48 hours.
-                  </p>
-                </div>
+            <form onSubmit={check} className="space-y-4">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input type="email" aria-label="Email" value={email} onChange={e => setEmail(e.target.value)} required disabled={checking} autoComplete="username" placeholder="you@suretalknow.com" className={`${inputClass} pl-11 pr-4`} />
               </div>
-
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-gray-800">What happens next?</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Once approved, you'll receive an email notification and can log in
-                    using the credentials you provided.
-                  </p>
-                </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input type={showPassword ? 'text' : 'password'} aria-label="Password" value={password} onChange={e => setPassword(e.target.value)} required disabled={checking} autoComplete="current-password" placeholder="Your password" className={`${inputClass} pl-11 pr-11`} />
+                <button type="button" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-            </div>
-
-            {/* Actions */}
-            <div className="mt-8 space-y-3">
-              <button
-                onClick={handleCheckStatus}
-                disabled={loading}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white 
-                         rounded-lg font-medium transition-colors flex items-center 
-                         justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Checking Status...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4" />
-                    Check Approval Status
-                  </>
-                )}
+              <button type="submit" disabled={checking} className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-accent-500 text-white font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-2">
+                {checking ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Checking…</> : 'Check status'}
               </button>
-
-              <button
-                onClick={handleLogout}
-                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 
-                         rounded-lg font-medium transition-colors flex items-center 
-                         justify-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Return to Login
-              </button>
-            </div>
-
-            {/* Contact Info */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-500 text-center">
-                Need help? Contact{' '}
-                <a href="mailto:Contact@SureTalkNow.com" className="text-blue-600 hover:underline">
-                  Contact@SureTalkNow.com
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
+            </form>
+            <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+              Haven&apos;t applied yet? <Link href="/admin/register" className="font-semibold text-brand-600 dark:text-brand-400">Request access</Link>
+            </p>
+          </>
+        )}
       </motion.div>
     </div>
   );

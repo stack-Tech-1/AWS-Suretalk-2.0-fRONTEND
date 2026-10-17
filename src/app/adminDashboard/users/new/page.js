@@ -21,7 +21,7 @@ export default function CreateUser() {
     e.preventDefault();
     setError("");
     const phone = form.phone.replace(/[\s()-]/g, '');
-    if (phone && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+    if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
       setError('Phone must be in international format, starting with + and the country code, e.g. +2348012345678');
       return;
     }
@@ -30,7 +30,7 @@ export default function CreateUser() {
       const res = await api.createUser({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
-        ...(phone ? { phone } : {}),
+        phone,
         subscriptionTier: form.subscriptionTier,
         sendSetupEmail: form.sendSetupEmail,
       });
@@ -130,13 +130,13 @@ export default function CreateUser() {
               </div>
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input id="phone" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)}
+                <input id="phone" type="tel" required value={form.phone} onChange={e => set('phone', e.target.value)}
                   className={`${inputClass} pl-10`} placeholder="+2348012345678" />
               </div>
-              <p className="text-xs text-gray-500 mt-1.5">Needed for the phone line (IVR). Include the country code.</p>
+              <p className="text-xs text-gray-500 mt-1.5">Every account needs a unique phone number (also used for the phone line). Include the country code.</p>
             </div>
           </div>
         </section>
