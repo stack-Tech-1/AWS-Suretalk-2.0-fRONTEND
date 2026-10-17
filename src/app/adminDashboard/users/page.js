@@ -10,7 +10,7 @@ import {
 import { api } from "@/utils/api";
 import { toast } from "@/components/ui/Toast";
 import {
-  PLANS, planInfo, statusInfo, timeAgo, formatDate, saveBlob, ConfirmDialog, useConfirm
+  PLANS, planInfo, accountStatusInfo, timeAgo, formatDate, saveBlob, ConfirmDialog, useConfirm
 } from "@/components/admin/userShared";
 
 const FILTERS = [
@@ -21,6 +21,7 @@ const FILTERS = [
   { id: "paying", label: "Paying (Stripe)", params: { status: "paying" } },
   { id: "active", label: "Active", params: { status: "active" } },
   { id: "inactive", label: "Inactive", params: { status: "inactive" } },
+  { id: "suspended", label: "Deactivated", params: { status: "suspended" } },
   { id: "admins", label: "Admins", params: { type: "admins" } },
 ];
 const PAGE_SIZE = 25;
@@ -337,7 +338,7 @@ export default function AdminUsers() {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {users.map(user => {
                     const plan = planInfo(user.subscription_tier);
-                    const status = statusInfo(user.subscription_status);
+                    const status = accountStatusInfo(user);
                     const isSel = selected.includes(user.id);
                     return (
                       <tr key={user.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 ${isSel ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>

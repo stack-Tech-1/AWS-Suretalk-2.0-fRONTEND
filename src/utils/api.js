@@ -1065,77 +1065,82 @@ async verifyEmail(token) {
   return this.request(`/auth/verify-email?token=${token}`);
 }
 
-// Super-admin endpoints
+// Super admin console (routes/superAdmin.js). Deleting accounts is soft-only (admin Users page).
+// GETs carry t= so the request cache never serves stale numbers.
 async getSuperAdminUsers(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  return this.request(`/super-admin/users${query ? `?${query}` : ''}`);
+  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''));
+  return this.request(`/super-admin/users?${new URLSearchParams({ ...clean, t: Date.now() })}`);
 }
 
 async getSuperAdminUserFull(id) {
-  return this.request(`/super-admin/users/${id}/full`);
+  return this.request(`/super-admin/users/${id}/full?t=${Date.now()}`);
 }
 
 async getSuperAdminUserFootprint(id) {
-  return this.request(`/super-admin/users/${id}/footprint`);
+  return this.request(`/super-admin/users/${id}/footprint?t=${Date.now()}`);
 }
 
 async updateUserTier(id, tier, reason) {
-  return this.request(`/super-admin/users/${id}/tier`, {
-    method: 'PUT',
-    body: JSON.stringify({ tier, reason })
-  });
+  return this.request(`/super-admin/users/${id}/tier`, { method: 'PUT', body: JSON.stringify({ tier, reason }) });
 }
 
 async suspendUser(id, suspend, reason) {
-  return this.request(`/super-admin/users/${id}/suspend`, {
-    method: 'PUT',
-    body: JSON.stringify({ suspend, reason })
-  });
+  return this.request(`/super-admin/users/${id}/suspend`, { method: 'PUT', body: JSON.stringify({ suspend, reason }) });
 }
 
-async hardDeleteUser(id) {
-  return this.request(`/super-admin/users/${id}`, {
-    method: 'DELETE',
-    body: JSON.stringify({ confirm: 'DELETE_USER' }),
-  });
+async resyncSuperAdminUser(id) {
+  return this.request(`/super-admin/users/${id}/resync`, { method: 'POST' });
+}
+
+async impersonateUser(id) {
+  return this.request(`/super-admin/users/${id}/impersonate`, { method: 'POST' });
 }
 
 async getSuperAdminOverview() {
-  return this.request('/super-admin/overview');
+  return this.request(`/super-admin/overview?t=${Date.now()}`);
+}
+
+async getSuperAdminRevenue() {
+  return this.request(`/super-admin/revenue?t=${Date.now()}`);
+}
+
+async getSuperAdminSyncHealth() {
+  return this.request(`/super-admin/sync-health?t=${Date.now()}`);
+}
+
+async getSuperAdminSystemHealth(refresh = false) {
+  return this.request(`/super-admin/system-health?t=${Date.now()}${refresh ? '&refresh=1' : ''}`);
 }
 
 async getDeadLetters() {
-  return this.request('/super-admin/sync/dead-letters');
+  return this.request(`/super-admin/sync/dead-letters?t=${Date.now()}`);
 }
 
 async retrySyncItem(id) {
   return this.request(`/super-admin/sync/${id}/retry`, { method: 'POST' });
 }
 
-async exportSuperAdminUsers() {
+async editRetrySyncItem(id, fields) {
+  return this.request(`/super-admin/sync/${id}/edit-retry`, { method: 'PUT', body: JSON.stringify(fields) });
+}
+
+async dismissSyncItem(id, reason) {
+  return this.request(`/super-admin/sync/${id}/dismiss`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
+
+// Super admin downloads: path under /super-admin → { blob, filename }
+async downloadSuperAdminFile(path, fallbackName) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
-  const response = await fetch(`${baseUrl}/super-admin/users/export`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
+  const response = await fetch(`${API_BASE_URL}/super-admin${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-
   if (!response.ok) {
-    throw new Error('Export failed');
+    let message = 'Export failed';
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
   }
-
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `suretalk-users-${new Date().toISOString().split('T')[0]}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+  const match = /filename="?([^"]+)"?/.exec(response.headers.get('Content-Disposition') || '');
+  return { blob: await response.blob(), filename: match?.[1] || fallbackName };
 }
 
 

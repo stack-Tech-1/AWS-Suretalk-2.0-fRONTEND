@@ -11,17 +11,12 @@ import {
 import { api } from "@/utils/api";
 import { toast } from "@/components/ui/Toast";
 import {
-  planInfo, statusInfo, isActiveStatus, timeAgo, formatDate, formatBytes, ConfirmDialog, useConfirm
+  planInfo, accountStatusInfo, actionLabel, timeAgo, formatDate, formatBytes, ConfirmDialog, useConfirm
 } from "@/components/admin/userShared";
 
 const formatDuration = (s) => {
   const total = Math.round(Number(s) || 0);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-};
-
-const humanizeAction = (action) => {
-  const text = String(action || '').toLowerCase().replace(/_/g, ' ');
-  return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
 function UsageBar({ label, used, limit, color, format = (v) => Number(v).toLocaleString() }) {
@@ -114,8 +109,8 @@ export default function UserDetail() {
 
   const u = data.user;
   const plan = planInfo(u.subscription_tier);
-  const status = statusInfo(u.subscription_status);
-  const active = isActiveStatus(u.subscription_status);
+  const status = accountStatusInfo(u);
+  const active = !u.is_suspended;
   const isSelf = myId && myId === u.id;
   const canManage = !u.is_admin && !isSelf;
   const name = u.full_name || u.email;
@@ -183,7 +178,7 @@ export default function UserDetail() {
   // User events and admin actions on this account, newest first
   const timeline = activity ? [
     ...activity.events.map(e => ({ key: `e-${e.id}`, at: e.created_at, level: e.level, title: e.message, sub: [e.service, e.ip_address].filter(Boolean).join(' · ') })),
-    ...activity.adminActions.map(a => ({ key: `a-${a.id}`, at: a.created_at, level: 'admin', title: `${humanizeAction(a.action)} by ${a.admin_name || a.admin_email || 'an admin'}`, sub: 'Admin action' })),
+    ...activity.adminActions.map(a => ({ key: `a-${a.id}`, at: a.created_at, level: 'admin', title: `${actionLabel(a.action)} by ${a.admin_name || a.admin_email || 'an admin'}`, sub: 'Admin action' })),
   ].sort((a, b) => new Date(b.at) - new Date(a.at)) : [];
 
   const levelStyle = {
