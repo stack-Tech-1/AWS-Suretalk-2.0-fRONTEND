@@ -95,7 +95,9 @@ class ApiClient {
         // Trailing slash stripped: the site serves pages as /maintenance/ (trailingSlash export)
         const path = window.location.pathname.replace(/\/+$/, '') || '/';
         // Maintenance mode is on (admin Settings) — show the maintenance screen instead of errors
-        if (response.status === 503 && data.maintenance && !path.startsWith('/admin') && path !== '/maintenance') {
+        // Recipient pages (/play, /will) keep working during maintenance — their own data comes from /api/play
+        if (response.status === 503 && data.maintenance && !path.startsWith('/admin') && path !== '/maintenance'
+            && !path.startsWith('/play/') && !path.startsWith('/will/')) {
           window.location.replace('/maintenance');
           return new Promise(() => {}); // page is leaving; don't let callers show an error or redirect to login
         }
@@ -380,17 +382,41 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/admin/users${query ? `?${query}` : ''}`);
   }
 
+  // Admin voice wills (routes/adminWills.js) — fresh data every time, these change state
   async getAdminWills(params = {}) {
-    const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined));
-    const query = new URLSearchParams(clean).toString();
-    return this.request(`/admin/wills${query ? `?${query}` : ''}`);
+    const clean = Object.fromEntries(Object.entries({ ...params, t: Date.now() }).filter(([, v]) => v !== undefined && v !== ''));
+    return this.request(`/admin/wills?${new URLSearchParams(clean)}`);
   }
 
-  async releaseVoiceWill(id, releaseNotes) {
+  async getAdminWillStats() {
+    return this.request(`/admin/wills/stats?t=${Date.now()}`);
+  }
+
+  async getAdminWill(id) {
+    return this.request(`/admin/wills/${id}?t=${Date.now()}`);
+  }
+
+  // deliver=false only marks it released (nobody is contacted)
+  async releaseWill(id, { notes = '', deliver = true } = {}) {
     return this.request(`/admin/wills/${id}/release`, {
       method: 'POST',
-      body: JSON.stringify({ releaseNotes }),
+      body: JSON.stringify({ notes, deliver }),
     });
+  }
+
+  async listenToWill(id) {
+    return this.request(`/admin/wills/${id}/listen`, { method: 'POST' });
+  }
+
+  async removeWill(id, reason) {
+    return this.request(`/admin/wills/${id}/remove`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async restoreWill(id) {
+    return this.request(`/admin/wills/${id}/restore`, { method: 'POST' });
   }
 
   // Admin dashboard endpoints

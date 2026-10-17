@@ -1892,6 +1892,25 @@ const es = {
   "maint.checkAgain": "Comprobar de nuevo",
   "maint.checking": "Comprobando...",
   "maint.autoCheck": "Esta página se comprueba automáticamente cada minuto.",
+
+  // ── Released voice will page (/will/[token]) ──
+  "willLink.loading": "Abriendo el testamento de voz…",
+  "willLink.from": "Un testamento de voz de",
+  "willLink.forYou": "Compartido con {name}",
+  "willLink.intro": "{owner} grabó este mensaje y pidió que se compartiera contigo.",
+  "willLink.private": "Este enlace privado se creó para ti. Por favor, no lo compartas.",
+  "willLink.daysLeft": "Disponible durante {count} días más",
+  "willLink.oneDayLeft": "Disponible durante 1 día más",
+  "willLink.expiresSoon": "Este enlace vence pronto",
+  "willLink.audioUnavailable": "La grabación no se puede reproducir en este momento. Inténtalo de nuevo más tarde.",
+  "willLink.expiredTitle": "Este enlace ha vencido",
+  "willLink.expiredBody": "Si todavía necesitas escuchar este testamento de voz, contacta a SureTalk en Contact@SureTalkNow.com.",
+  "willLink.unavailableTitle": "Este enlace no está disponible",
+  "willLink.unavailableBody": "Es posible que se haya escrito mal o que ya no esté activo. Si crees que es un error, contacta a SureTalk en Contact@SureTalkNow.com.",
+  "willLink.loadError": "No pudimos cargar este testamento de voz. Revisa tu conexión e inténtalo de nuevo.",
+  "willLink.retry": "Intentar de nuevo",
+  "willLink.play": "Reproducir",
+  "willLink.pause": "Pausar",
 };
 
 export default es;

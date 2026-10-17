@@ -1892,6 +1892,25 @@ const en = {
   "maint.checkAgain": "Check again",
   "maint.checking": "Checking...",
   "maint.autoCheck": "This page checks automatically every minute.",
+
+  // ── Released voice will page (/will/[token]) ──
+  "willLink.loading": "Opening the voice will…",
+  "willLink.from": "A voice will from",
+  "willLink.forYou": "Shared with {name}",
+  "willLink.intro": "{owner} recorded this message and asked that it be shared with you.",
+  "willLink.private": "This private link was made for you. Please don't share it.",
+  "willLink.daysLeft": "Available for {count} more days",
+  "willLink.oneDayLeft": "Available for 1 more day",
+  "willLink.expiresSoon": "This link expires soon",
+  "willLink.audioUnavailable": "The recording can't be played right now. Please try again later.",
+  "willLink.expiredTitle": "This link has expired",
+  "willLink.expiredBody": "If you still need to hear this voice will, contact SureTalk at Contact@SureTalkNow.com.",
+  "willLink.unavailableTitle": "This link isn't available",
+  "willLink.unavailableBody": "It may have been entered incorrectly or is no longer active. If you think this is a mistake, contact SureTalk at Contact@SureTalkNow.com.",
+  "willLink.loadError": "We couldn't load this voice will. Check your connection and try again.",
+  "willLink.retry": "Try again",
+  "willLink.play": "Play",
+  "willLink.pause": "Pause",
 };
 
 export default en;
