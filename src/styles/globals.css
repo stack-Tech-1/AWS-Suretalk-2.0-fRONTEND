@@ -173,6 +173,47 @@ h4, h5, h6 {
   -webkit-backdrop-filter: blur(24px);
 }
 
+/* In the components layer so Tailwind utilities (e.g. pl-10 next to an input icon) still win */
+@layer components {
+  /* Sign-up page card: the glass surface, solid enough to read on in both themes */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgb(var(--border));
+    box-shadow: var(--glass-shadow);
+  }
+  .dark .glass-card {
+    background: rgba(var(--surface), 0.92);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Text inputs (components/common/Input.js) */
+  .input-field {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(203, 213, 225);
+    background: #ffffff;
+    color: rgb(15, 23, 42);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input-field::placeholder { color: rgb(148, 163, 184); }
+  .input-field:focus {
+    outline: none;
+    border-color: rgb(var(--brand));
+    box-shadow: 0 0 0 3px rgba(var(--brand), 0.2);
+  }
+  .dark .input-field {
+    background: rgb(var(--surface-muted));
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgb(226, 232, 240);
+  }
+  .dark .input-field::placeholder { color: rgb(100, 116, 139); }
+}
+
 /* ============================================
    CARD SYSTEM
    ============================================ */

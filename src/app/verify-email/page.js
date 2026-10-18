@@ -80,18 +80,18 @@ export default function VerifyEmailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-brand-600 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300">{t('auth.verifyTitle')}</h2>
-          <p className="text-gray-500 mt-2">{t('common.loading')}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{t('common.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,9 +101,9 @@ export default function VerifyEmailPage() {
           
           {/* Status Icon */}
           <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-            status === "success" ? "bg-green-100" :
-            status === "expired" ? "bg-yellow-100" :
-            "bg-red-100"
+            status === "success" ? "bg-green-100 dark:bg-green-900/30" :
+            status === "expired" ? "bg-yellow-100 dark:bg-yellow-900/30" :
+            "bg-red-100 dark:bg-red-900/30"
           }`}>
             {status === "success" ? (
               <Check className="w-10 h-10 text-green-600" />
@@ -122,14 +122,14 @@ export default function VerifyEmailPage() {
           </h1>
 
           {/* Message */}
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             {message}
           </p>
 
           {/* Additional Info */}
           {status === "expired" && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
-              <p className="text-sm text-yellow-700">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 text-left">
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
                 Verification links expire after 24 hours for security reasons.
               </p>
             </div>
@@ -146,7 +146,7 @@ export default function VerifyEmailPage() {
                 >
                   {t('auth.goLogin')}
                 </Link>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Redirecting in 3 seconds...
                 </p>
               </>
@@ -165,15 +165,15 @@ export default function VerifyEmailPage() {
                 
                 <Link
                   href="/login"
-                  className="block w-full py-3 px-4 border border-gray-300 text-gray-700
-                           font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                  className="block w-full py-3 px-4 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-200
+                           font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   {t('auth.goLogin')}
                 </Link>
 
                 <Link
                   href="/signup"
-                  className="block w-full py-3 px-4 text-brand-600 font-medium
+                  className="block w-full py-3 px-4 text-brand-600 dark:text-brand-300 font-medium
                            hover:text-brand-700 transition-colors"
                 >
                   {t('auth.createAccount')}
@@ -183,12 +183,12 @@ export default function VerifyEmailPage() {
           </div>
 
           {/* Help Text */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Need help?{" "}
               <a 
                 href="mailto:contact@suretalknow.com" 
-                className="text-brand-600 hover:text-brand-700 font-medium"
+                className="text-brand-600 dark:text-brand-300 hover:text-brand-700 font-medium"
               >
                 Contact support
               </a>

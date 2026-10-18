@@ -23,7 +23,7 @@ const Input = forwardRef(function Input(
       {label && (
         <label 
           htmlFor={name} 
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           {label}
           {required && <span className="text-accent-500 ml-1">*</span>}
@@ -52,7 +52,7 @@ const Input = forwardRef(function Input(
             ${icon ? 'pl-10' : ''}
             ${rightIcon ? 'pr-10' : ''}
             ${error ? 'border-accent-500 focus:border-accent-500 focus:ring-accent-500' : ''}
-            ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}
+            ${disabled ? 'bg-gray-100 dark:bg-slate-800 cursor-not-allowed' : ''}
             ${className}
           `}
           {...props}

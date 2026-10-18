@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, Check, Star } from "lucide-react";
@@ -149,24 +149,24 @@ const handleSubmit = async (e) => {
           animate={{ opacity: 1, scale: 1 }}
           className="glass-card p-8 rounded-2xl shadow-2xl max-w-md mx-auto text-center"
         >
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-green-600" />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
             {t('auth.accountCreated')}
           </h2>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
             {t('auth.verificationSent')} <strong>{formData.email}</strong>.
             {t('auth.verificationCheck')}
           </p>
 
-          <div className="bg-brand-50 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-brand-700 mb-2">
+          <div className="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-brand-700 dark:text-brand-300 mb-2">
               {t('auth.nextSteps')}
             </h3>
-            <ul className="text-sm text-gray-600 space-y-1 text-left">
+            <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-1 text-left">
               <li className="flex items-center">
                 <Check className="w-4 h-4 text-green-500 mr-2" />
                 {t('auth.step1')}
@@ -235,10 +235,10 @@ const handleSubmit = async (e) => {
       >
         <div className="glass-card p-8 rounded-2xl shadow-2xl">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
               {t('auth.choosePlan')}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               {t('auth.choosePlanSubtitle')}
             </p>
           </div>
@@ -254,8 +254,8 @@ const handleSubmit = async (e) => {
                           transition-all duration-200 ${
                   selectedTier === tier.id
                     ? 'border-brand-500 shadow-lg scale-[1.02] ring-2 ring-brand-500/20'
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${tier.highlighted ? 'ring-2 ring-purple-200' : ''}`}
+                    : 'border-gray-200 hover:border-gray-300 dark:border-slate-700 dark:hover:border-slate-500'
+                } ${tier.highlighted ? 'ring-2 ring-purple-200 dark:ring-purple-800/60' : ''}`}
               >
                 {tier.highlighted && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -268,27 +268,27 @@ const handleSubmit = async (e) => {
                 )}
 
                 <div className="text-center mb-6">
-                  <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 
-                                ${tier.color === 'blue' ? 'badge-lite' : 
-                                  tier.color === 'purple' ? 'bg-purple-100 text-purple-800' : 
-                                  'badge-premium'}`}>
+                  {/* tier-* badge colours are defined for both themes in globals.css */}
+                  <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-3 ${
+                    tier.color === 'blue' ? 'tier-lite' : tier.color === 'purple' ? 'tier-essential' : 'tier-pro'
+                  }`}>
                     {tier.name}
                   </div>
                   
                   <div className="mb-2">
-                    <span className="text-4xl font-bold text-gray-900">{tier.price}</span>
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">{tier.price}</span>
                     {tier.period !== 'forever' && (
-                      <span className="text-gray-600 ml-1 text-sm">{tier.period}</span>
+                      <span className="text-gray-600 dark:text-gray-400 ml-1 text-sm">{tier.period}</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">{tier.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{tier.description}</p>
                 </div>
 
                 <ul className="space-y-3 mb-6">
                   {tier.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start text-sm">
                       <Check className="w-4 h-4 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
+                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -296,7 +296,7 @@ const handleSubmit = async (e) => {
                 <div className={`text-center p-3 rounded-lg font-medium transition-colors ${
                   selectedTier === tier.id
                     ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700'
                 }`}>
                   {selectedTier === tier.id ? (
                     <span className="flex items-center justify-center">
@@ -356,7 +356,7 @@ const handleSubmit = async (e) => {
                 required
                 icon={<Phone className="w-5 h-5 text-gray-400" />}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {t('auth.phoneHint')}
               </p>
             </div>
@@ -393,16 +393,16 @@ const handleSubmit = async (e) => {
                 type="checkbox"
                 checked={formData.agreeToTerms}
                 onChange={handleChange}
-                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+                className="mt-1 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
                 required
               />
-              <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="terms" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                 {t('auth.agreeTerms')}{" "}
-                <a href="/terms" className="text-brand-600 hover:underline">
+                <a href="/terms" className="text-brand-600 dark:text-brand-300 hover:underline">
                   {t('auth.terms')}
                 </a>{" "}
                 {t('auth.agreeTermsAnd')}{" "}
-                <a href="/privacy" className="text-brand-600 hover:underline">
+                <a href="/privacy" className="text-brand-600 dark:text-brand-300 hover:underline">
                   {t('auth.privacy')}
                 </a>
               </label>
@@ -416,10 +416,10 @@ const handleSubmit = async (e) => {
                 type="checkbox"
                 checked={formData.ageConfirmed}
                 onChange={handleChange}
-                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+                className="mt-1 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
                 required
               />
-              <label htmlFor="ageConfirmed" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="ageConfirmed" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                 {t('auth.ageConfirm')}
               </label>
             </div>
@@ -432,14 +432,14 @@ const handleSubmit = async (e) => {
                 type="checkbox"
                 checked={formData.smsConsent}
                 onChange={handleChange}
-                className="mt-1 rounded border-gray-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
+                className="mt-1 rounded border-gray-300 dark:border-slate-600 dark:bg-slate-800 text-brand-600 focus:ring-brand-500 focus:ring-offset-0"
               />
-              <label htmlFor="smsConsent" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="smsConsent" className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                 {t('auth.smsConsent')}
               </label>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
               <Button
                 type="submit"
                 loading={loading}
@@ -451,11 +451,11 @@ const handleSubmit = async (e) => {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               {t('auth.alreadyAccount')}{" "}
               <Link
                 href="/login"
-                className="font-semibold text-brand-600 hover:text-brand-700
+                className="font-semibold text-brand-600 dark:text-brand-300 hover:text-brand-700
                            transition-colors"
               >
                 {t('auth.signInHere')}
@@ -464,28 +464,28 @@ const handleSubmit = async (e) => {
           </div>
         </div>
 
-        <div className="mt-8 p-6 bg-gradient-to-r from-brand-50 to-accent-50 rounded-xl">
-          <h3 className="font-semibold text-brand-800 mb-3">
+        <div className="mt-8 p-6 bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/30 dark:to-accent-900/20 rounded-xl">
+          <h3 className="font-semibold text-brand-800 dark:text-brand-200 mb-3">
             {t('auth.whySuretalk')}
           </h3>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <div className="w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">{t('auth.whyF1')}</span>
+              <span className="text-gray-700 dark:text-gray-300">{t('auth.whyF1')}</span>
             </div>
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <div className="w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">{t('auth.whyF2')}</span>
+              <span className="text-gray-700 dark:text-gray-300">{t('auth.whyF2')}</span>
             </div>
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <div className="w-8 h-8 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mr-3 shadow-sm">
                 <span className="text-brand-600 font-bold">✓</span>
               </div>
-              <span className="text-gray-700">{t('auth.whyF3')}</span>
+              <span className="text-gray-700 dark:text-gray-300">{t('auth.whyF3')}</span>
             </div>
           </div>
         </div>

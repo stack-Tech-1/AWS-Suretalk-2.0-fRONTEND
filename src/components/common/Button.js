@@ -23,16 +23,23 @@ export default function Button({
       focus:ring-brand-500 active:scale-95
     `,
     secondary: `
-      bg-white text-brand-600 border border-brand-300 
+      bg-white text-brand-600 border border-brand-300
       hover:bg-brand-50 focus:ring-brand-500 active:scale-95
+      dark:bg-slate-800 dark:text-brand-300 dark:border-brand-700 dark:hover:bg-slate-700
+    `,
+    outline: `
+      bg-transparent text-gray-700 border border-gray-300
+      hover:bg-gray-50 focus:ring-brand-500 active:scale-95
+      dark:text-gray-200 dark:border-slate-600 dark:hover:bg-slate-800
     `,
     danger: `
       bg-accent-600 text-white hover:bg-accent-700 
       focus:ring-accent-500 active:scale-95
     `,
     ghost: `
-      text-gray-600 hover:text-gray-900 hover:bg-gray-100 
+      text-gray-600 hover:text-gray-900 hover:bg-gray-100
       focus:ring-gray-500 active:scale-95
+      dark:text-gray-300 dark:hover:text-white dark:hover:bg-slate-800
     `,
   };
 
