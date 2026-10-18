@@ -636,6 +636,11 @@ async getKnowledgeBase(params = {}) {
   return this.request(`/users/support/knowledge-base${query ? `?${query}` : ''}`);
 }
 
+// One published article (counts a view)
+async getArticle(id) {
+  return this.request(`/users/support/knowledge-base/${id}`);
+}
+
 async voteOnArticle(id, helpful) {
   return this.request(`/users/support/knowledge-base/${id}/vote`, {
     method: 'POST',
@@ -674,8 +679,19 @@ async assignTicket(id, adminId = null) {
   });
 }
 
+async updateTicketNotes(id, notes) {
+  return this.request(`/admin/support/tickets/${id}/notes`, {
+    method: 'PUT',
+    body: JSON.stringify({ notes }),
+  });
+}
+
 async getSupportStats() {
   return this.request('/admin/support/stats');
+}
+
+async getAdminArticle(id) {
+  return this.request(`/admin/support/knowledge-base/${id}`);
 }
 
 async getAdminKnowledgeBase(params = {}) {

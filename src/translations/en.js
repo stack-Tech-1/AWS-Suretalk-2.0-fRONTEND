@@ -198,6 +198,8 @@ const en = {
   "auth.whyF2": "24/7 Voice Access",
   "auth.whyF3": "Legacy Message Protection",
   "auth.mostPopular": "Most Popular",
+  "auth.signUpFree": "Sign Up Free",
+  "auth.support": "Support",
   "auth.welcomeTitle": "Welcome to SureTalk!",
   "auth.welcomeSubtitle": "Your account has been created successfully",
   "auth.accountCreated": "Account Created Successfully!",

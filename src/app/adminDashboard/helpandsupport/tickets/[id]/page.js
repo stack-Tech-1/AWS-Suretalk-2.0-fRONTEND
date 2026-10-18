@@ -41,7 +41,7 @@ export default function AdminTicketDetail() {
   ];
 
   useEffect(() => {
-    fetchTicketDetails();
+    fetchTicketDetails(true);
     fetchAdmins();
   }, [ticketId]);
 
@@ -49,9 +49,10 @@ export default function AdminTicketDetail() {
     scrollToBottom();
   }, [responses]);
 
-  const fetchTicketDetails = async () => {
+  // silent = refresh after an action without the full-page spinner
+  const fetchTicketDetails = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       
       const profile = await api.getProfile();
       if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
@@ -125,8 +126,8 @@ export default function AdminTicketDetail() {
   const fetchAdmins = async () => {
     try {
       // Fetch all admins for assignment
-      const usersData = await api.getAdminUsers({ limit: 100 });
-      const adminUsers = usersData.data.users.filter(user => user.is_admin);
+      const usersData = await api.getAdminUsers({ type: 'admins', limit: 100 });
+      const adminUsers = (usersData.data.users || []).filter(user => user.is_admin && user.admin_status === 'approved');
       setAdmins(adminUsers);
     } catch (error) {
       console.error("Fetch admins error:", error);
@@ -166,7 +167,7 @@ export default function AdminTicketDetail() {
       }
 
       // Refresh ticket to get updated status
-      fetchTicketDetails();
+      fetchTicketDetails(true);
 
     } catch (error) {
       console.error("Send response error:", error);
@@ -178,7 +179,7 @@ export default function AdminTicketDetail() {
     try {
       await api.updateTicketStatus(ticketId, newStatus);
       setStatus(newStatus);
-      fetchTicketDetails();
+      fetchTicketDetails(true);
     } catch (error) {
       console.error("Update status error:", error);
       toast.error('Failed to update status.');
@@ -189,7 +190,7 @@ export default function AdminTicketDetail() {
     try {
       await api.assignTicket(ticketId, adminId);
       setAssignTo(adminId);
-      fetchTicketDetails();
+      fetchTicketDetails(true);
     } catch (error) {
       console.error("Assign ticket error:", error);
       toast.error('Failed to assign ticket.');
@@ -200,7 +201,7 @@ export default function AdminTicketDetail() {
     try {
       await api.updateTicketNotes(ticketId, internalNotes);
       setEditingNotes(false);
-      fetchTicketDetails();
+      fetchTicketDetails(true);
     } catch (error) {
       console.error("Save notes error:", error);
       toast.error('Failed to save notes.');
@@ -503,21 +504,21 @@ export default function AdminTicketDetail() {
               {responses.map((response) => (
                 <div 
                   key={response.id}
-                  className={`flex gap-4 ${response.user_name !== ticket.user_name ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-4 ${response.user_id !== ticket.user_id ? 'flex-row-reverse' : ''}`}
                 >
                   <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center
-                    ${response.user_name !== ticket.user_name 
+                    ${response.user_id !== ticket.user_id 
                       ? 'bg-gradient-to-br from-blue-500 to-cyan-500' 
                       : 'bg-gradient-to-br from-brand-500 to-accent-500'}`}>
                     <User className="w-5 h-5 text-white" />
                   </div>
-                  <div className={`flex-1 ${response.user_name !== ticket.user_name ? 'text-right' : ''}`}>
-                    <div className={`flex items-center gap-2 mb-2 ${response.user_name !== ticket.user_name ? 'justify-end' : ''}`}>
+                  <div className={`flex-1 ${response.user_id !== ticket.user_id ? 'text-right' : ''}`}>
+                    <div className={`flex items-center gap-2 mb-2 ${response.user_id !== ticket.user_id ? 'justify-end' : ''}`}>
                       <span className="font-semibold text-gray-800 dark:text-white">{response.user_name}</span>
                       <span className="text-sm text-gray-500">{formatDate(response.created_at)}</span>
                     </div>
                     <div className={`rounded-2xl p-4 ${
-                      response.user_name !== ticket.user_name 
+                      response.user_id !== ticket.user_id 
                         ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-tr-none' 
                         : 'bg-gray-100 dark:bg-gray-800 rounded-tl-none'
                     }`}>
@@ -542,11 +543,7 @@ export default function AdminTicketDetail() {
                          focus:border-transparent transition-all resize-none"
               />
               <div className="flex justify-between items-center mt-3">
-                <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
-                    <Paperclip className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
+                <p className="text-xs text-gray-500">The customer gets this reply by email too.</p>
                 <button
                   onClick={() => handleSendResponse(false)}
                   disabled={!newResponse.trim()}

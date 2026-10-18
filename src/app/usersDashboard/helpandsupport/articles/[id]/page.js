@@ -11,6 +11,7 @@ import {
   Copy, Printer, Download, MessageSquare, User, Clock
 } from "lucide-react";
 import { useLanguage } from '@/contexts/LanguageContext';
+import { renderArticle } from '@/utils/articleMarkdown';
 
 export default function UserArticleDetail() {
   const router = useRouter();
@@ -48,15 +49,16 @@ export default function UserArticleDetail() {
     try {
       setLoading(true);
       
-      const kbData = await api.getKnowledgeBase({ limit: 50 });
-      const foundArticle = kbData.data.articles.find(a => a.id === articleId);
-      
+      const found = await api.getArticle(articleId).catch(() => null);
+      const foundArticle = found?.data;
+
       if (foundArticle) {
         setArticle(foundArticle);
-        
-        // Find related articles (same category)
-        const related = kbData.data.articles
-          .filter(a => a.id !== articleId && a.category === foundArticle.category)
+
+        // Related articles (same category)
+        const kbData = await api.getKnowledgeBase({ category: foundArticle.category, limit: 4 }).catch(() => null);
+        const related = (kbData?.data?.articles || [])
+          .filter(a => a.id !== articleId)
           .slice(0, 3);
         setRelatedArticles(related);
       } else {
@@ -321,19 +323,7 @@ Need more help? Contact our support team for assistance.`,
             className="glass rounded-2xl p-8"
           >
             <div className="prose prose-lg dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ 
-                __html: article.content
-                  .replace(/\n/g, '<br>')
-                  .replace(/#{1,6}\s+(.+)/g, (match, p1) => {
-                    const level = match.match(/#/g)?.length || 1;
-                    return `<h${level} class="scroll-mt-20">${p1}</h${level}>`;
-                  })
-                  .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                  .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                  .replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">$1</code>')
-                  .replace(/\n-\s+(.+)/g, '<li>$1</li>')
-                  .replace(/\n>\s+(.+)/g, '<blockquote class="border-l-4 border-brand-500 pl-4 italic">$1</blockquote>')
-              }} />
+              <div dangerouslySetInnerHTML={{ __html: renderArticle(article.content) }} />
             </div>
           </motion.div>
 

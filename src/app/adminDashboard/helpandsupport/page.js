@@ -16,10 +16,12 @@ export default function AdminHelpSupport() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('tickets');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
+  const [ticketStats, setTicketStats] = useState(null);
+  const [kbStats, setKbStats] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [knowledgeBase, setKnowledgeBase] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState(""); // searchQuery, applied after typing pauses
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
@@ -33,44 +35,45 @@ export default function AdminHelpSupport() {
   ];
 
   useEffect(() => {
+    const id = setTimeout(() => setSearch(searchQuery.trim()), 400);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchDashboardData();
-  }, [activeTab, filters]);
+  }, [activeTab, filters, search]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       const profile = await api.getProfile();
       if (!profile.data.is_admin || profile.data.admin_status !== 'approved') {
         router.replace('/admin/login');
         return;
       }
 
+      // Both tab counts stay filled whichever tab is open
+      const statsReq = Promise.all([
+        api.getSupportStats().then(r => setTicketStats(r.data)).catch(() => {}),
+        api.getKBStats().then(r => setKbStats(r.data)).catch(() => {}),
+      ]);
+
       if (activeTab === 'tickets') {
-        const [supportStats, ticketsData] = await Promise.all([
-          api.getSupportStats(),
-          api.getAdminSupportTickets(filters)
-        ]);
-        
-        setStats(supportStats.data);
+        const ticketsData = await api.getAdminSupportTickets({ ...filters, ...(search ? { search } : {}) });
         setTickets(ticketsData.data.tickets || []);
-        
       } else if (activeTab === 'knowledge-base') {
-        const [kbStats, kbData] = await Promise.all([
-          api.getKBStats(),
-          api.getAdminKnowledgeBase()
-        ]);
-        
-        setStats(kbStats.data);
+        const kbData = await api.getAdminKnowledgeBase(search ? { search } : {});
         setKnowledgeBase(kbData.data.articles || []);
       }
+      await statsReq;
 
     } catch (error) {
       console.error("Fetch data error:", error);
-      
+
       // Fallback data for development
       if (process.env.NODE_ENV === 'development') {
-        setStats({
+        setTicketStats({
           total_tickets: 156,
           open_tickets: 24,
           in_progress_tickets: 12,
@@ -117,10 +120,12 @@ export default function AdminHelpSupport() {
   };
 
   const formatTime = (seconds) => {
+    seconds = Number(seconds);
     if (!seconds) return 'N/A';
-    const hours = Math.floor(seconds / 3600);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+    return days ? `${days}d ${hours}h` : `${hours}h ${minutes}m`;
   };
 
   const getPriorityColor = (priority) => {
@@ -153,37 +158,40 @@ export default function AdminHelpSupport() {
     }
   };
 
-  // Stats cards data
+  const stats = ticketStats;
+  const num = (v) => Number(v) || 0;
+  const pct = (part, whole) => (num(whole) > 0 ? Math.round((num(part) / num(whole)) * 100) : 0);
+  const resolutionRate = stats ? pct(num(stats.resolved_tickets) + num(stats.closed_tickets), stats.total_tickets) : 0;
+  const helpfulRate = kbStats ? pct(kbStats.total_helpful_votes, num(kbStats.total_helpful_votes) + num(kbStats.total_not_helpful_votes)) : 0;
+  const kbVotes = kbStats ? num(kbStats.total_helpful_votes) + num(kbStats.total_not_helpful_votes) : 0;
+
+  // Stats cards data (real figures only)
   const statsCards = stats ? [
     {
       label: "Total Tickets",
-      value: stats.total_tickets?.toLocaleString() || "0",
-      change: "+12%",
-      trend: "up",
+      value: num(stats.total_tickets).toLocaleString(),
+      sub: `${num(stats.closed_tickets) + num(stats.resolved_tickets)} resolved or closed`,
       icon: <MessageSquare className="w-5 h-5" />,
       color: "from-blue-500 to-cyan-500",
     },
     {
       label: "Open Tickets",
-      value: stats.open_tickets?.toLocaleString() || "0",
-      change: "-3%",
-      trend: "down",
+      value: num(stats.open_tickets).toLocaleString(),
+      sub: `${num(stats.in_progress_tickets)} in progress · ${num(stats.unassigned_tickets)} unassigned`,
       icon: <AlertCircle className="w-5 h-5" />,
       color: "from-orange-500 to-red-500",
     },
     {
-      label: "Avg Resolution",
-      value: formatTime(stats.avg_resolution_seconds) || "N/A",
-      change: "-15%",
-      trend: "down",
+      label: "Avg Time to Resolve",
+      value: formatTime(stats.avg_resolution_seconds),
+      sub: "From opened to resolved",
       icon: <Clock className="w-5 h-5" />,
       color: "from-green-500 to-emerald-500",
     },
     {
       label: "Today's Tickets",
-      value: stats.today_tickets?.toLocaleString() || "0",
-      change: "+8%",
-      trend: "up",
+      value: num(stats.today_tickets).toLocaleString(),
+      sub: `${num(stats.critical_tickets)} critical · ${num(stats.high_tickets)} high priority (all time)`,
       icon: <TrendingUp className="w-5 h-5" />,
       color: "from-purple-500 to-pink-500",
     },
@@ -287,15 +295,10 @@ export default function AdminHelpSupport() {
                   {stat.icon}
                 </div>
               </div>
-              <div className={`flex items-center text-sm font-medium px-2 py-1 rounded-full
-                ${stat.trend === 'up' ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 
-                  'text-red-600 bg-red-50 dark:bg-red-900/20'}`}>
-                <TrendingUp className={`w-4 h-4 mr-1 ${stat.trend === 'down' ? 'rotate-180' : ''}`} />
-                {stat.change}
-              </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">{stat.value}</h3>
             <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
+            <p className="text-xs text-gray-500 mt-1">{stat.sub}</p>
           </div>
         ))}
       </motion.div>
@@ -331,7 +334,7 @@ export default function AdminHelpSupport() {
           >
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Knowledge Base ({stats?.published_articles || 0})
+              Knowledge Base ({kbStats?.published_articles || 0})
             </div>
           </button>
           <button
@@ -639,23 +642,26 @@ export default function AdminHelpSupport() {
                   Ticket Categories
                 </h4>
                 <div className="space-y-4">
+                  {!stats?.categories?.length && (
+                    <p className="text-sm text-gray-500">No tickets yet.</p>
+                  )}
                   {stats?.categories?.map((cat) => (
-                    <div key={cat.category}>
+                    <div key={cat.category || 'none'}>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-700 dark:text-gray-300 capitalize">{cat.category}</span>
-                        <span className="font-medium">{cat.count} tickets</span>
+                        <span className="text-gray-700 dark:text-gray-300 capitalize">{(cat.category || 'general').replace(/_/g, ' ')}</span>
+                        <span className="font-medium">{num(cat.count)} tickets</span>
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
+                        <div
                           className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500"
-                          style={{ width: `${(cat.count / stats.total_tickets) * 100}%` }}
+                          style={{ width: `${pct(cat.count, stats.total_tickets)}%` }}
                         ></div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              
+
               <div className="glass rounded-xl p-6">
                 <h4 className="font-semibold text-gray-800 dark:text-white mb-4">
                   Performance Metrics
@@ -663,43 +669,37 @@ export default function AdminHelpSupport() {
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-700 dark:text-gray-300">Avg Response Time</span>
+                      <span className="text-gray-700 dark:text-gray-300">Avg Time to Resolve</span>
                       <span className="font-medium">{formatTime(stats?.avg_resolution_seconds)}</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
-                        style={{ width: '65%' }}
-                      ></div>
-                    </div>
+                    <p className="text-xs text-gray-500">Average time from a ticket being opened to being marked resolved.</p>
                   </div>
-                  
+
                   <div>
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-gray-700 dark:text-gray-300">Resolution Rate</span>
-                      <span className="font-medium">
-                        {stats ? Math.round(((stats.resolved_tickets + stats.closed_tickets) / stats.total_tickets) * 100) : 0}%
-                      </span>
+                      <span className="font-medium">{resolutionRate}%</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
+                      <div
                         className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                        style={{ width: `${stats ? Math.round(((stats.resolved_tickets + stats.closed_tickets) / stats.total_tickets) * 100) : 0}%` }}
+                        style={{ width: `${resolutionRate}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-700 dark:text-gray-300">Customer Satisfaction</span>
-                      <span className="font-medium">92%</span>
+                      <span className="text-gray-700 dark:text-gray-300">Help articles rated helpful</span>
+                      <span className="font-medium">{kbVotes ? `${helpfulRate}%` : 'No votes yet'}</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
+                      <div
                         className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                        style={{ width: '92%' }}
+                        style={{ width: `${helpfulRate}%` }}
                       ></div>
                     </div>
+                    {kbVotes > 0 && <p className="text-xs text-gray-500 mt-1">From {kbVotes} customer votes</p>}
                   </div>
                 </div>
               </div>

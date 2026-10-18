@@ -262,7 +262,7 @@ const handleSubmit = async (e) => {
                     <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white 
                                    px-3 py-1 rounded-full text-xs font-semibold flex items-center">
                       <Star className="w-3 h-3 mr-1" />
-                      Most Popular
+                      {t('auth.mostPopular')}
                     </span>
                   </div>
                 )}

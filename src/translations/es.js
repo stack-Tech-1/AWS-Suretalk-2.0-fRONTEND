@@ -198,6 +198,8 @@ const es = {
   "auth.whyF2": "Acceso de Voz 24/7",
   "auth.whyF3": "Protección de Mensajes de Legado",
   "auth.mostPopular": "Más Popular",
+  "auth.signUpFree": "Regístrate Gratis",
+  "auth.support": "Soporte",
   "auth.welcomeTitle": "¡Bienvenido a SureTalk!",
   "auth.welcomeSubtitle": "Tu cuenta ha sido creada exitosamente",
   "auth.accountCreated": "¡Cuenta Creada Exitosamente!",

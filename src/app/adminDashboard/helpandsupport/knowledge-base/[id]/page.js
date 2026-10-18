@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { api } from "../../../../../utils/api";
 import { toast } from '@/components/ui/Toast';
+import { renderArticle } from '@/utils/articleMarkdown';
 import Link from "next/link";
 import {
   ArrowLeft, Save, Eye, Trash2, FileText, Tag, Globe,
@@ -68,9 +69,9 @@ export default function AdminKnowledgeBaseEditor() {
         return;
       }
 
-      const kbData = await api.getAdminKnowledgeBase();
-      const foundArticle = kbData.data.articles.find(a => a.id === articleId);
-      
+      const found = await api.getAdminArticle(articleId).catch(() => null);
+      const foundArticle = found?.data;
+
       if (foundArticle) {
         setArticle({
           title: foundArticle.title,
@@ -79,11 +80,14 @@ export default function AdminKnowledgeBaseEditor() {
           tags: foundArticle.tags || [],
           published: foundArticle.published
         });
-        
-        if (!isNew) {
-          const kbStats = await api.getKBStats();
-          setStats(kbStats.data);
-        }
+        // This article's own numbers
+        setStats({
+          total_views: foundArticle.views || 0,
+          helpful_votes: foundArticle.helpful_votes || 0,
+          not_helpful_votes: foundArticle.not_helpful_votes || 0,
+          published_at: foundArticle.published_at,
+          updated_at: foundArticle.updated_at,
+        });
       } else {
         router.push('/adminDashboard/helpandsupport');
       }
@@ -375,7 +379,7 @@ export default function AdminKnowledgeBaseEditor() {
               <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {isNew ? 'New article' : `Last updated: ${new Date().toLocaleDateString()}`}
+                  {isNew ? 'New article' : stats?.updated_at ? `Last updated: ${new Date(stats.updated_at).toLocaleDateString()}` : 'Saved article'}
                 </div>
                 <div className="flex items-center gap-2">
                   {article.published ? (
@@ -397,33 +401,21 @@ export default function AdminKnowledgeBaseEditor() {
             <div className="p-6">
               {preview ? (
                 <div className="prose prose-lg dark:prose-invert max-w-none">
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: article.content
-                      .replace(/\n/g, '<br>')
-                      .replace(/#{1,6}\s+(.+)/g, (match, p1) => {
-                        const level = match.match(/#/g)?.length || 1;
-                        return `<h${level}>${p1}</h${level}>`;
-                      })
-                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                      .replace(/`(.+?)`/g, '<code>$1</code>')
-                      .replace(/\n-\s+(.+)/g, '<li>$1</li>')
-                      .replace(/\n>\s+(.+)/g, '<blockquote>$1</blockquote>')
-                  }} />
+                  <div dangerouslySetInnerHTML={{ __html: renderArticle(article.content) }} />
                 </div>
               ) : (
                 <>
                   {/* Formatting Toolbar */}
                   <div className="flex flex-wrap gap-2 mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                     <button
-                      onClick={() => handleFormat('h2')}
+                      type="button" onClick={() => formatText('h2')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Heading 2"
                     >
                       <Heading className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleFormat('h3')}
+                      type="button" onClick={() => formatText('h3')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Heading 3"
                     >
@@ -431,14 +423,14 @@ export default function AdminKnowledgeBaseEditor() {
                     </button>
                     <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
                     <button
-                      onClick={() => handleFormat('bold')}
+                      type="button" onClick={() => formatText('bold')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Bold"
                     >
                       <Bold className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleFormat('italic')}
+                      type="button" onClick={() => formatText('italic')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Italic"
                     >
@@ -446,14 +438,14 @@ export default function AdminKnowledgeBaseEditor() {
                     </button>
                     <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
                     <button
-                      onClick={() => handleFormat('ul')}
+                      type="button" onClick={() => formatText('ul')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Bulleted List"
                     >
                       <List className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleFormat('ol')}
+                      type="button" onClick={() => formatText('ol')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Numbered List"
                     >
@@ -461,14 +453,14 @@ export default function AdminKnowledgeBaseEditor() {
                     </button>
                     <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
                     <button
-                      onClick={() => handleFormat('quote')}
+                      type="button" onClick={() => formatText('quote')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Quote"
                     >
                       <Quote className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleFormat('code')}
+                      type="button" onClick={() => formatText('code')}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                       title="Code Block"
                     >
@@ -648,7 +640,7 @@ export default function AdminKnowledgeBaseEditor() {
                 
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="text-xs text-gray-500">
-                    Last published: {new Date(stats.published_at).toLocaleDateString()}
+                    {stats.published_at ? `Last published: ${new Date(stats.published_at).toLocaleDateString()}` : 'Not published yet'}
                   </div>
                 </div>
               </div>
@@ -679,9 +671,9 @@ export default function AdminKnowledgeBaseEditor() {
                 Check Word Count
               </button>
               
-              <button
+              {!isNew && <button
                 onClick={() => {
-                  const url = `${window.location.origin}/help/article/${articleId}`;
+                  const url = `${window.location.origin}/usersDashboard/helpandsupport/articles/${articleId}`;
                   navigator.clipboard.writeText(url);
                   toast.success('Article URL copied to clipboard!', 'Copied');
                 }}
@@ -691,7 +683,7 @@ export default function AdminKnowledgeBaseEditor() {
               >
                 <LinkIcon className="w-4 h-4" />
                 Copy Article URL
-              </button>
+              </button>}
               
               <button
                 onClick={() => {

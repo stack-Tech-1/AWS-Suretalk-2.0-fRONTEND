@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import Head from "next/head";
 import LogoIcon from "@/components/common/LogoIcon";
 import Link from "next/link";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AuthLayout({
   children,
@@ -9,6 +10,7 @@ export default function AuthLayout({
   subtitle = "Your voice messaging platform",
   background = "default"
 }) {
+  const { t } = useLanguage();
   const backgrounds = {
     default: "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900",
     gradient: "gradient-bg",
@@ -43,14 +45,14 @@ export default function AuthLayout({
                 href="/login" 
                 className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium transition-colors"
               >
-                Sign In
+                {t('auth.signIn')}
               </Link>
               <Link 
                 href="/signup"
                 className="bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-300 px-4 py-2 rounded-lg font-medium 
                          border border-brand-300 dark:border-brand-700 hover:bg-brand-50 dark:hover:bg-slate-700 transition-colors"
               >
-                Sign Up Free
+                {t('auth.signUpFree')}
               </Link>
             </div>
           </div>
@@ -83,30 +85,29 @@ export default function AuthLayout({
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-4 md:mb-0">
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  © {new Date().getFullYear()} SureTalk. All rights reserved.
+                  © {new Date().getFullYear()} SureTalk. {t("home.footer.copyright")}
                 </p>
               </div>
               
-              <div className="flex space-x-6">
-                <Link href="#" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
-                  Privacy Policy
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <Link href="/privacy" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
+                  {t('auth.privacy')}
                 </Link>
-                <Link href="#" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
-                  Terms of Service
+                <Link href="/terms" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
+                  {t('auth.terms')}
                 </Link>
-                <Link href="#" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
-                  Contact Us
+                <Link href="/contact" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
+                  {t('home.footer.contact')}
                 </Link>
-                <Link href="#" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
-                  Support
-                </Link>
+                <a href="mailto:contact@suretalknow.com" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm">
+                  {t('auth.support')}
+                </a>
               </div>
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-800 text-center">
               <p className="text-xs text-gray-500">
-                Secure voice messaging with end-to-end encryption. 
-                Voice notes are stored in AWS S3 with optional permanent vault storage.
+                {t("home.footer.secured")}
               </p>
             </div>
           </div>
