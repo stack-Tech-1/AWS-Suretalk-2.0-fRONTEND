@@ -299,7 +299,9 @@ export default function SuperAdminDashboard() {
           <Kpi icon={Mic} label="Voice notes" value={c?.total_voice_notes?.toLocaleString()} sub={c && `${formatBytes(c.total_storage_bytes)} stored`} />
           <Kpi icon={Clock} label="Scheduled messages" value={c?.total_scheduled?.toLocaleString()}
             sub={c && `${c.total_delivered} delivered · ${c.total_failed} failed`} />
-+${s.pending_count}+ waiting to send`} />${s.pending_count} waiting to send`} />
+          <Kpi icon={ArrowRightLeft} label="Failed syncs" value={s && (s.dead_count || 0) + (s.phone_line_dead || 0)}
+            tone={s && (s.dead_count || 0) + (s.phone_line_dead || 0) > 0 ? 'text-red-600' : undefined}
+            sub={s && `${s.pending_count} waiting to send`} />
         </div>
       )}
 
