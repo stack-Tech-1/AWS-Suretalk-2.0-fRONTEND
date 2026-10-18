@@ -11,7 +11,7 @@ import {
 import {
   Users, Search, Shield, AlertTriangle, CheckCircle, RefreshCw, ChevronLeft, ChevronRight,
   Eye, Edit, Ban, Mic, HardDrive, Download, XCircle, Activity, DollarSign, Server,
-  ArrowRightLeft, Clock, Phone, CreditCard, Loader2, ChevronDown,
+  ArrowRightLeft, Clock, Phone, CreditCard, Loader2, ChevronDown, ClipboardCheck,
 } from 'lucide-react';
 
 const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500';
@@ -50,6 +50,7 @@ const TABS = [
   { id: 'dead-letters', label: 'Failed syncs', icon: AlertTriangle },
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'sync-monitor', label: 'Sync monitor', icon: ArrowRightLeft },
+  { id: 'nightly', label: 'Nightly check', icon: ClipboardCheck },
   { id: 'system-health', label: 'System health', icon: Server },
   { id: 'revenue', label: 'Revenue', icon: DollarSign },
 ];
@@ -70,6 +71,9 @@ export default function SuperAdminDashboard() {
 
   // Other tabs (loaded when first opened)
   const [deadLetters, setDeadLetters] = useState(null);
+  const [phoneLineFailed, setPhoneLineFailed] = useState(null); // { items, error }
+  const [reconcile, setReconcile] = useState(null);
+  const [reconcileRunning, setReconcileRunning] = useState(false);
   const [syncHealth, setSyncHealth] = useState(null);
   const [systemHealth, setSystemHealth] = useState(null);
   const [revenue, setRevenue] = useState(null);
@@ -111,7 +115,12 @@ export default function SuperAdminDashboard() {
   }, []);
 
   const loaders = {
-    'dead-letters': async () => setDeadLetters((await api.getDeadLetters()).data.deadLetters),
+    'dead-letters': async () => {
+      const d = (await api.getDeadLetters()).data;
+      setDeadLetters(d.deadLetters);
+      setPhoneLineFailed({ items: (d.phoneLine?.items || []).map(i => ({ ...i, direction: 'phone' })), error: d.phoneLine?.error || null });
+    },
+    nightly: async () => setReconcile((await api.getReconcileReport()).data),
     'sync-monitor': async () => setSyncHealth((await api.getSuperAdminSyncHealth()).data),
     'system-health': async (refresh) => setSystemHealth((await api.getSuperAdminSystemHealth(refresh)).data),
     revenue: async () => setRevenue((await api.getSuperAdminRevenue()).data),
@@ -136,13 +145,14 @@ export default function SuperAdminDashboard() {
     if (activeTab === 'sync-monitor' && !syncHealth) loadTab('sync-monitor');
     if (activeTab === 'system-health' && !systemHealth) loadTab('system-health');
     if (activeTab === 'revenue' && !revenue) loadTab('revenue');
+    if (activeTab === 'nightly' && !reconcile) loadTab('nightly');
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshAll = () => {
     fetchOverview();
     fetchUsers(pagination.page);
     loadTab('dead-letters');
-    if (activeTab === 'sync-monitor' || activeTab === 'system-health' || activeTab === 'revenue') loadTab(activeTab);
+    if (['sync-monitor', 'system-health', 'revenue', 'nightly'].includes(activeTab)) loadTab(activeTab);
   };
 
   const download = async (key, path, fallback) => {
@@ -187,8 +197,13 @@ export default function SuperAdminDashboard() {
   const retrySync = async (item) => {
     setBusyId(item.id);
     try {
-      await api.retrySyncItem(item.id);
-      toast.success('Queued for retry');
+      if (item.direction === 'phone') {
+        await api.retryPhoneLineSync(item.id);
+        toast.success('Queued: the phone line will send it again within about 2 minutes');
+      } else {
+        await api.retrySyncItem(item.id);
+        toast.success('Queued for retry');
+      }
       loadTab('dead-letters');
       fetchOverview();
     } catch (err) {
@@ -200,7 +215,8 @@ export default function SuperAdminDashboard() {
 
   const submitDismiss = async (reason) => {
     try {
-      await api.dismissSyncItem(dismissTarget.id, reason);
+      if (dismissTarget.direction === 'phone') await api.dismissPhoneLineSync(dismissTarget.id, reason);
+      else await api.dismissSyncItem(dismissTarget.id, reason);
       toast.success('Dismissed');
       loadTab('dead-letters');
       fetchOverview();
@@ -236,7 +252,21 @@ export default function SuperAdminDashboard() {
   const u = overview?.users;
   const c = overview?.content;
   const s = overview?.sync;
-  const deadCount = deadLetters?.length ?? s?.dead_count ?? 0;
+  const deadCount = (deadLetters?.length ?? s?.dead_count ?? 0) + (phoneLineFailed?.items?.length ?? s?.phone_line_dead ?? 0);
+
+  const runReconcileNow = async () => {
+    setReconcileRunning(true);
+    try {
+      await api.runReconcile();
+      toast.success('Check finished');
+      await loadTab('nightly');
+      loadTab('dead-letters');
+    } catch (err) {
+      toast.error(errorText(err, 'The check could not finish'));
+    } finally {
+      setReconcileRunning(false);
+    }
+  };
 
   return (
     <div className="page-enter">
@@ -269,8 +299,7 @@ export default function SuperAdminDashboard() {
           <Kpi icon={Mic} label="Voice notes" value={c?.total_voice_notes?.toLocaleString()} sub={c && `${formatBytes(c.total_storage_bytes)} stored`} />
           <Kpi icon={Clock} label="Scheduled messages" value={c?.total_scheduled?.toLocaleString()}
             sub={c && `${c.total_delivered} delivered · ${c.total_failed} failed`} />
-          <Kpi icon={ArrowRightLeft} label="Failed phone-line syncs" value={s?.dead_count}
-            tone={s?.dead_count > 0 ? 'text-red-600' : undefined} sub={s && `${s.pending_count} waiting to send`} />
++${s.pending_count}+ waiting to send`} />${s.pending_count} waiting to send`} />
         </div>
       )}
 
@@ -410,13 +439,15 @@ export default function SuperAdminDashboard() {
       {activeTab === 'dead-letters' && (
         <div className="space-y-3">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Changes the app couldn&apos;t send to the phone line after every retry. Retry once the cause is fixed, or dismiss with a note if it no longer matters.
+            Changes that couldn&apos;t reach the other side after every retry, in both directions. Retry once the cause is fixed, or dismiss with a note if it no longer matters.
+            Changes for people without a phone-line account are skipped, not shown here.
           </p>
+          <h3 className="font-semibold text-gray-900 dark:text-white pt-2">App → phone line</h3>
           {tabErrors['dead-letters'] ? <LoadError message={tabErrors['dead-letters']} onRetry={() => loadTab('dead-letters')} />
             : !deadLetters ? <Loading /> : deadLetters.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-              <p className="text-gray-500">No failed syncs. Everything reached the phone line.</p>
+            <div className="card p-4 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+              <p className="text-sm text-gray-600 dark:text-gray-300">Nothing failed. Everything reached the phone line.</p>
             </div>
           ) : deadLetters.map(item => {
             const p = item.payload || {};
@@ -473,7 +504,168 @@ export default function SuperAdminDashboard() {
               </div>
             );
           })}
+
+          <h3 className="font-semibold text-gray-900 dark:text-white pt-4">Phone line → app</h3>
+          {!phoneLineFailed ? (!tabErrors['dead-letters'] && <Loading />) : phoneLineFailed.error ? (
+            <div className="card p-4 text-sm text-amber-700 dark:text-amber-300">{phoneLineFailed.error}</div>
+          ) : phoneLineFailed.items.length === 0 ? (
+            <div className="card p-4 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+              <p className="text-sm text-gray-600 dark:text-gray-300">Nothing failed. Everything from the phone line reached the app.</p>
+            </div>
+          ) : phoneLineFailed.items.map(item => (
+            <div key={item.id} className="card p-4 border-red-200 dark:border-red-900">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <Phone className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <p className="font-medium text-gray-900 dark:text-white">{item.label}</p>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                      Failed {item.attempts} time{item.attempts === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {item.user_id
+                      ? <Link href={`/adminDashboard/super/users/${item.user_id}`} className="text-brand-600 hover:underline">{item.user_name || item.user_email}</Link>
+                      : <span>{item.phone || 'Unknown number'} <span className="text-gray-400">(no app account)</span></span>}
+                  </p>
+                  {item.error && <p className="text-sm text-red-500 mt-1 break-words">{item.error}</p>}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {item.createdAt ? `Created ${formatDate(item.createdAt, true)} · ` : ''}last tried {item.lastAttemptAt ? timeAgo(item.lastAttemptAt) : 'never'}
+                  </p>
+                  <button onClick={() => setExpanded(e => ({ ...e, [item.id]: !e[item.id] }))}
+                    className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1">
+                    <ChevronDown className={`w-3 h-3 transition-transform ${expanded[item.id] ? 'rotate-180' : ''}`} />
+                    {expanded[item.id] ? 'Hide' : 'Show'} technical details
+                  </button>
+                  {expanded[item.id] && (
+                    <pre className="text-xs text-gray-500 dark:text-gray-400 mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg overflow-auto max-h-48">
+                      {JSON.stringify(item.payload, null, 2)}
+                    </pre>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={() => setDismissTarget(item)}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <XCircle className="w-3 h-3" /> Dismiss
+                  </button>
+                  <button onClick={() => retrySync(item)} disabled={busyId === item.id}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg bg-brand-500 text-white text-sm hover:bg-brand-600 disabled:opacity-40">
+                    <RefreshCw className={`w-3 h-3 ${busyId === item.id ? 'animate-spin' : ''}`} /> Retry
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+      )}
+
+      {/* ── Nightly check ── */}
+      {activeTab === 'nightly' && (
+        tabErrors.nightly ? <LoadError message={tabErrors.nightly} onRetry={() => loadTab('nightly')} /> : !reconcile ? <Loading /> : (() => {
+          const r = reconcile.latest;
+          const sm = r?.summary || {};
+          return (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="max-w-2xl">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">App and phone line comparison</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Every night after 03:00 UTC each customer is checked on both sides. Plan differences, and phone sign-in left on for suspended or deleted accounts, are fixed automatically (the app is the source of truth). Anything else is listed below. Recordings, wills and contacts aren&apos;t compared yet.
+                  </p>
+                </div>
+                <button onClick={runReconcileNow} disabled={reconcileRunning || reconcile.needsMigration}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 disabled:opacity-50">
+                  {reconcileRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Run check now
+                </button>
+              </div>
+
+              {reconcile.needsMigration ? (
+                <div className="card p-4 text-sm text-amber-700 dark:text-amber-300">Run database update 018 to turn on the nightly check.</div>
+              ) : !r ? (
+                <div className="card p-6 text-center text-sm text-gray-500 dark:text-gray-400">No check has run yet. It runs tonight, or press &ldquo;Run check now&rdquo;.</div>
+              ) : r.error ? (
+                <div className="card p-4 text-sm text-red-600">The last check ({formatDate(r.started_at, true)}) could not finish: {r.error}</div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400">
+                    Last check {timeAgo(r.started_at)} ({r.trigger === 'manual' ? `run by ${r.run_by_name || 'an admin'}` : 'nightly'}) · {formatDate(r.started_at, true)}
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <Kpi label="Customers checked" value={sm.appCustomers} />
+                    <Kpi label="Phone-line accounts" value={sm.phoneLineAccounts} sub={`${sm.matched} linked to an app account`} />
+                    <Kpi label="Fixed automatically" value={sm.fixes} tone={sm.fixes ? 'text-green-600' : undefined}
+                      sub={sm.fixes && !sm.fixesApplied ? 'Not applied: over the safety limit' : undefined} />
+                    <Kpi label="Need a look" value={sm.needsAttention} tone={sm.needsAttention ? 'text-amber-600' : undefined} />
+                    <Kpi label="Phone line only" value={sm.phoneOnly} sub="Can claim an app account" />
+                    <Kpi label="Website only (US)" value={sm.appOnlyUs} sub="No phone PIN yet" />
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="card p-5">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        {sm.fixesApplied || !sm.fixes ? 'Fixed automatically' : 'Differences found (not changed)'}
+                      </p>
+                      {(r.fixes || []).length === 0 ? <p className="text-sm text-gray-400">Nothing needed fixing.</p> : (
+                        <div className="space-y-3">
+                          {r.fixes.map((x, i) => (
+                            <div key={i} className="text-sm">
+                              {x.userId
+                                ? <Link href={`/adminDashboard/super/users/${x.userId}`} className="font-medium text-gray-900 dark:text-white hover:underline">{x.name || x.email}</Link>
+                                : <span className="font-medium text-gray-900 dark:text-white">{x.name || x.email || x.phone}</span>}
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{x.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="card p-5">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Need a look</p>
+                      {(r.issues || []).length === 0 ? <p className="text-sm text-gray-400">Nothing needs attention.</p> : (
+                        <div className="space-y-3">
+                          {r.issues.map((x, i) => (
+                            <div key={i} className="text-sm">
+                              {x.userId
+                                ? <Link href={`/adminDashboard/super/users/${x.userId}`} className="font-medium text-gray-900 dark:text-white hover:underline">{x.name || x.email}</Link>
+                                : x.name || x.email ? <span className="font-medium text-gray-900 dark:text-white">{x.name || x.email}</span> : null}
+                              <p className={`text-xs ${x.userId || x.name || x.email ? 'text-gray-500 dark:text-gray-400' : 'text-amber-700 dark:text-amber-300'}`}>{x.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="card p-4 text-sm flex items-center justify-between gap-3 flex-wrap">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Failed syncs at the time: {sm.appFailedSyncs} app → phone line · {sm.phoneLineFailedSyncs ?? 'unknown'} phone line → app
+                    </span>
+                    <button onClick={() => setActiveTab('dead-letters')} className="text-brand-600 dark:text-brand-400 font-medium hover:underline">Open failed syncs</button>
+                  </div>
+
+                  {reconcile.history.length > 0 && (
+                    <div className="card p-5">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Earlier checks</p>
+                      <table className="w-full text-sm">
+                        <thead><tr className="text-xs text-gray-400 text-left"><th className="pb-2 font-medium">When</th><th className="pb-2 font-medium">Type</th><th className="pb-2 font-medium text-right">Fixed</th><th className="pb-2 font-medium text-right">Need a look</th></tr></thead>
+                        <tbody>
+                          {reconcile.history.map(h => (
+                            <tr key={h.id} className="border-t border-gray-100 dark:border-gray-800">
+                              <td className="py-2 text-gray-700 dark:text-gray-300">{formatDate(h.started_at, true)}</td>
+                              <td className="py-2 text-gray-500">{h.error ? 'Failed' : h.trigger === 'manual' ? 'Manual' : 'Nightly'}</td>
+                              <td className="py-2 text-right">{h.summary?.fixes ?? '—'}</td>
+                              <td className="py-2 text-right">{h.summary?.needsAttention ?? '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()
       )}
 
       {/* ── Activity ── */}
@@ -543,10 +735,11 @@ export default function SuperAdminDashboard() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
               <Kpi label="Delivered" value={syncHealth.appToIvr.sent.toLocaleString()} tone="text-green-600" />
               <Kpi label="Waiting / retrying" value={syncHealth.appToIvr.pending} tone={syncHealth.appToIvr.pending > 0 ? 'text-amber-600' : undefined} />
               <Kpi label="Failed" value={syncHealth.appToIvr.dead} tone={syncHealth.appToIvr.dead > 0 ? 'text-red-600' : undefined} />
+              <Kpi label="Skipped" value={syncHealth.appToIvr.skipped ?? 0} sub="No phone-line account" />
               <Kpi label="Dismissed" value={syncHealth.appToIvr.dismissed} />
               <Kpi label="Success rate" value={syncHealth.appToIvr.successRate == null ? '—' : `${syncHealth.appToIvr.successRate}%`}
                 tone={syncHealth.appToIvr.successRate != null && syncHealth.appToIvr.successRate < 95 ? 'text-amber-600' : undefined} />
@@ -594,6 +787,23 @@ export default function SuperAdminDashboard() {
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2"><Phone className="w-4 h-4" /> Phone line → app</p>
                 <p className="text-xs text-gray-400">Last received {syncHealth.ivrToApp.lastReceived ? timeAgo(syncHealth.ivrToApp.lastReceived) : 'never'}</p>
               </div>
+              {syncHealth.ivrToApp.queue ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {[
+                    ['Delivered', syncHealth.ivrToApp.queue.sent, 'text-green-600'],
+                    ['Waiting / retrying', syncHealth.ivrToApp.queue.pending, syncHealth.ivrToApp.queue.pending ? 'text-amber-600' : ''],
+                    ['Failed', syncHealth.ivrToApp.queue.dead, syncHealth.ivrToApp.queue.dead ? 'text-red-600' : ''],
+                    ['Dismissed', syncHealth.ivrToApp.queue.dismissed, ''],
+                  ].map(([label, value, tone]) => (
+                    <div key={label} className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-3">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+                      <p className={`text-xl font-bold stat-number ${tone || 'text-gray-900 dark:text-white'}`}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600 mb-3">The phone line&apos;s own queue couldn&apos;t be read right now.</p>
+              )}
               {syncHealth.ivrToApp.breakdown.length === 0 ? <p className="text-sm text-gray-400">Nothing received from the phone line yet.</p> : (
                 <table className="w-full text-sm">
                   <thead><tr className="text-xs text-gray-400 text-left"><th className="pb-2 font-medium">Type</th><th className="pb-2 font-medium text-right">Last 7 days</th><th className="pb-2 font-medium text-right">All time</th></tr></thead>
@@ -784,7 +994,7 @@ export default function SuperAdminDashboard() {
       <ReasonDialog
         open={!!dismissTarget}
         title="Dismiss failed sync"
-        message={dismissTarget && <>Stop showing this <strong>{dismissTarget.label.toLowerCase()}</strong> item. It won&apos;t be sent to the phone line. Use this when it no longer matters or was fixed another way.</>}
+        message={dismissTarget && <>Stop showing this <strong>{dismissTarget.label.toLowerCase()}</strong> item. It won&apos;t be sent to {dismissTarget.direction === 'phone' ? 'the app' : 'the phone line'}. Use this when it no longer matters or was fixed another way.</>}
         confirmLabel="Dismiss"
         placeholder="e.g. User re-recorded this slot on the phone line"
         onSubmit={submitDismiss}

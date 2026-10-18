@@ -1143,6 +1143,24 @@ async dismissSyncItem(id, reason) {
   return this.request(`/super-admin/sync/${id}/dismiss`, { method: 'POST', body: JSON.stringify({ reason }) });
 }
 
+// Phone line → app failures (the phone line's own queue)
+async retryPhoneLineSync(id) {
+  return this.request(`/super-admin/sync/phone-line/${encodeURIComponent(id)}/retry`, { method: 'POST' });
+}
+
+async dismissPhoneLineSync(id, reason) {
+  return this.request(`/super-admin/sync/phone-line/${encodeURIComponent(id)}/dismiss`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
+
+// Nightly app ↔ phone line comparison
+async getReconcileReport() {
+  return this.request(`/super-admin/sync/reconcile?t=${Date.now()}`);
+}
+
+async runReconcile() {
+  return this.request('/super-admin/sync/reconcile/run', { method: 'POST' });
+}
+
 // Super admin downloads: path under /super-admin → { blob, filename }
 async downloadSuperAdminFile(path, fallbackName) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
