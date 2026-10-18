@@ -256,13 +256,18 @@ export default function SuperAdminDashboard() {
 
   const [copyingContent, setCopyingContent] = useState(false);
   const copyMissingContent = async (report, issues) => {
-    const notes = issues.reduce((n, i) => n + (i.items?.notes?.length || 0), 0);
-    const wills = issues.reduce((n, i) => n + (i.items?.wills?.length || 0), 0);
-    if (!window.confirm(`Copy ${notes} voice note${notes === 1 ? '' : 's'} and ${wills} voice will${wills === 1 ? '' : 's'} for ${issues.length} customer${issues.length === 1 ? '' : 's'} to the phone line?\n\nOnly the items listed are sent. Nothing is deleted on either side.`)) return;
+    const count = (type) => issues.filter(i => i.type === type).reduce((n, i) => n + (i.items?.notes?.length || 0) + (i.items?.wills?.length || 0), 0);
+    const customers = new Set(issues.map(i => i.userId)).size;
+    const lines = [
+      count('CONTENT_RELINK') && `• relink ${count('CONTENT_RELINK')} recording(s) the app lost the slot of (app only)`,
+      count('PHONE_DUPLICATE_SLOTS') && `• remove ${count('PHONE_DUPLICATE_SLOTS')} extra copy/copies from the phone line`,
+      count('CONTENT_MISSING_ON_PHONE_LINE') && `• copy ${count('CONTENT_MISSING_ON_PHONE_LINE')} missing recording(s) to free slots`,
+    ].filter(Boolean);
+    if (!window.confirm(`Fix recordings for ${customers} customer${customers === 1 ? '' : 's'}?\n\n${lines.join('\n')}\n\nBoth sides are checked again first. Nothing is deleted in the app.`)) return;
     setCopyingContent(true);
     try {
       const d = (await api.copyReconcileContent(report.id)).data;
-      toast.success(`Sent ${d.notes} note${d.notes === 1 ? '' : 's'} and ${d.wills} will${d.wills === 1 ? '' : 's'} to the phone line${d.failed ? ` (${d.failed} customer${d.failed === 1 ? '' : 's'} failed)` : ''}. Run the check again in a minute to confirm.`);
+      toast.success(`Done: ${d.relinked} relinked, ${d.duplicatesRemoved} extra cop${d.duplicatesRemoved === 1 ? 'y' : 'ies'} removed, ${d.notes + d.wills} copied. Run the check again in a minute to confirm.`);
       loadTab('dead-letters');
     } catch (err) {
       toast.error(errorText(err, 'Could not copy to the phone line'));
@@ -642,12 +647,13 @@ export default function SuperAdminDashboard() {
                       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Need a look</p>
                         {(() => {
-                          const copyable = (r.issues || []).filter(x => x.type === 'CONTENT_MISSING_ON_PHONE_LINE');
+                          const copyable = (r.issues || []).filter(x => ['CONTENT_RELINK', 'PHONE_DUPLICATE_SLOTS', 'CONTENT_MISSING_ON_PHONE_LINE'].includes(x.type));
+                          const people = new Set(copyable.map(x => x.userId)).size;
                           return copyable.length > 0 && (
                             <button onClick={() => copyMissingContent(r, copyable)} disabled={copyingContent}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-300 dark:border-brand-700 text-brand-600 dark:text-brand-300 text-xs font-medium hover:bg-brand-50 dark:hover:bg-brand-900/20 disabled:opacity-50">
                               {copyingContent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
-                              Copy missing to the phone line ({copyable.length})
+                              Fix recordings ({people} customer{people === 1 ? '' : 's'})
                             </button>
                           );
                         })()}
@@ -662,8 +668,14 @@ export default function SuperAdminDashboard() {
                               <p className={`text-xs ${x.userId || x.name || x.email ? 'text-gray-500 dark:text-gray-400' : 'text-amber-700 dark:text-amber-300'}`}>{x.label}</p>
                               {x.type === 'CONTENT_MISSING_ON_PHONE_LINE' && (
                                 <ul className="mt-1 text-xs text-gray-400 list-disc pl-4">
-                                  {(x.items?.notes || []).map(n => <li key={n.id}>Voice note: {n.title || 'Untitled'} {n.slot ? `(keypad ${n.slot})` : '(gets the next free keypad slot)'}</li>)}
-                                  {(x.items?.wills || []).map(w => <li key={w.id}>Voice will: {w.title || 'Untitled'} {w.slot ? `(will slot ${w.slot})` : '(gets the next free will slot)'}</li>)}
+                                  {(x.items?.notes || []).map(n => <li key={n.id}>Voice note: {n.title || 'Untitled'} → keypad {n.slot}</li>)}
+                                  {(x.items?.wills || []).map(w => <li key={w.id}>Voice will: {w.title || 'Untitled'} → will slot {w.slot}</li>)}
+                                </ul>
+                              )}
+                              {x.type === 'CONTENT_RELINK' && (
+                                <ul className="mt-1 text-xs text-gray-400 list-disc pl-4">
+                                  {(x.items?.notes || []).map(n => <li key={n.id}>Voice note: {n.title || 'Untitled'} is in keypad {n.to}{n.from ? ` (app said ${n.from})` : ''}</li>)}
+                                  {(x.items?.wills || []).map(w => <li key={w.id}>Voice will: {w.title || 'Untitled'} is in will slot {w.to}{w.from ? ` (app said ${w.from})` : ''}</li>)}
                                 </ul>
                               )}
                             </div>
