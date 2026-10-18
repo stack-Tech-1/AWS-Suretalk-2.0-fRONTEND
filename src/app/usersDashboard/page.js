@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { useLanguage } from '@/contexts/LanguageContext';
+import PhoneLineSetupCard from '@/components/dashboard/PhoneLineSetupCard';
 
 export default function DashboardHome() {
   const [playingAudio, setPlayingAudio] = useState(null);
@@ -493,6 +494,9 @@ export default function DashboardHome() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Phone line setup prompt (hidden once set up, or snoozed) */}
+      <PhoneLineSetupCard />
 
       {/* Stats Bento Grid */}
       <motion.div

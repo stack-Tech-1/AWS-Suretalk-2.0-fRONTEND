@@ -918,8 +918,13 @@ async getPhoneLineStatus() {
   return this.request(`/users/phone-line?t=${Date.now()}`);
 }
 
-async createPhoneLinePin(pin) {
-  return this.request('/users/phone-line/pin', { method: 'POST', body: JSON.stringify({ pin }) });
+// Texts a 6-digit code to the account's phone number (proves they own it)
+async sendPhoneLineCode() {
+  return this.request('/users/phone-line/send-code', { method: 'POST' });
+}
+
+async createPhoneLinePin(pin, code) {
+  return this.request('/users/phone-line/pin', { method: 'POST', body: JSON.stringify({ pin, code }) });
 }
 
 async changePassword({ currentPassword, newPassword }) {
