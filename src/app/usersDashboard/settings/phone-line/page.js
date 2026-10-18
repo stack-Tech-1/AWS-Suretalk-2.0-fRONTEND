@@ -9,6 +9,7 @@ import { ArrowLeft, PhoneCall, CheckCircle, AlertCircle, Loader2, KeyRound, Hash
 import { api } from "@/utils/api";
 import { toast } from '@/components/ui/Toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // SureTalk's phone line (Twilio number used by the IVR flow)
 const PHONE_LINE_NUMBER = "+1 (864) 727-7476";
@@ -22,6 +23,7 @@ const formatId = (phone) => {
 
 export default function PhoneLineSettings() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [status, setStatus] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
@@ -53,7 +55,8 @@ export default function PhoneLineSettings() {
 
   const markHasAccount = () => {
     setStatus(s => ({ ...s, hasAccount: true }));
-    try { localStorage.setItem('suretalk-phone-line-ready', '1'); } catch {}
+    // Hides the dashboard prompt for this account (components/dashboard/PhoneLineSetupCard.js)
+    try { if (user?.id) localStorage.setItem(`suretalk-phone-line-ready:${user.id}`, '1'); } catch {}
   };
 
   const messageFor = (err) => {

@@ -1,15 +1,17 @@
 // Dashboard prompt to set up phone-line access (Settings → Phone line).
 // Shown only to people with a US (+1) number and no phone-line account yet. "Not now" hides it
 // on this device for 14 days; once they have an account it never asks the server again.
+// Both are remembered per account, so another person signing in on the same browser still sees it.
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PhoneCall, X } from "lucide-react";
 import { api } from "@/utils/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
-const READY_KEY = 'suretalk-phone-line-ready';
-const SNOOZE_KEY = 'suretalk-phone-line-snoozed-until';
+const readyKey = (userId) => `suretalk-phone-line-ready:${userId}`;
+const snoozeKey = (userId) => `suretalk-phone-line-snoozed-until:${userId}`;
 const SNOOZE_DAYS = 14;
 
 const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -17,27 +19,31 @@ const write = (key, value) => { try { localStorage.setItem(key, value); } catch 
 
 export default function PhoneLineSetupCard() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const userId = user?.id;
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (read(READY_KEY) === '1') return;
-    if (Number(read(SNOOZE_KEY) || 0) > Date.now()) return;
+    if (!userId) return;
+    setShow(false);
+    if (read(readyKey(userId)) === '1') return;
+    if (Number(read(snoozeKey(userId)) || 0) > Date.now()) return;
     let cancelled = false;
     api.getPhoneLineStatus()
       .then((res) => {
         if (cancelled) return;
         const s = res?.data;
-        if (s?.hasAccount) { write(READY_KEY, '1'); return; }
+        if (s?.hasAccount) { write(readyKey(userId), '1'); return; }
         if (s?.supported) setShow(true);
       })
       .catch(() => {}); // phone line unreachable: just don't show the card
     return () => { cancelled = true; };
-  }, []);
+  }, [userId]);
 
   if (!show) return null;
 
   const snooze = () => {
-    write(SNOOZE_KEY, String(Date.now() + SNOOZE_DAYS * 24 * 3600 * 1000));
+    write(snoozeKey(userId), String(Date.now() + SNOOZE_DAYS * 24 * 3600 * 1000));
     setShow(false);
   };
 
