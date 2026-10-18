@@ -254,6 +254,23 @@ export default function SuperAdminDashboard() {
   const s = overview?.sync;
   const deadCount = (deadLetters?.length ?? s?.dead_count ?? 0) + (phoneLineFailed?.items?.length ?? s?.phone_line_dead ?? 0);
 
+  const [copyingContent, setCopyingContent] = useState(false);
+  const copyMissingContent = async (report, issues) => {
+    const notes = issues.reduce((n, i) => n + (i.items?.notes?.length || 0), 0);
+    const wills = issues.reduce((n, i) => n + (i.items?.wills?.length || 0), 0);
+    if (!window.confirm(`Copy ${notes} voice note${notes === 1 ? '' : 's'} and ${wills} voice will${wills === 1 ? '' : 's'} for ${issues.length} customer${issues.length === 1 ? '' : 's'} to the phone line?\n\nOnly the items listed are sent. Nothing is deleted on either side.`)) return;
+    setCopyingContent(true);
+    try {
+      const d = (await api.copyReconcileContent(report.id)).data;
+      toast.success(`Sent ${d.notes} note${d.notes === 1 ? '' : 's'} and ${d.wills} will${d.wills === 1 ? '' : 's'} to the phone line${d.failed ? ` (${d.failed} customer${d.failed === 1 ? '' : 's'} failed)` : ''}. Run the check again in a minute to confirm.`);
+      loadTab('dead-letters');
+    } catch (err) {
+      toast.error(errorText(err, 'Could not copy to the phone line'));
+    } finally {
+      setCopyingContent(false);
+    }
+  };
+
   const runReconcileNow = async () => {
     setReconcileRunning(true);
     try {
@@ -573,7 +590,7 @@ export default function SuperAdminDashboard() {
                 <div className="max-w-2xl">
                   <h3 className="font-semibold text-gray-900 dark:text-white">App and phone line comparison</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Every night after 03:00 UTC each customer is checked on both sides. Plan differences, and phone sign-in left on for suspended or deleted accounts, are fixed automatically (the app is the source of truth). Anything else is listed below. Recordings, wills and contacts aren&apos;t compared yet.
+                    Every night after 03:00 UTC each customer is checked on both sides. Plan differences, and phone sign-in left on for suspended or deleted accounts, are fixed automatically (the app is the source of truth). Anything else is listed below, including voice notes and wills that are on one side but not the other (those are never changed automatically: review them, then copy them to the phone line).
                   </p>
                 </div>
                 <button onClick={runReconcileNow} disabled={reconcileRunning || reconcile.needsMigration}
@@ -622,7 +639,19 @@ export default function SuperAdminDashboard() {
                       )}
                     </div>
                     <div className="card p-5">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Need a look</p>
+                      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Need a look</p>
+                        {(() => {
+                          const copyable = (r.issues || []).filter(x => x.type === 'CONTENT_MISSING_ON_PHONE_LINE');
+                          return copyable.length > 0 && (
+                            <button onClick={() => copyMissingContent(r, copyable)} disabled={copyingContent}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-300 dark:border-brand-700 text-brand-600 dark:text-brand-300 text-xs font-medium hover:bg-brand-50 dark:hover:bg-brand-900/20 disabled:opacity-50">
+                              {copyingContent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
+                              Copy missing to the phone line ({copyable.length})
+                            </button>
+                          );
+                        })()}
+                      </div>
                       {(r.issues || []).length === 0 ? <p className="text-sm text-gray-400">Nothing needs attention.</p> : (
                         <div className="space-y-3">
                           {r.issues.map((x, i) => (
@@ -631,6 +660,12 @@ export default function SuperAdminDashboard() {
                                 ? <Link href={`/adminDashboard/super/users/${x.userId}`} className="font-medium text-gray-900 dark:text-white hover:underline">{x.name || x.email}</Link>
                                 : x.name || x.email ? <span className="font-medium text-gray-900 dark:text-white">{x.name || x.email}</span> : null}
                               <p className={`text-xs ${x.userId || x.name || x.email ? 'text-gray-500 dark:text-gray-400' : 'text-amber-700 dark:text-amber-300'}`}>{x.label}</p>
+                              {x.type === 'CONTENT_MISSING_ON_PHONE_LINE' && (
+                                <ul className="mt-1 text-xs text-gray-400 list-disc pl-4">
+                                  {(x.items?.notes || []).map(n => <li key={n.id}>Voice note: {n.title || 'Untitled'} {n.slot ? `(keypad ${n.slot})` : '(gets the next free keypad slot)'}</li>)}
+                                  {(x.items?.wills || []).map(w => <li key={w.id}>Voice will: {w.title || 'Untitled'} {w.slot ? `(will slot ${w.slot})` : '(gets the next free will slot)'}</li>)}
+                                </ul>
+                              )}
                             </div>
                           ))}
                         </div>

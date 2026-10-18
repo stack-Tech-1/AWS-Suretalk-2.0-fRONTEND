@@ -47,7 +47,7 @@ const ACTION_LABELS = {
   RELEASE_WILL: 'Released a voice will', LISTEN_WILL: 'Listened to a voice will', REMOVE_WILL: 'Removed a voice will', RESTORE_WILL: 'Restored a voice will',
   EXPORT_SCHEDULED_MSGS: 'Exported scheduled messages', EXPORT_LOGS: 'Exported system logs', CLEAR_OLD_LOGS: 'Cleared old logs',
   UPDATE_SETTINGS: 'Changed platform settings', SYNC_RETRY: 'Retried a failed sync', SYNC_EDIT_RETRY: 'Edited and retried a failed sync', SYNC_DISMISS: 'Dismissed a failed sync',
-  PHONE_SYNC_RETRY: 'Retried a failed phone-line sync', PHONE_SYNC_DISMISS: 'Dismissed a failed phone-line sync', SYNC_RECONCILE_RUN: 'Ran the app and phone line check',
+  PHONE_SYNC_RETRY: 'Retried a failed phone-line sync', PHONE_SYNC_DISMISS: 'Dismissed a failed phone-line sync', SYNC_RECONCILE_RUN: 'Ran the app and phone line check', SYNC_CONTENT_COPY: 'Copied missing recordings to the phone line',
   ASSIGN_TICKET: 'Assigned a support ticket', RESPOND_TICKET: 'Replied to a support ticket', UPDATE_TICKET_STATUS: 'Changed a ticket\'s status', UPDATE_TICKET_NOTES: 'Edited ticket notes',
   CREATE_KB_ARTICLE: 'Created a help article', UPDATE_KB_ARTICLE: 'Edited a help article', DELETE_KB_ARTICLE: 'Deleted a help article',
 };

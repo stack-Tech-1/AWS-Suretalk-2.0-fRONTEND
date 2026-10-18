@@ -1177,6 +1177,14 @@ async runReconcile() {
   return this.request('/super-admin/sync/reconcile/run', { method: 'POST' });
 }
 
+// Copy the recordings / wills a nightly-check report listed as missing from the phone line
+async copyReconcileContent(reportId, userIds) {
+  return this.request(`/super-admin/sync/reconcile/${reportId}/copy-content`, {
+    method: 'POST',
+    body: JSON.stringify(userIds ? { userIds } : {}),
+  });
+}
+
 // Super admin downloads: path under /super-admin → { blob, filename }
 async downloadSuperAdminFile(path, fallbackName) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
