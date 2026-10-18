@@ -169,7 +169,7 @@ export default function EditUser() {
 
           <h3 className="font-semibold text-gray-800 dark:text-white mb-1">Limits</h3>
           <p className="text-xs text-gray-500 mb-3">
-            {customised ? 'Custom limits — different from the plan\'s standard limits.' : 'Standard limits for this plan. You can raise or lower them for this user.'}
+            {customised ? 'Custom limits — different from the plan\'s standard limits.' : 'Standard limits for this plan. Contacts and voice notes can only be lowered: they match the phone line\'s keypad slots.'}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
@@ -181,7 +181,8 @@ export default function EditUser() {
                 <label htmlFor={key} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
                 <div className="relative">
                   <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input id={key} type="number" min="0" max="100000" step="1" value={form[key]} disabled={planLocked}
+                  <input id={key} type="number" min="0" step="1" value={form[key]} disabled={planLocked}
+                    max={key === 'storageLimitGb' ? 100000 : (chosen?.[key === 'contactsLimit' ? 'contacts' : 'voiceNotes'] ?? 9)}
                     onChange={e => set(key, e.target.value)} className={`${inputClass} pl-10`} required />
                 </div>
               </div>
