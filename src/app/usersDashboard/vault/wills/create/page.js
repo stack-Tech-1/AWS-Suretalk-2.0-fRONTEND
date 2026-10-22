@@ -23,6 +23,9 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } }
 };
 
+// A voice will can be up to 5 minutes long (the phone line records wills for at most 5 minutes too)
+const MAX_WILL_SECONDS = 300;
+
 export default function CreateVoiceWill() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
@@ -191,6 +194,12 @@ export default function CreateVoiceWill() {
     }
   };
 
+  // Stop by itself at the 5-minute limit
+  useEffect(() => {
+    if (recording && recordingTime >= MAX_WILL_SECONDS) stopRecording();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recording, recordingTime]);
+
   const togglePlayback = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
@@ -227,7 +236,17 @@ export default function CreateVoiceWill() {
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
     const audio = new Audio(url);
-    audio.onloadedmetadata = () => setRecordingDuration(audio.duration);
+    audio.onloadedmetadata = () => {
+      if (audio.duration > MAX_WILL_SECONDS + 1) {
+        setError(t('willc.tooLong'));
+        setFileUpload(null);
+        URL.revokeObjectURL(url);
+        setAudioUrl(null);
+        setRecordingDuration(0);
+        return;
+      }
+      setRecordingDuration(audio.duration);
+    };
     setAudioBlob(null);
   };
 
@@ -478,6 +497,9 @@ export default function CreateVoiceWill() {
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-[0.2em]">
                 {recording ? t('rec.stateRecording') : hasAudio ? t('rec.stateDuration') : t('rec.stateReady')}
+              </p>
+              <p className={`text-xs mt-1 ${recording && recordingTime >= MAX_WILL_SECONDS - 30 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-gray-400'}`}>
+                {t('willc.maxLength', { max: formatTime(MAX_WILL_SECONDS) })}
               </p>
             </div>
 

@@ -8,7 +8,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 export const PLANS = [
   { id: "LITE", label: "Lite", price: "Free", storageGb: 1, contacts: 3, voiceNotes: 3 },
   { id: "ESSENTIAL", label: "Essential", price: "$6.99/mo", storageGb: 5, contacts: 9, voiceNotes: 9 },
-  { id: "LEGACY_VAULT_PREMIUM", label: "Premium", price: "$12.99/mo", storageGb: 50, contacts: 9, voiceNotes: 9, wills: 9 },
+  { id: "LEGACY_VAULT_PREMIUM", label: "Premium", price: "$12.99/mo", storageGb: 50, contacts: 9, voiceNotes: 9, wills: 3 },
 ];
 
 export const planInfo = (tier) => {
