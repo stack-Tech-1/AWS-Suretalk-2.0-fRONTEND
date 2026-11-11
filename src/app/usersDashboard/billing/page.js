@@ -539,7 +539,7 @@ function BillingPageInner() {
           </div>
           <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Check className="w-4 h-4 text-green-500" />
-            <span>{t('bill.moneyBack')}</span>
+            <span>{t('bill.cancelAnytime')}</span>
           </div>
         </div>
 
@@ -623,7 +623,7 @@ function BillingPageInner() {
                   
                   {plan.price !== "$0" && (
                     <p className="text-center text-xs text-gray-500 dark:text-gray-500 mt-3">
-                      {t('bill.cancelAnytime')} • {t('bill.moneyBack')}
+                      {t('bill.cancelAnytime')}
                     </p>
                   )}
                 </div>

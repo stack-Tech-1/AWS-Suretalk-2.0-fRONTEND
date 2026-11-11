@@ -71,7 +71,7 @@ export default function SimplePageLayout({
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="/signup">
                   <Button size="lg">
-                    Start Free Trial
+                    Sign Up Now
                   </Button>
                 </a>
                 <a href="/contact">
