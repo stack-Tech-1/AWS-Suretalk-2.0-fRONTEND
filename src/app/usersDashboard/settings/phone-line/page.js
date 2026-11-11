@@ -12,7 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 // SureTalk's phone line (Twilio number used by the IVR flow)
-const PHONE_LINE_NUMBER = "+1 (864) 727-7476";
+const PHONE_LINE_NUMBER = "+1 (855) 680-4522";
 const RESEND_SECONDS = 60;
 
 const formatId = (phone) => {

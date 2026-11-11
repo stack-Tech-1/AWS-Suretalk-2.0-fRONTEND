@@ -39,8 +39,8 @@ export default function ContactPage() {
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{t('contact.phoneTitle')}</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-2">{t('contact.phoneDesc')}</p>
-            <a href="tel:+18005551234" className="text-brand-600 hover:text-brand-700 font-medium">
-              +1 (800) 555-1234
+            <a href="tel:+18556804522" className="text-brand-600 hover:text-brand-700 font-medium">
+              +1 (855) 680-4522
             </a>
           </div>
         </div>
