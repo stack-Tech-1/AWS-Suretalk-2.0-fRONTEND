@@ -1706,6 +1706,8 @@ const es = {
   "vault.ivrNoSize": "0 Bytes (grabación IVR)",
   "willc.premiumTitle": "Los testamentos de voz requieren Premium",
   "willc.premiumDesc": "Mejora al plan Legacy Vault Premium para crear testamentos de voz: grabaciones cifradas que se entregan a tus beneficiarios según las condiciones que tú definas.",
+  "willc.limitTitle": "Ya usaste todos tus testamentos de voz",
+  "willc.limitDesc": "Tu plan incluye {max} testamentos de voz, incluidos los que grabaste por teléfono. Elimina uno para agregar otro.",
   "willc.goBack": "Volver",
   "willc.needTitle": "Escribe un título para tu testamento de voz",
   "willc.maxLength": "Hasta {max} por testamento de voz",

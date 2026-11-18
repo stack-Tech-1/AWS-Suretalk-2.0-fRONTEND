@@ -1706,6 +1706,8 @@ const en = {
   "vault.ivrNoSize": "0 Bytes (IVR recording)",
   "willc.premiumTitle": "Voice Wills Require Premium",
   "willc.premiumDesc": "Upgrade to the Legacy Vault Premium plan to create voice wills — encrypted recordings that release to your beneficiaries under conditions you control.",
+  "willc.limitTitle": "You've used all your voice wills",
+  "willc.limitDesc": "Your plan includes {max} voice wills, counting any you recorded by phone. Delete one to add another.",
   "willc.goBack": "Go Back",
   "willc.needTitle": "Please enter a title for your voice will",
   "willc.maxLength": "Up to {max} per voice will",

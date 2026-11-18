@@ -829,6 +829,11 @@ async markAsPermanent(voiceNoteId) {
   });
 }
 
+// How many voice wills the person holds and whether they can add another
+async getWillCapacity() {
+  return this.request('/vault/wills/capacity');
+}
+
 // Generate vault upload URL
 async getVaultUploadUrl(fileName, fileType, isWill = false) {
   return this.request('/vault/upload-url', {

@@ -59,6 +59,9 @@ export default function CreateVoiceWill() {
   // File upload alternative
   const [fileUpload, setFileUpload] = useState(null);
 
+  // Voice will limit (counts the app and the phone line)
+  const [capacity, setCapacity] = useState(null);
+
   // Refs
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -344,6 +347,15 @@ export default function CreateVoiceWill() {
       .finally(() => setLoadingContacts(false));
   }, []);
 
+  // If this check fails the page still works: the server refuses a will over the limit when saving
+  const isPremium = !authLoading && hasLegacyVault();
+  useEffect(() => {
+    if (!isPremium) return;
+    api.getWillCapacity()
+      .then(res => { if (res?.success) setCapacity(res.data); })
+      .catch(() => {});
+  }, [isPremium]);
+
   useEffect(() => {
     return () => {
       if (audioUrl) URL.revokeObjectURL(audioUrl);
@@ -384,6 +396,24 @@ export default function CreateVoiceWill() {
             {t('dash.upgradePlan')}
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  // All voice wills used: say so before anyone spends time recording
+  if (capacity && !capacity.canCreate) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 text-center">
+        <div className="p-5 rounded-full bg-purple-100 dark:bg-purple-900/30 w-20 h-20 flex items-center justify-center mx-auto mb-6">
+          <Shield className="w-10 h-10 text-purple-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{t('willc.limitTitle')}</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
+          {t('willc.limitDesc', { max: capacity.max })}
+        </p>
+        <Link href="/usersDashboard/vault" className="inline-block px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-lg shadow-purple-600/25">
+          {t('willc.backToWills')}
+        </Link>
       </div>
     );
   }
