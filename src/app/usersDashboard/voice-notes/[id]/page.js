@@ -34,6 +34,7 @@ import {
   Bell
 } from "lucide-react";
 import { api } from '@/utils/api';
+import { deleteWithScheduleCheck } from '@/utils/deleteRecording';
 import { toast } from '@/components/ui/Toast';
 import { useAnalytics } from '@/hooks/useAnalytics.client';
 import Link from 'next/link';
@@ -190,8 +191,11 @@ export default function VoiceNoteDetail() {
     }
 
     try {
-      await api.deleteVoiceNote(id);
-      
+      const deleted = await deleteWithScheduleCheck(
+        (cancelScheduled) => api.deleteVoiceNote(id, { cancelScheduled }), { t, locale }
+      );
+      if (!deleted) return;
+
       // Record analytics
       analytics.recordEvent('voice_note_deleted', {
         noteId: id,

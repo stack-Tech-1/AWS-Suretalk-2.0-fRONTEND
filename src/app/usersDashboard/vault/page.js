@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { api } from '@/utils/api';
+import { deleteWithScheduleCheck } from '@/utils/deleteRecording';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from 'date-fns';
@@ -215,9 +216,12 @@ export default function VoiceWills() {
 
   const handleDelete = async (itemId) => {
     try {
-      await api.deleteVoiceWill(itemId);
-      setVoiceWills(prev => prev.filter(will => will.id !== itemId));
+      const deleted = await deleteWithScheduleCheck(
+        (cancelScheduled) => api.deleteVoiceWill(itemId, { cancelScheduled }), { t, locale: lang }
+      );
       setShowDeleteConfirm(null);
+      if (!deleted) return;
+      setVoiceWills(prev => prev.filter(will => will.id !== itemId));
     } catch (error) {
       console.error('Delete failed:', error);
       setError(t('vault.deleteError'));

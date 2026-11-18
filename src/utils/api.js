@@ -225,8 +225,8 @@ class ApiClient {
     });
   }
 
-  async deleteVoiceNote(id) {
-    return this.request(`/voice-notes/${id}`, {
+  async deleteVoiceNote(id, { cancelScheduled = false } = {}) {
+    return this.request(`/voice-notes/${id}${cancelScheduled ? '?cancelScheduled=true' : ''}`, {
       method: 'DELETE',
     });
   }
@@ -282,8 +282,8 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/vault/wills/${id}`);
   }
 
-  async deleteVoiceWill(id) {
-    return this.request(`/vault/wills/${id}`, { method: 'DELETE' });
+  async deleteVoiceWill(id, { cancelScheduled = false } = {}) {
+    return this.request(`/vault/wills/${id}${cancelScheduled ? '?cancelScheduled=true' : ''}`, { method: 'DELETE' });
   }
 
   async convertNoteToWill(id) {

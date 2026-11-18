@@ -865,6 +865,7 @@ const es = {
   "voice.noAudio": "No hay audio disponible para esta grabación",
   "voice.confirmDeleteNamed": "¿Seguro que quieres eliminar \"{title}\"? Esta acción no se puede deshacer.",
   "voice.deleteError": "No se pudo eliminar la nota de voz. Inténtalo de nuevo.",
+  "voice.scheduledWarn": "Esta grabación está programada para enviarse:\n{list}\n\nSi la eliminas, el mensaje programado también se cancelará.\n\nPulsa Aceptar para eliminarla y cancelar el mensaje, o Cancelar para conservarla.",
   "voice.confirmMoveToWills": "¿Mover \"{title}\" a Testamentos de Voz? Ya no aparecerá en Notas de Voz.",
   "voice.movedToWills": "Grabación movida a Testamentos de Voz.",
   "voice.convertError": "No se pudo convertir la grabación. Asegúrate de tener el plan Legacy Vault Premium.",

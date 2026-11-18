@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/utils/api';
+import { deleteWithScheduleCheck } from '@/utils/deleteRecording';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDateFnsLocale } from '@/utils/dateLocale';
@@ -59,7 +60,10 @@ export default function VoiceWillDetail() {
     if (!window.confirm(t('vault.deleteConfirm'))) return;
     try {
       setDeleting(true);
-      await api.deleteVoiceWill(id);
+      const deleted = await deleteWithScheduleCheck(
+        (cancelScheduled) => api.deleteVoiceWill(id, { cancelScheduled }), { t, locale: lang }
+      );
+      if (!deleted) { setDeleting(false); return; }
       router.push('/usersDashboard/vault');
     } catch (err) {
       setError(err.message || t('vault.deleteError'));

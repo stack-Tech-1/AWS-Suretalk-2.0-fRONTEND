@@ -865,6 +865,7 @@ const en = {
   "voice.noAudio": "No audio available for this recording",
   "voice.confirmDeleteNamed": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
   "voice.deleteError": "Failed to delete voice note. Please try again.",
+  "voice.scheduledWarn": "This recording is scheduled to be sent:\n{list}\n\nIf you delete it, the scheduled message will be cancelled too.\n\nPress OK to delete it and cancel the message, or Cancel to keep it.",
   "voice.confirmMoveToWills": "Move \"{title}\" to Voice Wills? It will no longer appear in Voice Notes.",
   "voice.movedToWills": "Recording moved to Voice Wills.",
   "voice.convertError": "Failed to convert recording. Make sure you have a Legacy Vault Premium plan.",

@@ -29,6 +29,7 @@ import {
   Users
 } from "lucide-react";
 import { api } from '@/utils/api';
+import { deleteWithScheduleCheck } from '@/utils/deleteRecording';
 import { useAnalyticsContext } from "@/contexts/AnalyticsContext";
 import Link from 'next/link';
 import { toast } from '@/components/ui/Toast';
@@ -376,26 +377,31 @@ const handleBulkDelete = async () => {
   }
   
   try {
-    // Delete each note
+    // Delete each note (a note with a scheduled message asks first, and may be kept)
+    const deletedIds = [];
     for (const noteId of selectedNotes) {
-      await api.deleteVoiceNote(noteId);
+      const deleted = await deleteWithScheduleCheck(
+        (cancelScheduled) => api.deleteVoiceNote(noteId, { cancelScheduled }), { t, locale }
+      );
+      if (deleted) deletedIds.push(noteId);
     }
-    
+    if (deletedIds.length === 0) return;
+
     // Record analytics
     analytics.recordEvent('voice_notes_bulk_deleted', {
-      count: selectedNotes.length
+      count: deletedIds.length
     });
-    
+
     // Remove from local state
     setVoiceNotes(prevNotes =>
-      prevNotes.filter(note => !selectedNotes.includes(note.id))
+      prevNotes.filter(note => !deletedIds.includes(note.id))
     );
-    
+
     // Update stats
     setStats(prev => ({
       ...prev,
-      totalNotes: prev.totalNotes - selectedNotes.length,
-      favoriteNotes: prev.favoriteNotes - selectedNotes.filter(id => {
+      totalNotes: prev.totalNotes - deletedIds.length,
+      favoriteNotes: prev.favoriteNotes - deletedIds.filter(id => {
         const note = voiceNotes.find(n => n.id === id);
         return note?.favorite;
       }).length
@@ -405,7 +411,7 @@ const handleBulkDelete = async () => {
     setSelectedNotes([]);
     setBulkMode(false);
     
-    toast.success(t('voice.bulkDeleted', { count: selectedNotes.length }), t('voice.deleted'));
+    toast.success(t('voice.bulkDeleted', { count: deletedIds.length }), t('voice.deleted'));
     
   } catch (error) {
     console.error('Bulk delete error:', error);
@@ -510,9 +516,12 @@ const selectAllNotes = () => {
     }
 
     try {
-      // Delete from server
-      await api.deleteVoiceNote(note.id);
-      
+      // Delete from server (a note with a scheduled message asks first, and may be kept)
+      const deleted = await deleteWithScheduleCheck(
+        (cancelScheduled) => api.deleteVoiceNote(note.id, { cancelScheduled }), { t, locale }
+      );
+      if (!deleted) return;
+
       // Record analytics
       await analytics.recordEvent('voice_note_deleted', {
         noteId: note.id,
