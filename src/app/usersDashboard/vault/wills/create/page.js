@@ -9,6 +9,7 @@ import {
   Shield, Lock
 } from "lucide-react";
 import { api } from '@/utils/api';
+import { convertToMp3 } from '@/utils/convertToMp3';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from "next/link";
@@ -269,9 +270,22 @@ export default function CreateVoiceWill() {
       setUploading(true);
       setError(null);
 
-      const fileToUpload = fileUpload || audioBlob;
-      const fileName = fileUpload ? fileUpload.name : `will_${Date.now()}.webm`;
-      const fileType = fileUpload ? fileUpload.type : mimeTypeRef.current;
+      // The phone line plays MP3, so every will is saved as MP3. If the conversion fails the
+      // original recording is still saved, under a file name that matches its real format.
+      let fileToUpload = fileUpload || audioBlob;
+      let fileType = fileUpload ? fileUpload.type : mimeTypeRef.current;
+      const originalExtension = fileType.includes('mp4') ? 'm4a' : fileType.includes('ogg') ? 'ogg' : 'webm';
+      let fileName = fileUpload ? fileUpload.name : `will_${Date.now()}.${originalExtension}`;
+
+      if (fileType !== 'audio/mpeg' && fileType !== 'audio/mp3') {
+        setSaveStage(t('rec.stageConverting'));
+        const mp3Blob = await convertToMp3(fileToUpload);
+        if (mp3Blob) {
+          fileToUpload = mp3Blob;
+          fileType = 'audio/mpeg';
+          fileName = `will_${Date.now()}.mp3`;
+        }
+      }
 
       setSaveStage(t('rec.stageUploading'));
       const uploadResponse = await api.getVaultUploadUrl(fileName, fileType, true);
