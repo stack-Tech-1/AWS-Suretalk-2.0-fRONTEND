@@ -46,6 +46,14 @@ const shortDevice = (ua) => {
 
 const hasDetails = (m) => m && typeof m === 'object' && Object.keys(m).length > 0;
 
+// Older payment logs hold the amount in cents (1299 = $12.99)
+const detailValue = (log, key, value) => {
+  if (log.service === 'billing' && key === 'amount' && typeof value === 'number') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: String(log.metadata?.currency || 'USD').toUpperCase() }).format(value / 100);
+  }
+  return value;
+};
+
 function LogPanel({ log, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -81,7 +89,7 @@ function LogPanel({ log, onClose }) {
                 {Object.entries(log.metadata).map(([k, v]) => (
                   <div key={k} className="grid grid-cols-3 gap-3">
                     <dt className="text-gray-500 break-words">{k}</dt>
-                    <dd className="col-span-2 text-gray-800 dark:text-gray-200 break-all font-mono text-xs">{typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}</dd>
+                    <dd className="col-span-2 text-gray-800 dark:text-gray-200 break-all font-mono text-xs">{typeof v === 'object' ? JSON.stringify(v, null, 2) : String(detailValue(log, k, v))}</dd>
                   </div>
                 ))}
               </dl>
@@ -317,7 +325,7 @@ export default function SystemLogs() {
                       <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{log.service}</td>
                       <td className="py-3 px-4">
                         <p className="text-gray-800 dark:text-white">{log.message}</p>
-                        {hasDetails(log.metadata) && <p className="text-xs text-gray-500 mt-0.5 truncate max-w-md">{Object.entries(log.metadata).slice(0, 3).map(([k, v]) => `${k}: ${typeof v === 'object' ? '…' : v}`).join(' · ')}</p>}
+                        {hasDetails(log.metadata) && <p className="text-xs text-gray-500 mt-0.5 truncate max-w-md">{Object.entries(log.metadata).slice(0, 3).map(([k, v]) => `${k}: ${typeof v === 'object' ? '…' : detailValue(log, k, v)}`).join(' · ')}</p>}
                       </td>
                       <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                         <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-gray-400" />{log.user_email || 'System'}</span>
