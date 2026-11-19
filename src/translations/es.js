@@ -1322,6 +1322,10 @@ const es = {
   // ── Scheduled — edit page ──
   "schede.updateSuccess": "Mensaje actualizado correctamente",
   "schede.updateError": "No se pudo actualizar el mensaje",
+  "schede.phoneNote": "Este mensaje se programó por teléfono y se entregará por llamada y mensaje de texto. Puedes cambiar la fecha y la hora de envío.",
+  "schede.tooSoon": "Elige una hora que sea al menos 5 minutos después de ahora.",
+  "schede.noLongerEditable": "Este mensaje ya se está enviando o ya no está programado, así que no se puede cambiar la hora.",
+  "schede.phoneUnavailable": "No pudimos conectar con la línea telefónica, así que la hora no se cambió. Inténtalo de nuevo en un momento.",
   "schede.paused": "En pausa",
   "schede.title": "Editar mensaje programado",
   "schede.subtitle": "Actualiza los datos de entrega de: {title}",

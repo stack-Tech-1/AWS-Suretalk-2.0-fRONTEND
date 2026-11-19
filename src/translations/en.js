@@ -1322,6 +1322,10 @@ const en = {
   // ── Scheduled — edit page ──
   "schede.updateSuccess": "Message updated successfully",
   "schede.updateError": "Failed to update message",
+  "schede.phoneNote": "This message was scheduled by phone and will be delivered by call and text. You can change the date and time it is sent.",
+  "schede.tooSoon": "Choose a time at least 5 minutes from now.",
+  "schede.noLongerEditable": "This message is already being sent or is no longer scheduled, so its time can't be changed.",
+  "schede.phoneUnavailable": "We couldn't reach the phone line, so the time was not changed. Try again in a moment.",
   "schede.paused": "Paused",
   "schede.title": "Edit Scheduled Message",
   "schede.subtitle": "Update delivery details for: {title}",

@@ -56,6 +56,9 @@ export default function EditScheduledMessage() {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Scheduled by phone: the phone line delivers it, so only the date and time can change
+  const phoneScheduled = message?.metadata?.source === 'ivr' && !!message?.metadata?.ivrScheduleId;
+
   // Load message details
   useEffect(() => {
     loadMessageDetails();
@@ -155,12 +158,12 @@ export default function EditScheduledMessage() {
       const isUpcoming = isAfter(scheduledDate, new Date());
       
       // Prepare update data
-      const updateData = {
+      const updateData = phoneScheduled ? { scheduledFor: scheduledDate.toISOString() } : {
         scheduledFor: scheduledDate.toISOString(),
         deliveryMethod: formData.deliveryMethod,
         status: formData.status,
-        ...(formData.customMessage !== message.custom_message && { 
-          customMessage: formData.customMessage || null 
+        ...(formData.customMessage !== message.custom_message && {
+          customMessage: formData.customMessage || null
         })
       };
 
@@ -177,8 +180,13 @@ export default function EditScheduledMessage() {
       }
     } catch (error) {
       console.error("Failed to update message:", error);
-      setError(error.message || t('schede.updateError'));
-      toast.error(error.message || t('schede.updateError'));
+      // Shown as a notice so the customer keeps the form and can pick another time
+      const byCode = {
+        SCHEDULE_TOO_SOON: 'schede.tooSoon',
+        PHONE_SCHEDULE_CLOSED: 'schede.noLongerEditable',
+        PHONE_LINE_UNAVAILABLE: 'schede.phoneUnavailable',
+      }[error.data?.code];
+      toast.error(byCode ? t(byCode) : (error.message || t('schede.updateError')));
     } finally {
       setSaving(false);
     }
@@ -448,9 +456,13 @@ export default function EditScheduledMessage() {
           className="glass rounded-2xl p-6"
         >
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-6">{t('schede.deliverySettings')}</h2>
-          
+          {phoneScheduled && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 -mt-4 mb-6">{t('schede.phoneNote')}</p>
+          )}
+
           <div className="space-y-6">
             {/* Delivery Method */}
+            {!phoneScheduled && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 {t('sched.deliveryMethod')}
@@ -474,6 +486,7 @@ export default function EditScheduledMessage() {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Schedule Time */}
             <div>
@@ -559,6 +572,7 @@ export default function EditScheduledMessage() {
           </div>
         </motion.div>
 
+        {!phoneScheduled && (<>
         {/* Custom Message */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -612,6 +626,7 @@ export default function EditScheduledMessage() {
             </p>
           </div>
         </motion.div>
+        </>)}
 
         {/* Action Buttons */}
         <motion.div
