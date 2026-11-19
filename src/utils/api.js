@@ -801,14 +801,6 @@ async getScheduledMessagesWithContacts(params = {}) {
   return this.request(`/scheduled/with-contacts${query ? `?${query}` : ''}`);
 }
 
-// Cancel scheduled message
-async cancelScheduledMessage(id) {
-  return this.request(`/scheduled/${id}/cancel`, {
-    method: 'PUT',
-  });
-}
-
-
 async deleteContact(id) {
   return this.request(`/contacts/${id}`, {
     method: 'DELETE',
