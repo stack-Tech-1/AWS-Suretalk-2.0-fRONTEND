@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from '@/utils/api';
+import { sendTestToMyself } from '@/utils/scheduledTest';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow, format, parseISO, isBefore, isAfter, addDays } from 'date-fns';
@@ -91,11 +92,6 @@ export default function ScheduledMessages() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
-  const [testForm, setTestForm] = useState({
-    recipientEmail: '',
-    recipientPhone: '',
-    deliveryMethod: 'email'
-  });
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const dropdownRef = useRef(null);
   const initialLoadRef = useRef(false);
@@ -406,31 +402,10 @@ export default function ScheduledMessages() {
   const handleSendTest = async () => {
     if (!selectedMessage) return;
 
-    try {
-      setActionLoading('test');
-      
-      const response = await api.sendTestMessage({
-        voiceNoteId: selectedMessage.voice_note_id,
-        recipientEmail: testForm.deliveryMethod.includes('email') ? testForm.recipientEmail : undefined,
-        recipientPhone: testForm.deliveryMethod.includes('sms') ? testForm.recipientPhone : undefined,
-        deliveryMethod: testForm.deliveryMethod
-      });
-
-      if (response.success) {
-        toast.success(t('sched.testSuccess'));
-        setShowTestModal(false);
-        setTestForm({
-          recipientEmail: '',
-          recipientPhone: '',
-          deliveryMethod: 'email'
-        });
-      }
-    } catch (error) {
-      console.error('Failed to send test:', error);
-      toast.error(error.message || t('sched.testError'));
-    } finally {
-      setActionLoading(null);
-    }
+    setActionLoading('test');
+    const sent = await sendTestToMyself(selectedMessage.id, t);
+    setActionLoading(null);
+    if (sent) setShowTestModal(false);
   };
 
   // Handle view details
@@ -1422,62 +1397,10 @@ export default function ScheduledMessages() {
               <div className="space-y-4 mb-6">
                 <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                   <p className="text-sm text-gray-500 mb-1">{t('scheduled.message')}</p>
-                  <p className="font-medium text-gray-800 dark:text-white">{selectedMessage.voice_note_title}</p>
+                  <p className="font-medium text-gray-800 dark:text-white">{selectedMessage.voice_note_title || t('sched.untitled')}</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {t('sched.deliveryMethod')}
-                  </label>
-                  <div className="flex gap-2">
-                    {['email', 'sms', 'both'].map((method) => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => setTestForm(prev => ({ ...prev, deliveryMethod: method }))}
-                        className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          testForm.deliveryMethod === method
-                            ? method === 'email' ? 'bg-green-500 text-white' :
-                              method === 'sms' ? 'bg-blue-500 text-white' :
-                              'bg-purple-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        {method === 'email' ? t('contacts.email') : method === 'sms' ? 'SMS' : t('sched.both')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {testForm.deliveryMethod.includes('email') && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('sched.testEmail')}
-                    </label>
-                    <input
-                      type="email"
-                      value={testForm.recipientEmail}
-                      onChange={(e) => setTestForm(prev => ({ ...prev, recipientEmail: e.target.value }))}
-                      placeholder={t('sched.testEmailPlaceholder')}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
-
-                {testForm.deliveryMethod.includes('sms') && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('sched.testPhone')}
-                    </label>
-                    <input
-                      type="tel"
-                      value={testForm.recipientPhone}
-                      onChange={(e) => setTestForm(prev => ({ ...prev, recipientPhone: e.target.value }))}
-                      placeholder={t('sched.testPhonePlaceholder')}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('sched.testToSelf')}</p>
               </div>
 
               <div className="flex gap-3">
@@ -1489,9 +1412,7 @@ export default function ScheduledMessages() {
                 </button>
                 <button
                   onClick={handleSendTest}
-                  disabled={actionLoading === 'test' ||
-                    (testForm.deliveryMethod.includes('email') && !testForm.recipientEmail) ||
-                    (testForm.deliveryMethod.includes('sms') && !testForm.recipientPhone)}
+                  disabled={actionLoading === 'test'}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {actionLoading === 'test' ? (

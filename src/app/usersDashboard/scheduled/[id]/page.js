@@ -36,6 +36,7 @@ import {
   Loader2
 } from "lucide-react";
 import { api } from "@/utils/api";
+import { sendTestToMyself } from "@/utils/scheduledTest";
 import { format, parseISO, formatDistanceToNow, isAfter, isBefore } from "date-fns";
 import Link from "next/link";
 import { toast } from '@/components/ui/Toast';
@@ -152,25 +153,9 @@ export default function ScheduledMessageDetail() {
 
   // Handle send test
   const handleSendTest = async () => {
-    try {
-      setActionLoading("test");
-      
-      const response = await api.sendTestMessage({
-        voiceNoteId: message.voice_note_id,
-        recipientEmail: message.recipient_email,
-        recipientPhone: message.recipient_phone,
-        deliveryMethod: message.delivery_method
-      });
-      
-      if (response.success) {
-        toast.success(t('sched.testSuccess'));
-      }
-    } catch (error) {
-      console.error("Failed to send test:", error);
-      toast.error(error.message || t('sched.testError'));
-    } finally {
-      setActionLoading(null);
-    }
+    setActionLoading("test");
+    await sendTestToMyself(params.id, t);
+    setActionLoading(null);
   };
 
   // Handle copy info

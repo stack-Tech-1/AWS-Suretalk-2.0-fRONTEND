@@ -783,6 +783,11 @@ async scheduleMessageWithContacts(data) {
 }
 
 // Send test message
+// Sends a test of a scheduled message to the signed-in customer only
+async sendScheduledTest(id) {
+  return this.request(`/scheduled/${id}/send-test`, { method: 'POST' });
+}
+
 async sendTestMessage(data) {
   return this.request('/scheduled/send-test', {
     method: 'POST',
