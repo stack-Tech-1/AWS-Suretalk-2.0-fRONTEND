@@ -50,6 +50,9 @@ export default function CreateVoiceWill() {
   const [releaseCondition, setReleaseCondition] = useState('manual');
   const [releaseDate, setReleaseDate] = useState('');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([]);
+  // The owner confirms beneficiaries expect messages from them (needed for texts to non-customers)
+  const [recipientConsent, setRecipientConsent] = useState(false);
+  const needsConsent = selectedBeneficiaries.length > 0;
 
   // Contacts / beneficiaries
   const [contacts, setContacts] = useState([]);
@@ -268,6 +271,7 @@ export default function CreateVoiceWill() {
     if (!audioBlob && !fileUpload) { setError(t('rec.needAudio')); return; }
     if (!title.trim()) { setError(t('willc.needTitle')); return; }
     if (releaseCondition === 'date' && !releaseDate) { setError(t('willc.needDate')); return; }
+    if (needsConsent && !recipientConsent) { setError(t('consent.recipientNeeded')); return; }
 
     try {
       setUploading(true);
@@ -856,9 +860,22 @@ export default function CreateVoiceWill() {
                 )}
               </div>
 
+              {needsConsent && (
+                <label htmlFor="recipientConsent" className="flex items-start gap-3 mb-4 cursor-pointer">
+                  <input
+                    id="recipientConsent"
+                    type="checkbox"
+                    checked={recipientConsent}
+                    onChange={(e) => setRecipientConsent(e.target.checked)}
+                    className="mt-1 h-5 w-5 rounded border-gray-300 text-purple-700 focus:ring-purple-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{t('consent.recipientWill')}</span>
+                </label>
+              )}
+
               <button
                 onClick={handleSubmit}
-                disabled={uploading || !hasAudio || !title.trim()}
+                disabled={uploading || !hasAudio || !title.trim() || (needsConsent && !recipientConsent)}
                 className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-700 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg shadow-purple-700/25 hover:shadow-purple-700/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {uploading ? (

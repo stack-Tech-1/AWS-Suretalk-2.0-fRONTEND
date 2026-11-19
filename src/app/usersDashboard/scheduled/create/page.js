@@ -73,6 +73,8 @@ export default function CreateScheduledMessage() {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [selectedVoiceNote, setSelectedVoiceNote] = useState(null);
+  // The sender confirms the recipient expects messages from them (needed for texts to non-customers)
+  const [recipientConsent, setRecipientConsent] = useState(false);
 
   // Generate time slots for the next 7 days
   const generateTimeSlots = () => {
@@ -151,6 +153,11 @@ export default function CreateScheduledMessage() {
     
     if (formData.deliveryMethod.includes("phone") && !formData.recipientPhone && !formData.recipientContactId) {
       toast.error(t('schedc.needPhone'));
+      return;
+    }
+
+    if (!recipientConsent) {
+      toast.error(t('consent.recipientNeeded'));
       return;
     }
 
@@ -1180,6 +1187,18 @@ export default function CreateScheduledMessage() {
           </div>
         )}
 
+        {/* Recipient consent (required) */}
+        <label htmlFor="recipientConsent" className="flex items-start gap-3 cursor-pointer">
+          <input
+            id="recipientConsent"
+            type="checkbox"
+            checked={recipientConsent}
+            onChange={(e) => setRecipientConsent(e.target.checked)}
+            className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-700 dark:text-gray-300">{t('consent.recipient')}</span>
+        </label>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
           <Link
@@ -1190,7 +1209,7 @@ export default function CreateScheduledMessage() {
           </Link>
           <button
             type="submit"
-            disabled={loading || !formData.voiceNoteId || !formData.scheduledFor}
+            disabled={loading || !formData.voiceNoteId || !formData.scheduledFor || !recipientConsent}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
             {loading ? (

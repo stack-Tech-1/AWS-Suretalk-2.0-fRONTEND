@@ -118,8 +118,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">10. SMS Data Handling</h2>
             <p className="text-gray-600 dark:text-gray-300">
-            Phone numbers collected for SMS communications are used solely for account security purposes and are never shared with third parties for marketing.
-            </p>            
+            We send text messages to account holders who opt in, about their account: verification codes, security alerts, reminders about their scheduled messages and voice wills, and delivery updates. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. By scheduling a message or naming a recipient, you confirm that person expects to receive messages from you through SureTalk. Every message names the sender. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mt-3">
+            Phone numbers are never sold, and are never shared with third parties or affiliates for marketing or promotional purposes.
+            </p>
           </section>
 
           <section>

@@ -115,8 +115,11 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">8. SMS Data Handling</h2>
             <p className="text-gray-600 dark:text-gray-300">
-            Phone numbers collected for SMS communications are used solely for account security purposes and are never shared with third parties for marketing.
-            </p>            
+            We send text messages to account holders who opt in, about their account: verification codes, security alerts, reminders about their scheduled messages and voice wills, and delivery updates. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. Every message names the sender. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mt-3">
+            Phone numbers are never sold, and are never shared with third parties or affiliates for marketing or promotional purposes. Text messaging opt-in data and consent are not shared with any third parties.
+            </p>
           </section>
 
           <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-500/10 rounded-xl border border-blue-200 dark:border-blue-400/30">
