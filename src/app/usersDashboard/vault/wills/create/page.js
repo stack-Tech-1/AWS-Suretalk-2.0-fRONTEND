@@ -27,10 +27,17 @@ const itemVariants = {
 // A voice will can be up to 5 minutes long (the phone line records wills for at most 5 minutes too)
 const MAX_WILL_SECONDS = 300;
 
+// 'YYYY-MM-DD' in the browser's own time zone (what <input type="date"> uses)
+const dateInputValue = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addMonths = (d, n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
 export default function CreateVoiceWill() {
   const router = useRouter();
   const { user, hasLegacyVault, loading: authLoading } = useAuth();
   const { t, locale } = useLanguage();
+  // A release date must leave room for the three reminders
+  const minAutoDate = dateInputValue(addDays(new Date(), 4));
 
   // Recording state
   const [recording, setRecording] = useState(false);
@@ -50,9 +57,16 @@ export default function CreateVoiceWill() {
   const [releaseCondition, setReleaseCondition] = useState('manual');
   const [releaseDate, setReleaseDate] = useState('');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState([]);
+  // Automatic release (only when switched on for this account): a release date, filled in as
+  // 6 months away, and an optional trusted contact. Otherwise the old Manual / Date / Event choice.
+  const [autoRelease, setAutoRelease] = useState(null); // null = still checking
+  const [autoDate, setAutoDate] = useState(() => dateInputValue(addMonths(new Date(), 6)));
+  const [trustedName, setTrustedName] = useState('');
+  const [trustedPhone, setTrustedPhone] = useState('');
+  const [trustedEmail, setTrustedEmail] = useState('');
   // The owner confirms beneficiaries expect messages from them (needed for texts to non-customers)
   const [recipientConsent, setRecipientConsent] = useState(false);
-  const needsConsent = selectedBeneficiaries.length > 0;
+  const needsConsent = selectedBeneficiaries.length > 0 || (autoRelease && trustedPhone.trim() !== '');
 
   // Contacts / beneficiaries
   const [contacts, setContacts] = useState([]);
@@ -270,7 +284,11 @@ export default function CreateVoiceWill() {
   const handleSubmit = async () => {
     if (!audioBlob && !fileUpload) { setError(t('rec.needAudio')); return; }
     if (!title.trim()) { setError(t('willc.needTitle')); return; }
-    if (releaseCondition === 'date' && !releaseDate) { setError(t('willc.needDate')); return; }
+    if (autoRelease) {
+      if (!autoDate || autoDate < minAutoDate) { setError(t('willAuto.dateTooSoon')); return; }
+      if (trustedPhone.trim() && trustedPhone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length !== 10) { setError(t('willAuto.trustedPhoneInvalid')); return; }
+      if (trustedEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trustedEmail.trim())) { setError(t('willAuto.trustedEmailInvalid')); return; }
+    } else if (releaseCondition === 'date' && !releaseDate) { setError(t('willc.needDate')); return; }
     if (needsConsent && !recipientConsent) { setError(t('consent.recipientNeeded')); return; }
 
     try {
@@ -314,8 +332,15 @@ export default function CreateVoiceWill() {
         s3Bucket: bucket,
         fileSize: fileToUpload.size,
         duration: Math.round(recordingDuration),
-        releaseCondition,
-        ...(releaseCondition === 'date' && releaseDate && { releaseDate }),
+        ...(autoRelease ? {
+          releaseCondition: 'date',
+          releaseDate: new Date(`${autoDate}T12:00:00`).toISOString(), // noon, the owner's time
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          ...(trustedPhone.trim() && { trustedName: trustedName.trim(), trustedPhone: trustedPhone.trim(), trustedEmail: trustedEmail.trim() }),
+        } : {
+          releaseCondition,
+          ...(releaseCondition === 'date' && releaseDate && { releaseDate }),
+        }),
         ...(selectedBeneficiaries.length > 0 && { beneficiaries: selectedBeneficiaries }),
       };
 
@@ -358,6 +383,9 @@ export default function CreateVoiceWill() {
     api.getWillCapacity()
       .then(res => { if (res?.success) setCapacity(res.data); })
       .catch(() => {});
+    api.getWillReleaseStatus()
+      .then(res => setAutoRelease(!!res?.data?.automatic))
+      .catch(() => setAutoRelease(false));
   }, [isPremium]);
 
   useEffect(() => {
@@ -687,6 +715,47 @@ export default function CreateVoiceWill() {
                 </div>
               </div>
 
+              {autoRelease ? (
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="autoDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                      {t('willAuto.dateLabel')} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <input
+                        id="autoDate"
+                        type="date"
+                        value={autoDate}
+                        min={minAutoDate}
+                        onChange={(e) => setAutoDate(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white"
+                      />
+                    </div>
+                    <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{t('willAuto.dateHint')}</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-sm text-indigo-800 dark:text-indigo-200">
+                    {t('willAuto.howItWorks')}
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('willAuto.trustedTitle')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{t('willAuto.trustedHint')}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <input type="text" value={trustedName} onChange={(e) => setTrustedName(e.target.value)} maxLength={255}
+                        placeholder={t('willAuto.trustedName')} aria-label={t('willAuto.trustedName')}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white" />
+                      <input type="tel" value={trustedPhone} onChange={(e) => setTrustedPhone(e.target.value)} maxLength={20}
+                        placeholder={t('willAuto.trustedPhone')} aria-label={t('willAuto.trustedPhone')}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white" />
+                      <input type="email" value={trustedEmail} onChange={(e) => setTrustedEmail(e.target.value)} maxLength={255}
+                        placeholder={t('willAuto.trustedEmail')} aria-label={t('willAuto.trustedEmail')}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800 dark:text-white" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -740,6 +809,7 @@ export default function CreateVoiceWill() {
                   </motion.div>
                 )}
               </div>
+              )}
             </div>
           </motion.div>
 
@@ -847,9 +917,11 @@ export default function CreateVoiceWill() {
                 <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('willc.release')}</span>
                   <span className="font-medium text-gray-800 dark:text-white capitalize">
-                    {releaseCondition === 'date' && releaseDate
-                      ? new Date(releaseDate).toLocaleDateString(locale)
-                      : t(`vault.cond.${releaseCondition}`)}
+                    {autoRelease
+                      ? (autoDate ? new Date(`${autoDate}T12:00:00`).toLocaleDateString(locale) : '—')
+                      : releaseCondition === 'date' && releaseDate
+                        ? new Date(releaseDate).toLocaleDateString(locale)
+                        : t(`vault.cond.${releaseCondition}`)}
                   </span>
                 </div>
                 {selectedBeneficiaries.length > 0 && (

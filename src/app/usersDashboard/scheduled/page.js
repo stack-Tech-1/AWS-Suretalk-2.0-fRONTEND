@@ -52,6 +52,7 @@ import { getDateFnsLocale, dateTimePattern } from '@/utils/dateLocale';
 import { toast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext'; // ✅ Import useAuth
 import { useLanguage } from '@/contexts/LanguageContext';
+import UpcomingWillReleases from '@/components/vault/UpcomingWillReleases';
 
 export default function ScheduledMessages() {
   const { t, lang } = useLanguage();
@@ -547,6 +548,9 @@ export default function ScheduledMessages() {
           </div>
         </div>
       )}
+
+      {/* Voice wills with a release date (automatic release) */}
+      <UpcomingWillReleases />
 
       {/* Stats */}
       <motion.div

@@ -97,7 +97,7 @@ class ApiClient {
         // Maintenance mode is on (admin Settings) — show the maintenance screen instead of errors
         // Recipient pages (/play, /will) keep working during maintenance — their own data comes from /api/play
         if (response.status === 503 && data.maintenance && !path.startsWith('/admin') && path !== '/maintenance'
-            && !path.startsWith('/play/') && !path.startsWith('/will/')) {
+            && !path.startsWith('/play/') && !path.startsWith('/will/') && !path.startsWith('/will-postpone/')) {
           window.location.replace('/maintenance');
           return new Promise(() => {}); // page is leaving; don't let callers show an error or redirect to login
         }
@@ -286,6 +286,25 @@ async getVoiceNoteDownloadUrl(id) {
     return this.request(`/vault/wills/${id}${cancelScheduled ? '?cancelScheduled=true' : ''}`, { method: 'DELETE' });
   }
 
+  // Automatic will release (backend routes/willRelease.js)
+  async getWillReleaseStatus() {
+    return this.request('/will-release/status');
+  }
+
+  async getWillRelease(id) {
+    return this.request(`/will-release/wills/${id}?t=${Date.now()}`);
+  }
+
+  // { action: 'postpone' } or { action: 'date', date: 'YYYY-MM-DD' }
+  async changeWillReleaseDate(id, body) {
+    return this.request(`/will-release/wills/${id}/release-date`, { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  // { name, phone, email }; an empty phone removes the trusted contact
+  async setWillTrustedContact(id, body) {
+    return this.request(`/will-release/wills/${id}/trusted-contact`, { method: 'PUT', body: JSON.stringify(body) });
+  }
+
   async convertNoteToWill(id) {
     return this.request(`/voice-notes/${id}/convert-to-will`, { method: 'POST' });
   }
@@ -413,6 +432,14 @@ async getVoiceNoteDownloadUrl(id) {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
+  }
+
+  async pauseWillRelease(id, reason) {
+    return this.request(`/admin/wills/${id}/pause`, { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+
+  async resumeWillRelease(id) {
+    return this.request(`/admin/wills/${id}/resume`, { method: 'POST' });
   }
 
   async restoreWill(id) {

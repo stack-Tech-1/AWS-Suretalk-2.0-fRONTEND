@@ -12,6 +12,7 @@ import { deleteWithScheduleCheck } from '@/utils/deleteRecording';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDateFnsLocale } from '@/utils/dateLocale';
+import WillReleaseCard from '@/components/vault/WillReleaseCard';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
@@ -171,6 +172,7 @@ export default function VoiceWillDetail() {
                 </p>
               </div>
             </div>
+            {will.release_flow !== 'auto' && (<>
             <div className="flex items-center gap-3">
               <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
@@ -191,6 +193,7 @@ export default function VoiceWillDetail() {
                 </p>
               </div>
             </div>
+            </>)}
             <div className="flex items-center gap-3">
               <AlertCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div>
@@ -228,6 +231,9 @@ export default function VoiceWillDetail() {
             </div>
           </div>
         </motion.div>
+
+        {/* Release date, postponing and trusted contact (automatic release only) */}
+        {will.release_flow === 'auto' && <WillReleaseCard willId={id} />}
       </div>
     </div>
   );

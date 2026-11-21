@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Search, User, Calendar, CheckCircle, Clock, AlertTriangle, AlertCircle, RefreshCw,
   Phone, Smartphone, Users, X, Send, Play, Pause, Archive, RotateCcw, Loader2, Mail, MessageSquare,
-  ChevronLeft, ChevronRight, Shield, Eye
+  ChevronLeft, ChevronRight, Shield, Eye, PauseCircle, PlayCircle
 } from "lucide-react";
 import { api } from "@/utils/api";
 import { toast } from "@/components/ui/Toast";
@@ -21,6 +21,7 @@ const FILTERS = [
 const PAGE_SIZE = 12;
 
 const releaseLabel = (w) => {
+  if (w.release_flow === 'auto') return w.release_date ? `Automatically on ${formatDate(w.release_date)}` : 'Automatically (date not set)';
   if (w.release_condition === 'date') return w.release_date ? `On ${formatDate(w.release_date)}` : 'On a date (not set)';
   if (w.release_condition === 'event') return 'After an event (admin confirms)';
   return 'When an admin releases it';
@@ -29,6 +30,11 @@ const releaseLabel = (w) => {
 function StatusBadge({ will }) {
   if (will.admin_removed_at) return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"><Archive className="w-3 h-3" /> Removed</span>;
   if (will.is_released) return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"><CheckCircle className="w-3 h-3" /> Released</span>;
+  if (will.release_flow === 'auto') {
+    if (will.release_state === 'paused') return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"><PauseCircle className="w-3 h-3" /> Paused</span>;
+    if (will.release_state === 'failed') return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"><AlertTriangle className="w-3 h-3" /> Release failed</span>;
+    return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"><Clock className="w-3 h-3" /> Releases automatically</span>;
+  }
   if (will.is_due) return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"><AlertTriangle className="w-3 h-3" /> Due for release</span>;
   return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"><Clock className="w-3 h-3" /> Awaiting release</span>;
 }
@@ -131,6 +137,32 @@ function WillPanel({ willId, onClose, onChanged }) {
     });
   };
 
+  // Automatic release: pause for a dispute (no reminders, no release) and resume
+  const openPause = () => {
+    setReason(''); reasonRef.current = '';
+    confirm.open({
+      kind: 'pause',
+      title: 'Pause this release?',
+      message: 'No reminders are sent and the will is not released while it is paused. Resuming restarts the reminders.',
+      confirmLabel: 'Pause',
+      onConfirm: async () => {
+        if (reasonRef.current.trim().length < 5) { toast.warning('Give a reason (at least 5 characters)'); return true; }
+        try { await api.pauseWillRelease(willId, reasonRef.current.trim()); toast.success('Release paused'); await load(); onChanged(); }
+        catch (err) { toast.error(err.message || 'Could not pause the release'); return true; }
+      }
+    });
+  };
+
+  const resume = () => confirm.open({
+    title: 'Resume this release?',
+    message: 'The reminders start again. If the release date is less than 4 days away, it moves to 4 days from now.',
+    confirmLabel: 'Resume',
+    onConfirm: async () => {
+      try { const res = await api.resumeWillRelease(willId); toast.success(`Resumed. Release date: ${formatDate(res.data.releaseDate)}`); await load(); onChanged(); }
+      catch (err) { toast.error(err.message || 'Could not resume the release'); return true; }
+    }
+  });
+
   const restore = () => confirm.open({
     title: 'Restore this will?',
     message: 'It becomes visible again and the phone line can play it. Recipient links that haven\'t expired start working again.',
@@ -187,6 +219,12 @@ function WillPanel({ willId, onClose, onChanged }) {
               <p className="font-semibold text-gray-800 dark:text-white mb-2">Release</p>
               <dl className="space-y-1.5">
                 <div className="flex justify-between gap-3"><dt className="text-gray-500">Condition</dt><dd className="text-gray-800 dark:text-gray-200 text-right">{releaseLabel(w)}</dd></div>
+                {w.release_flow === 'auto' && !w.is_released && <>
+                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Reminders sent</dt><dd className="text-gray-800 dark:text-gray-200 text-right">{w.warning_stage || 0} of 3</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-gray-500">Trusted contact</dt><dd className="text-gray-800 dark:text-gray-200 text-right">{w.trusted_contact ? [w.trusted_contact.name, w.trusted_contact.phone].filter(Boolean).join(' · ') : 'None'}{w.trusted_postpones_in_row ? ` (postponed ${w.trusted_postpones_in_row}× in a row)` : ''}</dd></div>
+                  {w.release_state === 'paused' && <div><dt className="text-gray-500">Paused</dt><dd className="text-gray-800 dark:text-gray-200 mt-0.5">{formatDate(w.paused_at, true)}{w.paused_reason ? ` · ${w.paused_reason}` : ''}</dd></div>}
+                  {w.release_error && <div><dt className="text-gray-500">Last release problem</dt><dd className="text-red-600 dark:text-red-400 mt-0.5">{w.release_error}</dd></div>}
+                </>}
                 {w.is_released && <>
                   <div className="flex justify-between gap-3"><dt className="text-gray-500">Released</dt><dd className="text-gray-800 dark:text-gray-200 text-right">{formatDate(w.released_at, true)}{w.released_by_name ? ` by ${w.released_by_name}` : ''}</dd></div>
                   {w.release_notes && <div><dt className="text-gray-500">Notes</dt><dd className="text-gray-800 dark:text-gray-200 whitespace-pre-line mt-0.5">{w.release_notes}</dd></div>}
@@ -265,7 +303,18 @@ function WillPanel({ willId, onClose, onChanged }) {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3 pt-2">
-              {!w.is_released && !w.admin_removed_at && (
+              {w.release_flow === 'auto' && !w.is_released && !w.admin_removed_at && (
+                ['paused', 'failed'].includes(w.release_state) ? (
+                  <button onClick={resume} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 font-medium">
+                    <PlayCircle className="w-4 h-4" /> Resume
+                  </button>
+                ) : (
+                  <button onClick={openPause} className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 font-medium">
+                    <PauseCircle className="w-4 h-4" /> Pause release
+                  </button>
+                )
+              )}
+              {!w.is_released && !w.admin_removed_at && (w.release_flow !== 'auto' || ['paused', 'failed'].includes(w.release_state)) && (
                 <button onClick={openRelease}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 text-white font-medium">
                   <Send className="w-4 h-4" /> Release will
@@ -307,12 +356,14 @@ function WillPanel({ willId, onClose, onChanged }) {
               </div>
             </div>
           )}
-          {confirm.dialogProps.kind === 'remove' && (
+          {['remove', 'pause'].includes(confirm.dialogProps.kind) && (
             <div>
               <label htmlFor="remove-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason (required)</label>
               <textarea id="remove-reason" rows={3} maxLength={1000} value={reason}
                 onChange={e => { setReason(e.target.value); reasonRef.current = e.target.value; }}
-                placeholder="e.g. Owner asked for it to be taken down while they re-record it"
+                placeholder={confirm.dialogProps.kind === 'pause'
+                  ? 'e.g. Family member says the owner is alive and in hospital'
+                  : 'e.g. Owner asked for it to be taken down while they re-record it'}
                 className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
             </div>
           )}
