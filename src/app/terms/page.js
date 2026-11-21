@@ -13,7 +13,7 @@ export default function TermsPage() {
     >
       <div className="prose prose-lg max-w-none">
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Last updated: October 2026
+          Last updated: November 2026
         </p>
 
         <div className="space-y-8">
@@ -118,10 +118,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">10. SMS Data Handling</h2>
             <p className="text-gray-600 dark:text-gray-300">
-            We send text messages to account holders who opt in, about their account: verification codes, security alerts, reminders about their scheduled messages and voice wills, and delivery updates. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. By scheduling a message or naming a recipient, you confirm that person expects to receive messages from you through SureTalk. Every message names the sender. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
+            SureTalk LLC sends text messages to account holders who opt in, about their account: verification codes, PIN reset and account ID recovery, security alerts, reminders about their scheduled messages and voice wills, and reminders before a voice will is released. If an account holder does not respond to those reminders, we may text the trusted contact they named. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. By scheduling a message, or naming a recipient or trusted contact, you confirm that person expects to receive messages from you through SureTalk. Every message names SureTalk. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
             </p>
             <p className="text-gray-600 dark:text-gray-300 mt-3">
-            Phone numbers are never sold, and are never shared with third parties or affiliates for marketing or promotional purposes.
+            No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
             </p>
           </section>
 
@@ -131,7 +131,7 @@ export default function TermsPage() {
               <p className="text-gray-700 dark:text-gray-200">
                 Questions about these Terms? Contact us at:<br />
                 <strong>Email:</strong> Contact@SureTalkNow.com<br />
-                <strong>Mail:</strong> Legal Department, SureTalk Inc.
+                <strong>Mail:</strong> Legal Department, SureTalk LLC
               </p>
             </div>
           </section>          

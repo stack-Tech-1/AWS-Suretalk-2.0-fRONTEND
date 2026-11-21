@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     >
       <div className="prose prose-lg max-w-none">
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Last updated: October 2026
+          Last updated: November 2026
         </p>
 
         <div className="space-y-8">
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
             <div className="mt-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
               <p className="text-gray-700 dark:text-gray-200">
                 <strong>Email:</strong> Contact@SureTalkNow.com<br />
-                <strong>Mail:</strong> Privacy Officer, SureTalk Inc.<br />
+                <strong>Mail:</strong> Privacy Officer, SureTalk LLC<br />
                 <strong>Response Time:</strong> We aim to respond within 48 hours
               </p>
             </div>
@@ -115,10 +115,10 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">8. SMS Data Handling</h2>
             <p className="text-gray-600 dark:text-gray-300">
-            We send text messages to account holders who opt in, about their account: verification codes, security alerts, reminders about their scheduled messages and voice wills, and delivery updates. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. Every message names the sender. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
+            SureTalk LLC sends text messages to account holders who opt in, about their account: verification codes, PIN reset and account ID recovery, security alerts, reminders about their scheduled messages and voice wills, and reminders before a voice will is released. If an account holder does not respond to those reminders, we may text the trusted contact they named. We also send text messages to recipients chosen by an account holder to receive a voice message or voice will from them. Every message names SureTalk. Anyone can reply STOP at any time to stop receiving texts, or HELP for help. Message frequency varies, and message and data rates may apply.
             </p>
             <p className="text-gray-600 dark:text-gray-300 mt-3">
-            Phone numbers are never sold, and are never shared with third parties or affiliates for marketing or promotional purposes. Text messaging opt-in data and consent are not shared with any third parties.
+            No mobile information will be shared with third parties/affiliates for marketing/promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
             </p>
           </section>
 
