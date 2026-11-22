@@ -268,7 +268,7 @@ export default function UserDetail() {
                 <InfoRow icon={Calendar} label="Joined">{formatDate(u.created_at, true)}</InfoRow>
                 <InfoRow icon={Clock} label="Last active">{timeAgo(u.last_active)}</InfoRow>
                 <InfoRow icon={Activity} label="Last sign-in">{u.last_login ? formatDate(u.last_login, true) : 'Never'}</InfoRow>
-                <InfoRow icon={User} label="Signed up via">{u.source === 'admin' ? 'Added by an admin' : u.source === 'ivr' ? 'Phone line (IVR)' : 'Website / app'}</InfoRow>
+                <InfoRow icon={User} label="Signed up via">{u.source === 'admin' ? 'Added by an admin' : u.source === 'ivr' ? 'Phone line (not claimed on the website yet)' : 'Website / app'}</InfoRow>
                 <InfoRow label="Email verified"><Check ok={u.email_verified} /></InfoRow>
                 <InfoRow label="Two-step verification"><Check ok={u.two_factor_enabled} /></InfoRow>
               </div>

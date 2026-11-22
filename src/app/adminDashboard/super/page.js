@@ -402,7 +402,7 @@ export default function SuperAdminDashboard() {
                             ) : user.is_admin && (
                               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">Admin</span>
                             )}
-                            {user.source === 'ivr' && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Phone line</span>}
+                            {user.source === 'ivr' && <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" title="Made by a phone call. They can claim it on the website with a texted code.">Phone line, not claimed yet</span>}
                           </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}{user.phone ? ` · ${user.phone}` : ''}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 flex-wrap">
@@ -621,7 +621,7 @@ export default function SuperAdminDashboard() {
                     <Kpi label="Fixed automatically" value={sm.fixes} tone={sm.fixes ? 'text-green-600' : undefined}
                       sub={sm.fixes && !sm.fixesApplied ? 'Not applied: over the safety limit' : undefined} />
                     <Kpi label="Need a look" value={sm.needsAttention} tone={sm.needsAttention ? 'text-amber-600' : undefined} />
-                    <Kpi label="Phone line only" value={sm.phoneOnly} sub="Can claim an app account" />
+                    <Kpi label="Phone line only" value={sm.phoneOnly} sub="No website record: mostly unfinished phone sign-ups" />
                     <Kpi label="Website only (US)" value={sm.appOnlyUs} sub="No phone PIN yet" />
                   </div>
 

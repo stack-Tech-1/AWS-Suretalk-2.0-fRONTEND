@@ -111,7 +111,7 @@ export default function WillReleaseCard({ willId }) {
             {!editTrusted ? (
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-sm text-gray-800 dark:text-white">
-                  {info.trustedContact ? [info.trustedContact.name, info.trustedContact.phone, info.trustedContact.email].filter(Boolean).join(' · ') : t('willAuto.noTrusted')}
+                  {info.trustedContact ? [info.trustedContact.name || (info.trustedContact.nameRecordedByPhone ? t('willAuto.nameRecordedByPhone') : null), info.trustedContact.phone, info.trustedContact.email].filter(Boolean).join(' · ') : t('willAuto.noTrusted')}
                 </p>
                 <button onClick={() => setEditTrusted(true)} className="text-sm text-purple-600 dark:text-purple-300 hover:underline">
                   {info.trustedContact ? t('common.edit') : t('willAuto.addTrusted')}

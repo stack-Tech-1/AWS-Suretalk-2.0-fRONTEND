@@ -15,6 +15,7 @@ export default function Signup() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [claimNeeded, setClaimNeeded] = useState(false);
   const [selectedTier, setSelectedTier] = useState("LITE");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -118,6 +119,10 @@ const handleSubmit = async (e) => {
 
   } catch (error) {
     console.error("Signup failed:", error);
+    if (error.data?.code === 'PHONE_ACCOUNT_UNCLAIMED') {
+      setClaimNeeded(true);
+      return;
+    }
     
     // Show error to user
     toast.error(`Signup failed: ${error.message}`);
@@ -311,6 +316,13 @@ const handleSubmit = async (e) => {
             ))}
           </div>
 
+          {claimNeeded && (
+            <div role="alert" className="mb-6 rounded-xl border border-blue-300 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-100">
+              <p className="font-semibold">{t('auth.claimNeeded.title')}</p>
+              <p className="mt-1">{t('auth.claimNeeded.body')}</p>
+              <Link href="/claim-account" className="mt-3 inline-block font-semibold underline">{t('auth.claimNeeded.cta')}</Link>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <Input

@@ -2047,6 +2047,10 @@ const es = {
   "willAuto.releasesOn": "Se envía el {date} salvo que se aplace",
   "willAuto.pausedShort": "En espera",
   "willAuto.changeLink": "Cambiar",
+  "auth.claimNeeded.title": "Ya tienes una cuenta de SureTalk",
+  "auth.claimNeeded.body": "Este número de teléfono se registró en la línea telefónica de SureTalk. Reclama esa cuenta para usar el sitio web con las mismas grabaciones, contactos y plan. Te enviaremos un código por mensaje de texto para confirmar que eres tú.",
+  "auth.claimNeeded.cta": "Reclamar mi cuenta",
+  "willAuto.nameRecordedByPhone": "Nombre grabado por teléfono",
 };
 
 export default es;
